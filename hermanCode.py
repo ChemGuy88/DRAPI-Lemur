@@ -7,10 +7,30 @@ import sys
 from pathlib import Path
 
 
+class StreamToLogger(object):
+    """
+    Fake file-like stream object that redirects writes to a logger instance.
+    h/t to https://stackoverflow.com/a/39215961/5478086
+    """
+
+    def __init__(self, logger, level):
+        self.logger = logger
+        self.level = level
+        self.linebuf = ''
+
+    def write(self, buf):
+        for line in buf.rstrip().splitlines():
+            self.logger.log(self.level, line.rstrip())
+
+    def flush(self):
+        pass
+
+
 class LoggerWriter:
     """
     h/t to https://stackoverflow.com/a/31688396/5478086
     """
+
     def __init__(self, level):
         self.level = level
 

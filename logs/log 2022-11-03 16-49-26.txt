@@ -1,3 +1,0 @@
-[2022-11-03 16:49:26,609][ERROR](main): This is an error message.
-[2022-11-03 16:49:26,609][WARNING](main): This is a warning!
-[2022-11-03 16:49:26,610][CRITICAL](main): Oh noes!

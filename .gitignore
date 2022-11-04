@@ -1,3 +1,8 @@
+# >>> [start] Things added by Herman >>>
+**/.DS_Store
+**/logs/
+# <<< [end] Things added by Herman <<<
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

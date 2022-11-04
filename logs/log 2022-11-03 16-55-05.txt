@@ -1,9 +1,0 @@
-[2022-11-03 16:55:05,549][DEBUG](main): Running 'test-logging.py'.
-[2022-11-03 16:55:05,550][DEBUG](main): `base_dir`: 'test-logging.py'.
-[2022-11-03 16:55:05,550][DEBUG](main): Creating fileHandler with path at '/Users/herman/Documents/hermanCode/logs/log 2022-11-03 16-55-05.txt'.
-[2022-11-03 16:55:05,550][DEBUG](main): This is a debug message.
-[2022-11-03 16:55:05,550][INFO](main): This is an info message.
-[2022-11-03 16:55:05,550][ERROR](main): This is an error message.
-[2022-11-03 16:55:05,550][WARNING](main): This is a warning!
-[2022-11-03 16:55:05,550][CRITICAL](main): Oh noes!
-[2022-11-03 16:55:05,550][INFO](main): Prepare for division by zero...

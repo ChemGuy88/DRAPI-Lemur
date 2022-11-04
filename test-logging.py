@@ -16,7 +16,7 @@ def main(loglevel):
     base_dir = this_file_path.absolute().parent
 
     timestamp = dt.now().strftime("%Y-%m-%d %H-%M-%S")
-    logpath = os.path.join(base_dir, "logs", f"log {timestamp}.txt")
+    logpath = os.path.join(base_dir, "logs", f"log {timestamp}.log")
     make_dir_path(Path(logpath).parent)
 
     # Define handlers
