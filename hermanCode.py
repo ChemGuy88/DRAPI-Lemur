@@ -2,7 +2,9 @@
 Herman's utility functions commonly used in his projects
 """
 
+import logging
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -51,3 +53,26 @@ def make_dir_path(directory_path):
     for dir in paths:
         if not os.path.exists(dir):
             os.mkdir(dir)
+
+
+def replace_sql_query(query, old, new):
+    """
+    Replaces text in a SQL query only if it's not commented out. I.e., this function applies string.replace() only if the string doesn't begin with "--".
+    """
+    pattern = r"^\w*--"
+    li = query.split("\n")
+    result = []
+    logging.debug("Starting")
+    for line in li:
+        logging.debug(f"""  Working on "{line}".""")
+        obj = re.search(pattern, line)
+        if obj:
+            logging.debug("    Passing")
+            nline = line
+        else:
+            nline = line.replace(old, new)
+            logging.debug(f"""    Transforming "{line}" --> "{nline}".""")
+        logging.debug("  Appending...")
+        result.append(nline)
+    logging.debug("Finished")
+    return "\n".join(result)
