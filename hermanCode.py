@@ -7,6 +7,9 @@ import os
 import re
 import sys
 from pathlib import Path
+from typing import Union
+
+logger = logging.getLogger(__name__)
 
 
 class StreamToLogger(object):
@@ -44,7 +47,7 @@ class LoggerWriter:
         self.level(sys.stderr)
 
 
-def make_dir_path(directory_path):
+def make_dir_path(directory_path: str) -> None:
     """
     Check if all directories exists in a path. If not, create them
     """
@@ -55,24 +58,36 @@ def make_dir_path(directory_path):
             os.mkdir(dir)
 
 
-def replace_sql_query(query, old, new):
+def loglevel2int(loglevel: Union[int, str]) -> int:
+    """
+    An agnostic converter that takes int or str and returns int. If input is int, output is the same as input"""
+    dummy = logging.getLogger("dummy")
+    dummy.setLevel(loglevel)
+    loglevel = dummy.level
+    return loglevel
+
+
+def replace_sql_query(query: str, old: str, new: str, loglevel: Union[int, str]) -> str:
     """
     Replaces text in a SQL query only if it's not commented out. I.e., this function applies string.replace() only if the string doesn't begin with "--".
     """
+    loglevel_asnumber = loglevel2int(loglevel)
+    logger.setLevel(loglevel_asnumber + 10)
+
     pattern = r"^\w*--"
     li = query.split("\n")
     result = []
-    logging.debug("Starting")
+    logger.debug("Starting")
     for line in li:
-        logging.debug(f"""  Working on "{line}".""")
+        logger.debug(f"""  Working on "{line}".""")
         obj = re.search(pattern, line)
         if obj:
-            logging.debug("    Passing")
+            logger.debug("    Passing")
             nline = line
         else:
             nline = line.replace(old, new)
-            logging.debug(f"""    Transforming "{line}" --> "{nline}".""")
-        logging.debug("  Appending...")
+            logger.debug(f"""    Replacing text in "{line}" --> "{nline}".""")
+        logger.debug("  Appending...")
         result.append(nline)
-    logging.debug("Finished")
+    logger.debug("Finished")
     return "\n".join(result)
