@@ -4,13 +4,26 @@ Herman's utility functions commonly used in his projects
 
 import logging
 import os
+import pandas as pd
 import re
+import sqlalchemy as sa
 import sys
 from itertools import islice
 from pathlib import Path
 from typing import Union
 
 logger = logging.getLogger(__name__)
+
+# SQL Server settings
+SERVER = "DWSRSRCH01.shands.ufl.edu"  # AKA `HOST`
+DATABASE = "DWS_PROD"
+USERDOMAIN = "UFAD"
+USERNAME = os.environ["USER"]
+UID = fr"{USERDOMAIN}\{USERNAME}"
+PWD = os.environ["HFA_UFADPWD"]
+
+connstr = f"mssql+pymssql://{UID}:{PWD}@{SERVER}/{DATABASE}"  # Create connection string
+engine = sa.create_engine(connstr)  # Make connection/engine
 
 
 class StreamToLogger(object):
@@ -68,7 +81,7 @@ def loglevel2int(loglevel: Union[int, str]) -> int:
     return loglevel
 
 
-def replace_sql_query(query: str, old: str, new: str, loglevel: Union[int, str]) -> str:
+def replace_sql_query(query: str, old: str, new: str, loglevel: Union[int, str] = "INFO") -> str:
     """
     Replaces text in a SQL query only if it's not commented out. I.e., this function applies string.replace() only if the string doesn't begin with "--".
     """
@@ -93,6 +106,65 @@ def replace_sql_query(query: str, old: str, new: str, loglevel: Union[int, str])
     logger.debug("Finished")
     return "\n".join(result)
 
+
+def patientKey_from_personID(personID, map_={}):
+    """
+    Assumes "map_" is a dictionary with person IDs as integers that map patient keys as integers.
+    """
+    if personID in map_.keys():
+        patientKey = map_[personID]
+        source = 0
+    else:
+        query = f"""use DWS_OMOP_PROD
+        SELECT 
+            xref.PERSON_MAPPING.person_id as person_id,
+            xref.PERSON_MAPPING.patient_key as patient_key
+        FROM
+            xref.PERSON_MAPPING
+        WHERE
+            xref.PERSON_MAPPING.person_id IN ({personID})"""
+        results = pd.read_sql(query, engine)
+        personID = results["person_id"][0]
+        patientKey = results["patient_key"][0]
+        source = 1
+    return patientKey, source
+
+
+
+def float2str(value, navalue=""):
+    """
+    Converts values to string-type. If a value is NaN it is replaced with a value that can be converted to a string, default empty string, "".
+    """
+    assert isinstance(navalue, str), """"navalue" is not a string type."""
+    if pd.isna(value):
+        newValue = str(navalue)
+    else:
+        newValue = str(int(value))
+    return newValue
+
+
+def str2int(value, navalue=-1):
+    """
+    Converts values to integer-type. If a value is NaN it is replaced with a value that can be converted to an integer, default is "-1".
+    """
+    assert isinstance(navalue, int), """"navalue" is not an integer type."""
+    if pd.isna(value):
+        newValue = int(navalue)
+    else:
+        newValue = int(float(value))
+    return newValue
+
+
+def str2bool(value, navalue=""):
+    """
+    Converts values to boolean-type. If a value is missing it is replaced with an empty string.
+    """
+    if pd.isna(value):
+        newValue = int(navalue)
+    else:
+        newValue = bool(value)
+    return newValue
+    
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # >>> tree function >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
