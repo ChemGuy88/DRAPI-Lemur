@@ -107,12 +107,12 @@ def replace_sql_query(query: str, old: str, new: str, loglevel: Union[int, str] 
     return "\n".join(result)
 
 
-def patientKey_from_personID(personID, map_={}):
+def patient_key_from_person_id(person_id, map_={}):
     """
     Assumes "map_" is a dictionary with person IDs as integers that map patient keys as integers.
     """
-    if personID in map_.keys():
-        patientKey = map_[personID]
+    if person_id in map_.keys():
+        patient_key = map_[person_id]
         source = 0
     else:
         query = f"""use DWS_OMOP_PROD
@@ -122,12 +122,12 @@ def patientKey_from_personID(personID, map_={}):
         FROM
             xref.PERSON_MAPPING
         WHERE
-            xref.PERSON_MAPPING.person_id IN ({personID})"""
+            xref.PERSON_MAPPING.person_id IN ({person_id})"""
         results = pd.read_sql(query, engine)
-        personID = results["person_id"][0]
-        patientKey = results["patient_key"][0]
+        person_id = results["person_id"][0]
+        patient_key = results["patient_key"][0]
         source = 1
-    return patientKey, source
+    return patient_key, source
 
 
 
