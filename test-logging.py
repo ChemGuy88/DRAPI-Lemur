@@ -7,7 +7,7 @@ This version works at printing logs to the console and a file. However, I also w
 import os
 import logging
 from datetime import datetime as dt
-from hermanCode import make_dir_path
+from hermanCode.hermanCode import make_dir_path
 from pathlib import Path
 
 

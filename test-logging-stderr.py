@@ -6,7 +6,7 @@ import logging
 import os
 import sys
 from datetime import datetime as dt
-from hermanCode import make_dir_path, StreamToLogger
+from hermanCode.hermanCode import make_dir_path, StreamToLogger
 from pathlib import Path
 
 # Set and make log path
