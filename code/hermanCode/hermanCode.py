@@ -8,6 +8,7 @@ import pandas as pd
 import re
 import sqlalchemy as sa
 import sys
+from datetime import datetime as dt
 from itertools import islice
 from pathlib import Path
 from typing import Union
@@ -22,6 +23,7 @@ USERNAME = os.environ["USER"]
 UID = fr"{USERDOMAIN}\{USERNAME}"
 PWD = os.environ["HFA_UFADPWD"]
 
+# SQLAlchemy connections
 connstr = f"mssql+pymssql://{UID}:{PWD}@{SERVER}/{DATABASE}"  # Create connection string
 engine = sa.create_engine(connstr)  # Make connection/engine
 
@@ -72,6 +74,10 @@ def make_dir_path(directory_path: str) -> None:
             os.mkdir(dir)
 
 
+def getTimestamp():
+    return dt.now().strftime("%Y-%m-%d %H-%M-%S")
+
+
 def loglevel2int(loglevel: Union[int, str]) -> int:
     """
     An agnostic converter that takes int or str and returns int. If input is int, output is the same as input"""
@@ -84,6 +90,7 @@ def loglevel2int(loglevel: Union[int, str]) -> int:
 def replace_sql_query(query: str, old: str, new: str, loglevel: Union[int, str] = "INFO") -> str:
     """
     Replaces text in a SQL query only if it's not commented out. I.e., this function applies string.replace() only if the string doesn't begin with "--".
+    TODO Don't replace text after "--".
     """
     loglevel_asnumber = loglevel2int(loglevel)
     logger.setLevel(loglevel_asnumber + 10)
@@ -107,6 +114,27 @@ def replace_sql_query(query: str, old: str, new: str, loglevel: Union[int, str] 
     return "\n".join(result)
 
 
+def sqlite2df(tableContents, tableName, cursor):
+    """
+    `tableContents` must be a "*" query where all the columns are returned.
+    """
+    # Get metadata on table
+    query = f"PRAGMA table_info({tableName});"
+    cursor.execute(query)
+    query_results = cursor.fetchall()
+    column_header = [tu[1] for tu in query_results]
+
+    tableContents_asDict = {}
+    for it, table_info in enumerate(tableContents):
+        di = {}
+        for key, value in zip(column_header, table_info):
+            di[key] = value
+        tableContents_asDict[it] = di
+    df = pd.DataFrame.from_dict(tableContents_asDict, orient="index")
+    df.index = range(1, len(tableContents) + 1)
+    return df
+
+
 def patient_key_from_person_id(person_id, map_={}):
     """
     Assumes "map_" is a dictionary with person IDs as integers that map patient keys as integers.
@@ -116,7 +144,7 @@ def patient_key_from_person_id(person_id, map_={}):
         source = 0
     else:
         query = f"""use DWS_OMOP_PROD
-        SELECT 
+        SELECT
             xref.PERSON_MAPPING.person_id as person_id,
             xref.PERSON_MAPPING.patient_key as patient_key
         FROM
@@ -129,6 +157,43 @@ def patient_key_from_person_id(person_id, map_={}):
         source = 1
     return patient_key, source
 
+
+def map2di(map_: pd.DataFrame):
+    """
+    Assumes the following structure to "map_":
+    column 1 | column 2 | column 3
+        a1   |     1    |    b1
+        .    |     .    |     .
+        .    |     .    |     .
+        .    |     .    |     .
+        an   |     n    |    bn
+    """
+    di = {}
+    errors = []
+    for _, row in map_.iterrows():
+        oldValue, _, newValue = row.values
+        if oldValue in di.keys() and di[oldValue] != newValue:
+            errors.append({oldValue: newValue})
+        di[oldValue] = newValue
+    if len(errors) > 0:
+        raise Exception(f"This map is not one to one. At least one ID is duplicated with multiple de-identified IDs: {errors}")
+    else:
+        return di
+
+
+def isNumber(string):
+    """
+    Checks if the string represents a number
+
+    For a discussion see https://stackoverflow.com/questions/354038/how-do-i-check-if-a-string-represents-a-number-float-or-int
+    """
+    try:
+        int(string)
+        return True
+    except ValueError as error:
+        msg = error.args[0]
+        if "invalid literal for int() with base 10:" in msg:
+            return False
 
 
 def float2str(value, navalue=""):
@@ -164,7 +229,23 @@ def str2bool(value, navalue=""):
     else:
         newValue = bool(value)
     return newValue
-    
+
+
+def isValidPatientID(value):
+    """
+    Checks if the value is a valid UFHealth patient ID. Invalid patient IDs are defined as negative integers
+    """
+    isNumber_bool = isNumber(value)
+    if isNumber_bool:
+        number = int(value)
+        if number < 0:
+            result = False
+        elif number >= 0:  # Assumes `0` is a valid patient ID
+            result = True
+    elif not isNumber_bool:
+        result = True  # Assumes all non-numeric IDs are valid
+    return result
+
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # >>> tree function >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

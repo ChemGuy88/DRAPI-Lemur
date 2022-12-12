@@ -1,5 +1,5 @@
 """
-Create a working directory from template. THe structure of the directory to be made is as follows:
+Create a working directory from template. The structure of the directory to be made is as follows (NOTE: For most up to date structure, see the directory under `hermanCode/`):
 
 New Directory
 ├── Code
@@ -8,7 +8,9 @@ New Directory
 │   └── Output
 ├── Logs
 ├── SQL
-└── .env
+├── .env
+├── .gitignore
+└── README.MD
 
 where "New Directory" is the name of the directory to be created
 """
