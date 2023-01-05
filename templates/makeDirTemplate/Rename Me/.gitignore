@@ -2,6 +2,9 @@
 **/.DS_Store
 **/*.csv
 **/logs/
+**/*.xlsx
+**/*.pdf
+**/*.zip
 # <<< [end] Things added by Herman <<<
 
 # >>> [start] Default IDR files >>>

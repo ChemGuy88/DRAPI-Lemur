@@ -78,6 +78,44 @@ def getTimestamp():
     return dt.now().strftime("%Y-%m-%d %H-%M-%S")
 
 
+def getLastIDNum(df):
+    """
+    Gets the last ID number in a de-identification map.
+    """
+    numbers = df["deid_num"].astype(int)
+    return max(numbers)
+
+
+def makeMap(IDset: set,
+            IDName: str,
+            startFrom: int,
+            irbNumber: str,
+            suffix: str,
+            columnSuffix: str) -> pd.DataFrame:
+    """
+    Makes an IDR de-identification map.
+
+    INPUT
+        `IDset`, a set of IDs
+        `IDName`, the name of the ID
+        `startFrom`, the integer number to start from
+    OUTPUT
+        `map_`, a Pandas DataFrame with the following format:
+    """
+    IDli = sorted(list(IDset))
+    mapDi = {IDNum: {} for IDNum in IDli}
+    deid_num = startFrom
+    for IDNum in IDli:
+        deid_pat_id = f"{irbNumber}_{suffix}_{deid_num}"
+        mapDi[IDNum] = {IDName: IDNum,
+                        "deid_num": deid_num,
+                        f"deid_{columnSuffix}_id": deid_pat_id}
+        deid_num += 1
+    newMap = pd.DataFrame.from_dict(mapDi, orient="index")
+    newMap.index = range(1, len(newMap) + 1)
+    return newMap
+
+
 def loglevel2int(loglevel: Union[int, str]) -> int:
     """
     An agnostic converter that takes int or str and returns int. If input is int, output is the same as input"""
