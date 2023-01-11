@@ -11,7 +11,7 @@ import sqlalchemy as sa
 # Variables
 this_file_path = Path(__file__)
 this_file_stem = this_file_path.stem
-project_dir = this_file_path.absolute().parent.parent.parent
+project_dir = this_file_path.absolute().parent.parent.parent.parent
 input_dir = project_dir.joinpath("data", "input")
 output_dir = project_dir.joinpath("data", "output")
 sql_dir = project_dir.joinpath("sql")
@@ -49,5 +49,3 @@ def patientKey2MRNs(patientKeys: list):
     query = replace_sql_query(query0, old, new)
     results = pd.read_sql(query, engine)
     return results
-
-

@@ -285,6 +285,18 @@ def isValidPatientID(value):
     return result
 
 
+def makeChunks(array_length, array_size):
+    """
+    Inspired by GeekForGeeks.com (https://www.geeksforgeeks.org/break-list-chunks-size-n-python/)
+
+    Example:
+    list(chunk(range(30), 5))
+
+    """
+    array_length = iter(array_length)
+    return iter(lambda: tuple(islice(array_length, array_size)), ())
+
+
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # >>> tree function >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
