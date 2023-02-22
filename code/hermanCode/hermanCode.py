@@ -4,14 +4,18 @@ Herman's utility functions commonly used in his projects
 
 import logging
 import os
-import pandas as pd
 import re
-import sqlalchemy as sa
-import sys
 from datetime import datetime as dt
 from itertools import islice
 from pathlib import Path
 from typing import Union
+import sys
+# Third-party packages
+import pandas as pd
+import sqlalchemy as sa
+import sqlite3
+# Local packages
+pass
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +156,7 @@ def replace_sql_query(query: str, old: str, new: str, loglevel: Union[int, str] 
     return "\n".join(result)
 
 
-def sqlite2df(tableContents, tableName, cursor):
+def sqlite2df(tableContents: list, tableName: str, cursor: sqlite3.Cursor) -> pd.DataFrame:
     """
     `tableContents` must be a "*" query where all the columns are returned.
     """
@@ -285,16 +289,18 @@ def isValidPatientID(value):
     return result
 
 
-def makeChunks(array_length, array_size):
+def makeChunks(array_range, chunkSize):
     """
     Inspired by GeekForGeeks.com (https://www.geeksforgeeks.org/break-list-chunks-size-n-python/)
 
-    Example:
-    list(chunk(range(30), 5))
+    Doesn't really make chunks of an array, but rather its range. Can be further developed to make chunks of the actual array.
 
+    Example:
+    array = range(30)
+    chunks = makeChunks(array, chunkSize)
     """
-    array_length = iter(array_length)
-    return iter(lambda: tuple(islice(array_length, array_size)), ())
+    array_range = iter(array_range)
+    return iter(lambda: tuple(islice(array_range, chunkSize)), ())
 
 
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
