@@ -2,6 +2,9 @@
 Herman's utility functions commonly used in his IDEALIST projects
 """
 
+__all__ = ["idealistMap2dict",
+           "patientKey2MRNs"]
+
 from pathlib import Path
 from hermanCode.hermanCode import replace_sql_query
 import os
@@ -41,6 +44,7 @@ def idealistMap2dict(idealistMap, fromID, toID):
 def patientKey2MRNs(patientKeys: list):
     """
     """
+    assert isinstance(patientKeys, list), "This function expects an object of type list."
     queryPath = sql_dir.joinpath("MRNfromPatientKey.sql")
     with open(queryPath, "r") as file:
         query0 = file.read()

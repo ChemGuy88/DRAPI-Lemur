@@ -1,17 +1,19 @@
 # >>> [start] Things added by Herman >>>
-**/.DS_Store
-**/*.csv
 **/logs/
-**/*.xlsx
+**/.DS_Store
+**/*.bat
+**/*.csv
 **/*.pdf
+**/*.tsv
+**/*.xlsx
 **/*.zip
 # <<< [end] Things added by Herman <<<
 
 # >>> [start] Default IDR files >>>
-settings.yaml
-types.yaml
 data/
 documents/
+settings.yaml
+types.yaml
 # <<< [end] Default IDR files <<<
 
 # Byte-compiled / optimized / DLL files

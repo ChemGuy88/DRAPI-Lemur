@@ -60,13 +60,13 @@ database_path = Path(os.path.join(database_dir,
                                   DATABASE_FILE_NAME))
 
 # SQLite connection
-print(f"""Loading sqlite database from "{database_path}".""")
+print(f"""[{getTimestamp()}] Loading sqlite database from "{database_path}".""")
 sqliteConnection = sqlite3.connect(database_path)
 cursor = sqliteConnection.cursor()
 
-# Test connections
-if True:
-    # SQLite
+
+def testSQLiteConection():
+    """Test SQLite connection"""
     print(f"""[{getTimestamp()}] Testing SQLite connection.""")
     query = """SELECT 1"""
     cursor.execute(query)
@@ -74,15 +74,31 @@ if True:
     if test1:
         print(f"""[{getTimestamp()}] SQLite connection successful: "{test1}".""")
 
-# Query de-identification map
-print(f"""[{getTimestamp()}] Running SQLite query.""")
-query = """SELECT
-           *
-           FROM
-           PatientDeidenMap
-           WHERE
-           active_ind_y_n = 1;"""
-cursor.execute(query)
-patientMapLi = cursor.fetchall()
-print(f"""[{getTimestamp()}] SQLite query completed.""")
-patientMapDf = sqlite2df(patientMapLi, "PatientDeidenMap", cursor)
+
+def getPatientMapDf():
+    """Query patient de-identification map"""
+    print(f"""[{getTimestamp()}] Running SQLite query.""")
+    query = """SELECT
+            *
+            FROM
+            PatientDeidenMap
+            WHERE
+            active_ind_y_n = 1;"""
+    cursor.execute(query)
+    patientMapLi = cursor.fetchall()
+    print(f"""[{getTimestamp()}] SQLite query completed.""")
+    patientMapDf = sqlite2df(patientMapLi, "PatientDeidenMap", cursor)
+    patientMapDf["deiden_id_string"] = patientMapDf["deiden_id"].apply(lambda integer: f"IDEALIST_2021-05-01_{integer}")
+    return patientMapDf
+
+
+def getEncounterMapDf():
+    """Query patient de-identification map"""
+    return
+
+
+if __name__ == "__main__":
+    print("This file not implemented to run as script.")
+else:
+    testSQLiteConection()
+    patientMapDf = getPatientMapDf()

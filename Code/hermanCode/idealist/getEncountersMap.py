@@ -6,11 +6,13 @@ Outline
     - For each file, append the encounter de-identification maps to the master map.
 """
 
+""" NOTE See DNR folder for latest version
 # Private variables ("dunders")
 __all__ = ["encounterMapDf"]
 
 # Imports
 from pathlib import Path
+import logging
 import os
 import re
 import sys
@@ -23,12 +25,6 @@ from hermanCode.hermanCode import sqlite2df, getTimestamp, replace_sql_query, ma
 
 # Arguments
 QUERY_PATH = Path("sql/encounterNumber2patientKey.SQL")
-DATABSE_DIR_WINDOWS = os.path.join("X:\\",
-                                   "FTP",
-                                   "IDR",
-                                   "ANES",
-                                   "IRB201600223 - aka R01",
-                                   "Deiden_db")
 DATABSE_DIR_MAC = os.path.join("/",
                                "Volumes",
                                "FILES",
@@ -37,6 +33,12 @@ DATABSE_DIR_MAC = os.path.join("/",
                                "ANES",
                                "IRB201600223 - aka R01",
                                "Deiden_db")
+DATABSE_DIR_WINDOWS = os.path.join("X:\\",
+                                   "FTP",
+                                   "IDR",
+                                   "ANES",
+                                   "IRB201600223 - aka R01",
+                                   "Deiden_db")
 CHUNK_SIZE = "100,000"
 
 # Arguments: SQL connection settings
@@ -99,44 +101,44 @@ def getDeidenDBSeriesNumber(string):
 
 
 if __name__ == "__main__":
-    print(f"""[{getTimestamp()}] Begin running "{thisFilePath}".""")
-    print(f"""[{getTimestamp()}] All other paths will be reported in debugging relative to `projectDir`: "{projectDir}".""")
+    logging.info(f"""Begin running "{thisFilePath}".""")
+    logging.info(f"""All other paths will be reported in debugging relative to `projectDir`: "{projectDir}".""")
 
     # SQLite connection
     databaseFiles = sorted([fPath for fPath in database_dir.iterdir() if "deiden_2021-05-01_" in fPath.name], key=lambda fPath: int(getDeidenDBSeriesNumber(str(fPath))))
     encounterMapDf = pd.DataFrame()
     for it, file in enumerate(databaseFiles, start=1):
         database_path = file
-        print(f"""[{getTimestamp()}]   Loading file {it} of {len(databaseFiles)}.""")
-        print(f"""[{getTimestamp()}]     Loading sqlite database from "{database_path}".""")
+        logging.info(f"""  Loading file {it} of {len(databaseFiles)}.""")
+        logging.info(f"""    Loading sqlite database from "{database_path}".""")
         sqliteConnection = sqlite3.connect(database_path)
         cursor = sqliteConnection.cursor()
 
         if it == 1:
             # Test SQLite connection
-            print(f"""[{getTimestamp()}]   ..  Testing SQLite connection.""")
+            logging.info("""  ..  Testing SQLite connection.""")
             query = """SELECT 1"""
             cursor.execute(query)
             test1 = cursor.fetchall()[0][0]
             if test1:
-                print(f"""[{getTimestamp()}]   ..    SQLite connection successful: "{test1}".""")
+                logging.info(f"""  ..    SQLite connection successful: "{test1}".""")
 
         # Query encounter de-identification map
-        print(f"""[{getTimestamp()}]     Running SQLite query for encounter map.""")
+        logging.info("""    Running SQLite query for encounter map.""")
         query = """SELECT *
     FROM EncounterDeidenMap"""
         cursor.execute(query)
         resultsList = cursor.fetchall()
-        print(f"""[{getTimestamp()}]     SQLite query completed.""")
+        logging.info("""    SQLite query completed.""")
         results = sqlite2df(resultsList, "EncounterDeidenMap", cursor)
         encounterMapDf = pd.concat([encounterMapDf, results])
 
     # Post-processing
-    print(f"""[{getTimestamp()}] Ordering encounter de-identification map dataframe by values.""")
+    logging.info("""Ordering encounter de-identification map dataframe by values.""")
     encounterMapDf = encounterMapDf.sort_values(by="real_id")
 
     # Map encounter numbers to patient keys, in parallel / series
-    print(f"""[{getTimestamp()}] Reading SQL file.""")
+    logging.info("""Reading SQL file.""")
     with open(QUERY_PATH, "r") as file:
         query0 = file.read()
 
@@ -144,20 +146,20 @@ if __name__ == "__main__":
     numChunks = int(np.ceil(len(encounterMapDf) / chunkSize))
     allResults = pd.DataFrame()
     for it, indices in enumerate(indexChunks, start=1):
-        print(f"""[{getTimestamp()}]   Working on chunk {it} of {numChunks}.""")
+        logging.info(f"""  Working on chunk {it} of {numChunks}.""")
         # Make chunk
-        print(f"""[{getTimestamp()}]     Making chunk.""")
+        logging.info("""    Making chunk.""")
         indices = list(indices)
         dfChunk = encounterMapDf.iloc[indices, :]
         # Make query string from chunk
-        print(f"""[{getTimestamp()}]     Making query string.""")
+        logging.info("""    Making query string.""")
         series = dfChunk["real_id"]
         # li = sorted(series.to_list())
         li = series.to_list()
         encountersListAsString = ",".join([str(int(el)) for el in li])
         query = replace_sql_query(query0, "0123456789, 1234567890", encountersListAsString)
         # Query chunk
-        print(f"""[{getTimestamp()}]     Querying database.""")
+        logging.info("""    Querying database.""")
         results = pd.read_sql(query, con=conStr)
         # results.sort_values(by="ENCNTR_CSN_ID", key=int)
         allResults = pd.concat([allResults, results])
@@ -168,4 +170,5 @@ if __name__ == "__main__":
         encounterMapDf[COLUMN_NAME] = encounterMapDf["deiden_id"].apply(lambda integer: f"{integer}")
 
     # Script end
-    print(f"""[{getTimestamp()}] Finished running "{thisFilePath}".""")
+    logging.info(f"""Finished running "{thisFilePath}".""")
+"""
