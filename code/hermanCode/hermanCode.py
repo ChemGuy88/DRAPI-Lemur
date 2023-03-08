@@ -82,11 +82,11 @@ def getTimestamp():
     return dt.now().strftime("%Y-%m-%d %H-%M-%S")
 
 
-def getLastIDNum(df):
+def getLastIDNum(df, columnName="deid_num"):
     """
     Gets the last ID number in a de-identification map.
     """
-    numbers = df["deid_num"].astype(int)
+    numbers = df[columnName].astype(int)
     return max(numbers)
 
 
