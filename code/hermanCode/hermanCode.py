@@ -8,7 +8,8 @@ import re
 from datetime import datetime as dt
 from itertools import islice
 from pathlib import Path
-from typing import Union
+from typing import List, Tuple, Union
+from typing_extensions import Literal
 import sys
 # Third-party packages
 import pandas as pd
@@ -28,8 +29,8 @@ UID = fr"{USERDOMAIN}\{USERNAME}"
 PWD = os.environ["HFA_UFADPWD"]
 
 # SQLAlchemy connections
-connstr = f"mssql+pymssql://{UID}:{PWD}@{SERVER}/{DATABASE}"  # Create connection string
-engine = sa.create_engine(connstr)  # Make connection/engine
+conStr = f"mssql+pymssql://{UID}:{PWD}@{SERVER}/{DATABASE}"  # Create connection string
+engine = sa.create_engine(conStr)  # Make connection/engine
 
 
 class StreamToLogger(object):
@@ -95,7 +96,9 @@ def makeMap(IDset: set,
             startFrom: int,
             irbNumber: str,
             suffix: str,
-            columnSuffix: str) -> pd.DataFrame:
+            columnSuffix: str,
+            groups: dict = {0: {"criteria": [lambda x: x < 0],
+                                "deidNum": 0}}) -> pd.DataFrame:
     """
     Makes an IDR de-identification map.
 
@@ -103,18 +106,30 @@ def makeMap(IDset: set,
         `IDset`, a set of IDs
         `IDName`, the name of the ID
         `startFrom`, the integer number to start from
+        `groups`, ID values to group or map in a many-to-one fashion. E.g., invalid IDs (negative numbers) are usually all mapped to the same de-identified number, like "0".
     OUTPUT
         `map_`, a Pandas DataFrame with the following format:
     """
     IDli = sorted(list(IDset))
     mapDi = {IDNum: {} for IDNum in IDli}
-    deid_num = startFrom
     for IDNum in IDli:
-        deid_pat_id = f"{irbNumber}_{suffix}_{deid_num}"
+        fromGroup = False
+        for group, groupAttributes in groups.items():
+            criteriaList = groupAttributes["criteria"]
+            criteria = [criterion(IDNum) for criterion in criteriaList]
+            if all(criteria):
+                deid_num = groupAttributes["deidNum"]
+                fromGroup = True
+                break
+        if fromGroup:
+            pass
+        else:
+            deid_num = startFrom
+            startFrom += 1
+        deid_id = f"{irbNumber}_{suffix}_{deid_num}"
         mapDi[IDNum] = {IDName: IDNum,
                         "deid_num": deid_num,
-                        f"deid_{columnSuffix}_id": deid_pat_id}
-        deid_num += 1
+                        f"deid_{columnSuffix}_id": deid_id}
     newMap = pd.DataFrame.from_dict(mapDi, orient="index")
     newMap.index = range(1, len(newMap) + 1)
     return newMap
@@ -177,7 +192,7 @@ def sqlite2df(tableContents: list, tableName: str, cursor: sqlite3.Cursor) -> pd
     return df
 
 
-def patient_key_from_person_id(person_id, map_={}):
+def patient_key_from_person_id(person_id: int, map_: dict = {}) -> Tuple[int, Literal[0, 1]]:
     """
     Assumes "map_" is a dictionary with person IDs as integers that map patient keys as integers.
     """
@@ -193,11 +208,28 @@ def patient_key_from_person_id(person_id, map_={}):
             xref.PERSON_MAPPING
         WHERE
             xref.PERSON_MAPPING.person_id IN ({person_id})"""
-        results = pd.read_sql(query, engine)
+        results = pd.read_sql(query, con=conStr)
         person_id = results["person_id"][0]
         patient_key = results["patient_key"][0]
         source = 1
     return patient_key, source
+
+
+def personIDs2patientKeys(personIDList: List[int]) -> pd.DataFrame:
+    """
+    
+    """
+    list2str = ",".join([str(num) for num in personIDList])
+    query = f"""use DWS_OMOP_PROD
+    SELECT
+        xref.PERSON_MAPPING.person_id as person_id,
+        xref.PERSON_MAPPING.patient_key as patient_key
+    FROM
+        xref.PERSON_MAPPING
+    WHERE
+        xref.PERSON_MAPPING.person_id IN ({list2str})"""
+    results = pd.read_sql(query, con=conStr)
+    return results
 
 
 def map2di(map_: pd.DataFrame):
