@@ -294,6 +294,16 @@ def str2int(value, navalue=-1):
     return newValue
 
 
+def str2intOr0(string):
+    """
+    Converts a string to its numeric value, or 0, if it has no numeric value.
+    """
+    if string.isnumeric():
+        return int(string)
+    else:
+        return 0
+
+
 def str2bool(value, navalue=""):
     """
     Converts values to boolean-type. If a value is missing it is replaced with an empty string.
@@ -340,17 +350,17 @@ def makeChunks(array_range, chunkSize):
 # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 # h/t https://stackoverflow.com/a/59109706/5478086
 
-# prefix components:
-space = '    '
-branch = '│   '
-# pointers:
-tee = '├── '
-last = '└── '
-
 
 def tree(dir_path: Path, level: int = -1, limit_to_directories: bool = False,
          length_limit: int = 1000):
     """Given a directory Path object print a visual tree structure"""
+    # prefix components:
+    space = '    '
+    branch = '│   '
+    # pointers:
+    tee = '├── '
+    last = '└── '
+
     dir_path = Path(dir_path)  # accept string coerceable to Path
     files = 0
     directories = 0
