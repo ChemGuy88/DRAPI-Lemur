@@ -93,7 +93,7 @@ def getLastIDNum(df, columnName="deid_num"):
 
 def makeMap(IDset: set,
             IDName: str,
-            startFrom: int,
+            startFrom: Union[int, list],
             irbNumber: str,
             suffix: str,
             columnSuffix: str,
@@ -110,6 +110,13 @@ def makeMap(IDset: set,
     OUTPUT
         `map_`, a Pandas DataFrame with the following format:
     """
+    if isinstance(startFrom, int):
+        startFrom = startFrom
+        numbers = range(startFrom, startFrom + len(IDset))
+    elif isinstance(startFrom, list):
+        numbers = startFrom[:]
+        startFrom = numbers[0]
+    numbers.extend([None])
     IDli = sorted(list(IDset))
     mapDi = {IDNum: {} for IDNum in IDli}
     for IDNum in IDli:
@@ -124,8 +131,7 @@ def makeMap(IDset: set,
         if fromGroup:
             pass
         else:
-            deid_num = startFrom
-            startFrom += 1
+            deid_num = numbers.pop()
         deid_id = f"{irbNumber}_{suffix}_{deid_num}"
         mapDi[IDNum] = {IDName: IDNum,
                         "deid_num": deid_num,
@@ -133,6 +139,45 @@ def makeMap(IDset: set,
     newMap = pd.DataFrame.from_dict(mapDi, orient="index")
     newMap.index = range(1, len(newMap) + 1)
     return newMap
+
+
+def makeMapFromOthers(IDset: set,
+                      IDName: str,
+                      numbers: set,
+                      irbNumber: str,
+                      suffix: str,
+                      columnSuffix: str,
+                      groups: dict = {0: {"criteria": [lambda x: x < 0],
+                                          "deidNum": 0}}) -> pd.DataFrame:
+    """
+    Not implemented
+    """
+    li = list(zip(IDset, numbers))
+    df = pd.DataFrame(li)
+    return 
+
+
+def makeSetComplement(set1, cardinalityOfNewSet):
+    """
+    Creates a complement to a set, based on the specified size of the complement. Elements of the first set are assumed to be integers from 1 and above, and cardinalities are non-zero positive integers.
+    """
+    set1Min = 1
+    set1Max = max(set1)
+    s1Contiguous = set(range(set1Min, set1Max + 1))
+    setDifference = s1Contiguous.difference(set1)
+    cardinalityOfSetDifference = len(setDifference)
+    cardinalityOfContiguousSubset = cardinalityOfNewSet - cardinalityOfSetDifference
+    if cardinalityOfContiguousSubset > 0:
+        setDifferenceSubset = setDifference
+        contiguousSubset = set(range(set1Max + 1, set1Max + cardinalityOfContiguousSubset + 1))
+    elif cardinalityOfContiguousSubset == 0:
+        setDifferenceSubset = setDifference
+        contiguousSubset = set()
+    elif cardinalityOfContiguousSubset < 0:
+        setDifferenceSubset = set(list(setDifference)[:cardinalityOfNewSet])
+        contiguousSubset = set()
+    newSet = setDifferenceSubset.union(contiguousSubset)
+    return newSet
 
 
 def loglevel2int(loglevel: Union[int, str]) -> int:
@@ -217,7 +262,7 @@ def patient_key_from_person_id(person_id: int, map_: dict = {}) -> Tuple[int, Li
 
 def personIDs2patientKeys(personIDList: List[int]) -> pd.DataFrame:
     """
-    
+
     """
     list2str = ",".join([str(num) for num in personIDList])
     query = f"""use DWS_OMOP_PROD

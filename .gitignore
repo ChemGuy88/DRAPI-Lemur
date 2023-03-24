@@ -1,14 +1,15 @@
 # >>> [start] Things added by Herman >>>
 **/.DS_Store
-**/*.csv
-**/logs/
+# **/*.csv
+**/logs/*
 # <<< [end] Things added by Herman <<<
 
 # >>> [start] Default IDR files >>>
-settings.yaml
-types.yaml
-data/
-documents/
+# Do not add IDR files to the top-level .gitignore or it will ignore the directories and files in the template directory.
+# settings.yaml
+# types.yaml
+data/*
+documents/*
 # <<< [end] Default IDR files <<<
 
 # Byte-compiled / optimized / DLL files
