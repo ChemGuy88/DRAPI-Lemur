@@ -1,5 +1,6 @@
 # >>> [start] Things added by Herman >>>
 **/logs/
+**/*.7z
 **/.DS_Store
 **/*.bat
 **/*.csv

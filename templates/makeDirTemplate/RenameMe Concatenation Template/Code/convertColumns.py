@@ -3,7 +3,6 @@ Convert person ID column to patient key
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
 # NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
-# TODO Needs up sync `hermanCode` on Windows
 """
 
 import logging
@@ -14,13 +13,12 @@ import pandas as pd
 # Local packages
 from hermanCode.hermanCode import getTimestamp, make_dir_path
 from hermanCode.idealist.idealist import idealistMap2dict
+from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 
 # Arguments
 LOG_LEVEL = "DEBUG"
 COLUMNS_TO_CONVERT_DI = {"person_id": "PatientKey"}
 
-OMOP_PORTION_DIR_MAC = Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Shukla/IRB202001660 DatReq02/Intermediate Results/OMOP Portion/data/output/2023-03-09 10-57-42")
-OMOP_PORTION_DIR_WIN = Path(r"Z:\IDR Data Requests\ACTIVE RDRs\Shukla\IRB202001660 DatReq02\Intermediate Results\OMOP Portion\data\output\2023-03-09 10-57-42")
 MAC_PATHS = [OMOP_PORTION_DIR_MAC]
 WIN_PATHS = [OMOP_PORTION_DIR_WIN]
 
@@ -28,7 +26,7 @@ NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 LIST_OF_PORTION_CONDITIONS = [OMOP_PORTION_FILE_CRITERIA]
 
-PERSON_ID_MAP_PATH = Path("data/output/makePersonIDMap/2023-03-14 12-53-37/person_id map.csv")
+PERSON_ID_MAP_PATH = Path("data/output/makePersonIDMap/2023-03-24 17-17-14/person_id map.csv")
 
 CHUNK_SIZE = 50000
 
@@ -129,6 +127,13 @@ if __name__ == "__main__":
                     logging.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(IRBDir)}".""")
             else:
                 logging.info("""    This file does not need to be processed.""")
+
+    # Clean up
+    # TODO If input directory is empty, delete
+    # TODO Delete intermediate run directory
+
+    # Output location summary
+    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(IRBDir)}".""")
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")

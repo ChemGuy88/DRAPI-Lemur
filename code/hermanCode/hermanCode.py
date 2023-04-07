@@ -12,6 +12,7 @@ from typing import List, Tuple, Union
 from typing_extensions import Literal
 import sys
 # Third-party packages
+import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlite3
@@ -91,6 +92,16 @@ def getLastIDNum(df, columnName="deid_num"):
     return max(numbers)
 
 
+def setIndex(table: pd.DataFrame,
+             columnName: str) -> pd.DataFrame:
+    """
+    Re-indexes a Pandas dataframe using an existing column
+    """
+    table.index = table[columnName]
+    table = table.drop(columns=columnName)
+    return table
+
+
 def makeMap(IDset: set,
             IDName: str,
             startFrom: Union[int, list],
@@ -109,10 +120,18 @@ def makeMap(IDset: set,
         `groups`, ID values to group or map in a many-to-one fashion. E.g., invalid IDs (negative numbers) are usually all mapped to the same de-identified number, like "0".
     OUTPUT
         `map_`, a Pandas DataFrame with the following format:
+        | `IDName` | deid_num   | deid_{`columnSuffix`}_id |
+        | -------- | --------   | ------------------------ |
+        | IDset[0] | numbers[0] | ... |
+        | ...      | ...        | ... |
     """
+    if len(IDset) == 0:
+        return pd.DataFrame(columns=[IDName, "deid_num", f"deid_{columnSuffix}_id"])
+    else:
+        pass
     if isinstance(startFrom, int):
         startFrom = startFrom
-        numbers = range(startFrom, startFrom + len(IDset))
+        numbers = list(range(startFrom, startFrom + len(IDset)))
     elif isinstance(startFrom, list):
         numbers = startFrom[:]
         startFrom = numbers[0]
@@ -131,7 +150,7 @@ def makeMap(IDset: set,
         if fromGroup:
             pass
         else:
-            deid_num = numbers.pop()
+            deid_num = numbers.pop(0)
         deid_id = f"{irbNumber}_{suffix}_{deid_num}"
         mapDi[IDNum] = {IDName: IDNum,
                         "deid_num": deid_num,
@@ -141,28 +160,17 @@ def makeMap(IDset: set,
     return newMap
 
 
-def makeMapFromOthers(IDset: set,
-                      IDName: str,
-                      numbers: set,
-                      irbNumber: str,
-                      suffix: str,
-                      columnSuffix: str,
-                      groups: dict = {0: {"criteria": [lambda x: x < 0],
-                                          "deidNum": 0}}) -> pd.DataFrame:
-    """
-    Not implemented
-    """
-    li = list(zip(IDset, numbers))
-    df = pd.DataFrame(li)
-    return 
-
-
 def makeSetComplement(set1, cardinalityOfNewSet):
     """
     Creates a complement to a set, based on the specified size of the complement. Elements of the first set are assumed to be integers from 1 and above, and cardinalities are non-zero positive integers.
+
+    TODO: Implement empty set handling
     """
     set1Min = 1
-    set1Max = max(set1)
+    if len(set1) == 0:
+        raise ValueError("Set should not be empty.")
+    else:
+        set1Max = max(set1)
     s1Contiguous = set(range(set1Min, set1Max + 1))
     setDifference = s1Contiguous.difference(set1)
     cardinalityOfSetDifference = len(setDifference)
@@ -307,7 +315,7 @@ def isNumber(string):
     For a discussion see https://stackoverflow.com/questions/354038/how-do-i-check-if-a-string-represents-a-number-float-or-int
     """
     try:
-        int(string)
+        int(float(string))
         return True
     except ValueError as error:
         msg = error.args[0]
@@ -376,11 +384,30 @@ def isValidPatientID(value):
     return result
 
 
+def ditchFloat(value):
+    """
+    Gets rid of float types if value is string, integer, or float.
+    """
+    if isinstance(value, str):
+        value = str(value)
+        if value.isnumeric():
+            standardValue = int(value)
+        elif isNumber(value):
+            standardValue = int(float(value))
+        else:
+            raise ValueError(f"""Unexpected data type "{type(value)}" for value "{value}". Expect only string, float, or integers.""")
+    elif isinstance(value, int) or isinstance(value, np.integer) or isinstance(value, float):
+        standardValue = int(value)
+    else:
+        raise ValueError(f"""Unexpected data type "{type(value)}" for value "{value}". Expect only string, float, or integers.""")
+    return standardValue
+
+
 def makeChunks(array_range, chunkSize):
     """
     Inspired by GeekForGeeks.com (https://www.geeksforgeeks.org/break-list-chunks-size-n-python/)
 
-    Doesn't really make chunks of an array, but rather its range. Can be further developed to make chunks of the actual array.
+    Only makes chunks of one dimensional arrays (e.g., lists, Pandas Series), but not dataframes.
 
     Example:
     array = range(30)

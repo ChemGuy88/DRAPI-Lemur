@@ -19,16 +19,11 @@ from hermanCode.hermanCode import getTimestamp, make_dir_path
 # Arguments
 LOG_LEVEL = "DEBUG"
 
-NOTES_PORTION_DIR_MAC = Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Shukla/IRB202001660 DatReq02/Intermediate Results/Notes Portion/data/output/free_text")
-NOTES_PORTION_DIR_WIN = Path(r"Z:\IDR Data Requests\ACTIVE RDRs\Shukla\IRB202001660 DatReq02\Intermediate Results\Notes Portion\data\output\free_text")
+OMOP_PORTION_DIR_MAC = Path("data/output/deIdentify/2023-03-31 11-44-24")
+OMOP_PORTION_DIR_WIN = Path("data/output/deIdentify/2023-03-31 11-44-24")
 
-OMOP_PORTION_DIR_MAC = Path("data/output/deIdentify/2023-03-14 14-17-10")
-OMOP_PORTION_DIR_WIN = Path("data/output/deIdentify/2023-03-14 14-17-10")
-
-MAC_PATHS = [NOTES_PORTION_DIR_MAC,
-             OMOP_PORTION_DIR_MAC]
-WIN_PATHS = [NOTES_PORTION_DIR_WIN,
-             OMOP_PORTION_DIR_WIN]
+MAC_PATHS = [OMOP_PORTION_DIR_MAC]
+WIN_PATHS = [OMOP_PORTION_DIR_WIN]
 
 NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
@@ -36,9 +31,12 @@ OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 LIST_OF_PORTION_CONDITIONS = [NOTES_PORTION_FILE_CRITERIA,
                               OMOP_PORTION_FILE_CRITERIA]
 
-COLUMNS_TO_DELETE = ["condition_occurrence_id",
+COLUMNS_TO_DELETE = ["address_1",
+                     "address_2",
+                     "condition_occurrence_id",
                      "device_exposure_id",
                      "drug_exposure_id",
+                     "location_source_value",
                      "measurement_id",
                      "observation_id",
                      "person_source_value",
@@ -139,6 +137,13 @@ if __name__ == "__main__":
                     logging.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(IRBDir)}".""")
             else:
                 logging.info("""    This file does not need to be processed.""")
+
+    # Clean up
+    # TODO If input directory is empty, delete
+    # TODO Delete intermediate run directory
+
+    # Output location summary
+    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(IRBDir)}".""")
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")

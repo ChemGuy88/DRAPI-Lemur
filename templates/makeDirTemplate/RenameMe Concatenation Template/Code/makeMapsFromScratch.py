@@ -1,8 +1,9 @@
 """
-Convert OMOP person IDs to IDR patient keys.
+Makes de-identification maps from scratch.
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
 # NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
+# TODO Needs to combine similar IDs, like different providers IDs.
 """
 
 import logging
@@ -12,21 +13,57 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path, personIDs2patientKeys
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+from hermanCode.hermanCode import getTimestamp, make_dir_path, makeMap
+from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 
 # Arguments
 LOG_LEVEL = "DEBUG"
 
-COLUMNS_TO_CONVERT = ["person_id"]
+VARIABLE_SUFFIXES = {"AuthoringProviderKey": {"columnSuffix": "provider",
+                                              "deIdIDSuffix": "PROV"},
+                     "AuthorizingProviderKey": {"columnSuffix": "provider",
+                                                "deIdIDSuffix": "PROV"},
+                     "CosignProviderKey": {"columnSuffix": "provider",
+                                           "deIdIDSuffix": "PROV"},
+                     "EncounterCSN": {"columnSuffix": "encounter",
+                                      "deIdIDSuffix": "ENC"},
+                     "EncounterKey": {"columnSuffix": "encounter",
+                                      "deIdIDSuffix": "ENC"},
+                     "MRN_GNV": {"columnSuffix": "patient",
+                                 "deIdIDSuffix": "PAT"},
+                     "MRN_JAX": {"columnSuffix": "patient",
+                                 "deIdIDSuffix": "PAT"},
+                     "NoteID": {"columnSuffix": "note",
+                                "deIdIDSuffix": "NOTE"},  # ?
+                     "NoteKey": {"columnSuffix": "note",
+                                 "deIdIDSuffix": "NOTE"},  # ?
+                     "OrderID": {"columnSuffix": "order",
+                                 "deIdIDSuffix": "ORD"},  # ?
+                     "OrderKey": {"columnSuffix": "order",
+                                  "deIdIDSuffix": "ORD"},  # ?
+                     "PatientKey": {"columnSuffix": "patient",
+                                    "deIdIDSuffix": "PAT"},
+                     "ProviderKey": {"columnSuffix": "provider",
+                                     "deIdIDSuffix": "PROV"},
+                     "person_id": {"columnSuffix": "patient",
+                                   "deIdIDSuffix": "PAT"},
+                     "preceding_visit_occurrence_id": {"columnSuffix": "encounter",
+                                                       "deIdIDSuffix": "ENC"},
+                     "provider_id": {"columnSuffix": "provider",
+                                     "deIdIDSuffix": "PROV"},
+                     "visit_occurrence_id": {"columnSuffix": "encounter",
+                                             "deIdIDSuffix": "ENC"}}
 
-MAC_PATHS = [OMOP_PORTION_DIR_MAC]
-WIN_PATHS = [OMOP_PORTION_DIR_WIN]
+MAC_PATHS = [NOTES_PORTION_DIR_MAC,
+             OMOP_PORTION_DIR_MAC]
+WIN_PATHS = [NOTES_PORTION_DIR_WIN,
+             OMOP_PORTION_DIR_WIN]
 
 NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 
-LIST_OF_PORTION_CONDITIONS = [OMOP_PORTION_FILE_CRITERIA]
+LIST_OF_PORTION_CONDITIONS = [NOTES_PORTION_FILE_CRITERIA,
+                              OMOP_PORTION_FILE_CRITERIA]
 
 SETS_PATH = None
 
@@ -60,9 +97,11 @@ if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
+        notesPortionDir = NOTES_PORTION_DIR_MAC
         omopPortionDir = OMOP_PORTION_DIR_MAC
         listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
+        notesPortionDir = NOTES_PORTION_DIR_WIN
         omopPortionDir = OMOP_PORTION_DIR_WIN
         listOfPortionDirs = WIN_PATHS[:]
     else:
@@ -93,49 +132,12 @@ if __name__ == "__main__":
     logging.info(f"""All other paths will be reported in debugging relative to `IRBDir`: "{IRBDir}".""")
 
     # Get set of values
-    if SETS_PATH:
-        logging.info(f"""Using the set of values previously collected from "{SETS_PATH}".""")
-    else:
-        logging.info("""Getting the set of values for each variable to convert.""")
-        columnSetsVarsDi = {columnName: {"fpath": runIntermediateDataDir.joinpath(f"{columnName}.txt"),
-                                         "fileMode": "w"} for columnName in COLUMNS_TO_CONVERT}
-        for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
-            # Act on directory
-            logging.info(f"""Working on directory "{directory.relative_to(IRBDir)}".""")
-            for file in directory.iterdir():
-                logging.info(f"""  Working on file "{file.absolute().relative_to(IRBDir)}".""")
-                conditions = [condition(file) for condition in fileConditions]
-                if all(conditions):
-                    # Read file
-                    logging.info("""    File has met all conditions for processing.""")
-                    numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
-                    dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
-                    for it, dfChunk in enumerate(dfChunks, start=1):
-                        logging.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
-                        for columnName in dfChunk.columns:
-                            logging.info(f"""  ..    Working on column "{columnName}".""")
-                            if columnName in COLUMNS_TO_CONVERT:
-                                logging.info("""  ..  ..  Column must be converted. Collecting values.""")
-                                valuesSet = sorted(list(set(dfChunk[columnName].dropna().values)))
-                                columnSetFpath = columnSetsVarsDi[columnName]["fpath"]
-                                columnSetFileMode = columnSetsVarsDi[columnName]["fileMode"]
-                                with open(columnSetFpath, columnSetFileMode) as file:
-                                    for value in valuesSet:
-                                        file.write(str(value))
-                                        file.write("\n")
-                                columnSetsVarsDi[columnName]["fileMode"] = "a"
-                                logging.info(f"""  ..  ..  Values saved to "{columnSetFpath.absolute().relative_to(IRBDir)}" in the project directory.""")
-                else:
-                    logging.info("""    This file does not need to be processed.""")
+    # Imported from "getIDValues.py"
 
     # Map values
-    if SETS_PATH:
-        setsPathDir = SETS_PATH
-    else:
-        setsPathDir = runIntermediateDataDir
-    for file in setsPathDir.iterdir():
-        columnName = file.stem
-        logging.info(f"""  Working on variable "{columnName}" located at "{file.absolute().relative_to(IRBDir)}".""")
+    for file in SETS_PATH.iterdir():
+        variableName = file.stem
+        logging.info(f"""  Working on variable "{variableName}" located at "{file.absolute().relative_to(IRBDir)}".""")
         # Read file
         try:
             df = pd.read_table(file, header=None)
@@ -157,11 +159,12 @@ if __name__ == "__main__":
         elif df.shape[1] == 0:
             pass
         # Map contents
-        map_ = personIDs2patientKeys(list(values))
+        deIdIDSuffix = VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]
+        map_ = makeMap(IDset=values, IDName=variableName, startFrom=1, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName)
         # Save map
-        mapPath = runOutputDir.joinpath(f"{columnName} map.csv")
+        mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
         map_.to_csv(mapPath, index=False)
-        logging.info(f"""    PersonID-to-PatientKey map saved to "{mapPath.absolute().relative_to(IRBDir)}".""")
+        logging.info(f"""    De-identification map saved to "{mapPath.absolute().relative_to(IRBDir)}".""")
 
     # Clean up
     # TODO If input directory is empty, delete

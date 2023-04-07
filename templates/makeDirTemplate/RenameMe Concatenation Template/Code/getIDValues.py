@@ -1,68 +1,28 @@
 """
-Make a project de-identification map from the notes metadata.
+Get the set of ID values for all variables to de-identify.
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
 # NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
-# TODO Needs up sync `hermanCode` on Windows
-# TODO Needs to combine similar IDs, like different providers IDs.
 """
+
+__all__ = ["runIntermediateDataDir"]
 
 import logging
 import sys
 from pathlib import Path
 # Third-party packages
 import pandas as pd
-from pandas.errors import EmptyDataError
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path, makeMap
-from common import COLUMNS_TO_DE_IDENTIFY, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+from hermanCode.hermanCode import getTimestamp, make_dir_path
+from common import COLUMNS_TO_DE_IDENTIFY, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
 
 # Arguments
 LOG_LEVEL = "DEBUG"
 
-VARIABLE_SUFFIXES = {"AuthoringProviderKey": {"columnSuffix": "provider",
-                                              "deIdIDSuffix": "PROV"},
-                     "AuthorizingProviderKey": {"columnSuffix": "provider",
-                                                "deIdIDSuffix": "PROV"},
-                     "CosignProviderKey": {"columnSuffix": "provider",
-                                           "deIdIDSuffix": "PROV"},
-                     "EncounterCSN": {"columnSuffix": "encounter",
-                                      "deIdIDSuffix": "ENC"},
-                     "EncounterKey": {"columnSuffix": "encounter",
-                                      "deIdIDSuffix": "ENC"},
-                     "MRN_GNV": {"columnSuffix": "patient",
-                                 "deIdIDSuffix": "PAT"},
-                     "MRN_JAX": {"columnSuffix": "patient",
-                                 "deIdIDSuffix": "PAT"},
-                     "NoteID": {"columnSuffix": "note",
-                                "deIdIDSuffix": "NOTE"},  # ?
-                     "NoteKey": {"columnSuffix": "note",
-                                 "deIdIDSuffix": "NOTE"},  # ?
-                     "OrderID": {"columnSuffix": "order",
-                                 "deIdIDSuffix": "ORD"},  # ?
-                     "OrderKey": {"columnSuffix": "order",
-                                  "deIdIDSuffix": "ORD"},  # ?
-                     "PatientKey": {"columnSuffix": "patient",
-                                    "deIdIDSuffix": "PAT"},
-                     "ProviderKey": {"columnSuffix": "provider",
-                                     "deIdIDSuffix": "PROV"},
-                     "person_id": {"columnSuffix": "patient",
-                                   "deIdIDSuffix": "PAT"},
-                     "preceding_visit_occurrence_id": {"columnSuffix": "encounter",
-                                                       "deIdIDSuffix": "ENC"},
-                     "provider_id": {"columnSuffix": "provider",
-                                     "deIdIDSuffix": "PROV"},
-                     "visit_occurrence_id": {"columnSuffix": "encounter",
-                                             "deIdIDSuffix": "ENC"}}
-
-NOTES_PORTION_DIR_MAC = Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Shukla/IRB202001660 DatReq02/Intermediate Results/Notes Portion/data/output/free_text")
-
-NOTES_PORTION_DIR_WIN = Path(r"Z:\IDR Data Requests\ACTIVE RDRs\Shukla\IRB202001660 DatReq02\Intermediate Results\Notes Portion\data\output\free_text")
-
 MAC_PATHS = [NOTES_PORTION_DIR_MAC,
-             OMOP_PORTION_DIR_MAC]
+             MODIFIED_OMOP_PORTION_DIR_MAC]
 WIN_PATHS = [NOTES_PORTION_DIR_WIN,
-             OMOP_PORTION_DIR_WIN]
+             MODIFIED_OMOP_PORTION_DIR_WIN]
 
 NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
@@ -74,7 +34,7 @@ SETS_PATH = None
 
 CHUNK_SIZE = 50000
 
-IRB_NUMBER = "IRB202001660"
+IRB_NUMBER = "IRB202300242"
 
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
@@ -102,12 +62,10 @@ if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
-        notesPortionDir = NOTES_PORTION_DIR_MAC
-        omopPortionDir = OMOP_PORTION_DIR_MAC
+        notesPortionDir, omopPortionDir = MAC_PATHS
         listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
-        notesPortionDir = NOTES_PORTION_DIR_WIN
-        omopPortionDir = OMOP_PORTION_DIR_WIN
+        notesPortionDir, omopPortionDir = WIN_PATHS
         listOfPortionDirs = WIN_PATHS[:]
     else:
         raise Exception("Unsupported operating system")
@@ -141,7 +99,7 @@ if __name__ == "__main__":
         logging.info(f"""Using the set of values previously collected from "{SETS_PATH}".""")
     else:
         logging.info("""Getting the set of values for each variable to de-identify.""")
-        columnSetsVarsDi = {columnName: {"fpath": runIntermediateDataDir.joinpath(f"{columnName}.txt"),
+        columnSetsVarsDi = {columnName: {"fpath": runOutputDir.joinpath(f"{columnName}.txt"),
                                          "fileMode": "w"} for columnName in COLUMNS_TO_DE_IDENTIFY}
         for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
             # Act on directory
@@ -172,42 +130,9 @@ if __name__ == "__main__":
                 else:
                     logging.info("""    This file does not need to be processed.""")
 
-    # Map values
-    if SETS_PATH:
-        setsPathDir = SETS_PATH
-    else:
-        setsPathDir = runIntermediateDataDir
-    for file in setsPathDir.iterdir():
-        columnName = file.stem
-        logging.info(f"""  Working on variable "{columnName}" located at "{file.absolute().relative_to(IRBDir)}".""")
-        # Read file
-        try:
-            df = pd.read_table(file, header=None)
-        except EmptyDataError as err:
-            _ = err
-            df = pd.DataFrame()
-        # Assert
-        if df.shape[1] == 1:
-            # Try to convert to integer-type
-            try:
-                df.iloc[:, 0] = df.iloc[:, 0].astype(int)
-            except ValueError as err:
-                _ = err
-            # Check length differences
-            len0 = len(df)
-            values = set(df.iloc[:, 0].values)
-            len1 = len(values)
-            logging.info(f"""    The length of the ID array was reduced from {len0:,} to {len1:,} when removing duplicates.""")
-        elif df.shape[1] == 0:
-            pass
-        # Map contents
-        # columnSuffix = VARIABLE_SUFFIXES[columnName]["columnSuffix"]
-        deIdIDSuffix = VARIABLE_SUFFIXES[columnName]["deIdIDSuffix"]
-        map_ = makeMap(IDset=values, IDName=columnName, startFrom=1, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=columnName)
-        # Save map
-        mapPath = runOutputDir.joinpath(f"{columnName} map.csv")
-        map_.to_csv(mapPath, index=False)
-        logging.info(f"""    De-identification map saved to "{mapPath.absolute().relative_to(IRBDir)}".""")
+    # Return path to sets fo ID values
+    # TODO If this is implemented as a function, instead of a stand-alone script, return `runOutputDir` to define `setsPathDir` in the "makeMap" scripts.
+    logging.info(f"""Finished collecting the set of ID values to de-identify. The set files are located in "{runOutputDir.relative_to(projectDir)}".""")
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")

@@ -3,7 +3,6 @@ De-identify files
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
 # NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
-# TODO Needs up sync `hermanCode` on Windows
 # TODO Assign portion name to each path (per OS) so that portion files are stored in their respective folders, this prevents file from being overwritten in the unlikely, but possible, case files from different portions have the same name.
 """
 
@@ -14,13 +13,17 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from hermanCode.hermanCode import getTimestamp, make_dir_path, map2di
-from common import COLUMNS_TO_DE_IDENTIFY, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+from common import COLUMNS_TO_DE_IDENTIFY, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 
 # Arguments
-LOG_LEVEL = "DEBUG"
 
-NOTES_PORTION_DIR_MAC = Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Shukla/IRB202001660 DatReq02/Intermediate Results/Notes Portion/data/output/free_text")
-NOTES_PORTION_DIR_WIN = Path(r"Z:\IDR Data Requests\ACTIVE RDRs\Shukla\IRB202001660 DatReq02\Intermediate Results\Notes Portion\data\output\free_text")
+CONCATENATED_MAPS_DIR_PATH = Path("data/output/concatenateMaps/2023-03-31 11-39-10")
+
+MAPS_DIR_PATH = CONCATENATED_MAPS_DIR_PATH
+
+CHUNK_SIZE = 50000
+
+LOG_LEVEL = "DEBUG"
 
 MAC_PATHS = [NOTES_PORTION_DIR_MAC,
              OMOP_PORTION_DIR_MAC]
@@ -32,10 +35,6 @@ OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 
 LIST_OF_PORTION_CONDITIONS = [NOTES_PORTION_FILE_CRITERIA,
                               OMOP_PORTION_FILE_CRITERIA]
-
-MAPS_DIR_PATH = Path("data/output/makeMaps/2023-03-14 14-06-55")
-
-CHUNK_SIZE = 50000
 
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
@@ -140,6 +139,9 @@ if __name__ == "__main__":
                     logging.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(IRBDir)}".""")
             else:
                 logging.info("""    This file does not need to be processed.""")
+
+    # Output location summary
+    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(IRBDir)}".""")
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")

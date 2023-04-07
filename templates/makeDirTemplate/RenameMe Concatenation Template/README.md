@@ -1,60 +1,63 @@
-# README file for IRB202001660
+# README file for IRB000000000
 
-# Request Date: 3/10/2023
+# Request Date: DD/MM/YYYY
 
 # PI: 
- - Virk, Sarah S.
+ - ...
 
 # Request Type:
  - Line-level
 
 # Final Applied Inclusion Criteria:
- - Patients with chronic kidney disease (CKD) as identified by diagnostic codes
-   - ICD9: 580 to 589
-   - ICD10
-     - N00 to N08
-     - N10 to N16
-     - N17 to N19
+ - ...
 
 # Final Applied Exclusion Criteria:
  - None
 
 # Data Elements for Release:
- - Clinical notes (all notes available as of date of data request)
-   - Clinical notes
-   - Order narratives
-   - Order impression
-   - Order result comments
- - OMOP Variables. All variables available as of date of data request. See IRB data elements attachment
+ - 
 
 # Steps to Generate Data Release:
- - Run Notes Portion
- - Run OMOP Portion
- - For each of the following, modify the script arguments as necessary (located in top of file) and then run the script:
-   - Run "makePersonIDMap.py"
-   - Run "convertColumns.py"
-   - Run "makeMaps.py"
-   - Run "deIdentify.py"
-   - 
-   - Run "gatherFiles.py"
+ - Run ... Portion. See its corresponding README for details.
+ - Run ... Portion. See its corresponding README for details.
+ - For each of the following, modify the script arguments as necessary (located in top of file), and the project arguments (located in "common.py") and then run the script:
+   - "makePersonIDMap.py"
+   - "convertColumns.py"
+   - "getIDValues.py"
+   - "makeMapsFromOthers.py"
+   - "concatenateMaps.py"
+   - "deIdentify.py"
+   - "deleteColumns.py"
+   - "gatherFiles.py"
  - Submit the output from "gatherFiles.py" to the honest broker for release
 
 # Release to:
- - 
+ - ...
 
-# 3/10/2023 Release Files:
- - Cohort File: Virk/IRB202300505/data/file_name.csv
+# Release Files:
+ - ...
 
 # Other Notes:
 
-## Files to use as of 3/15/2023
+## Files to use for release dated MM/DD/YYYY
 
-| Description                      | Path                                                                | Script that uses it        |
-| -------------------------------- | ------------------------------------------------------------------- | -------------------------- |
-| person ID map                    | "data/output/makePersonIDMap/2023-03-14 12-53-37/person_id map.csv" | convertColumns.py          |
-| converted OMOP files             | "data/output/convertColumns/2023-03-14 13-04-07"                    | makeMaps.py, deIdentify.py |
-| ID Sets (map intermediate files) | "data/intermediate/makeMaps/2023-03-14 14-06-55"                    | makeMaps.py                |
-| De-identification maps           | "data/output/makeMaps/2023-03-14 14-06-55"                          | deIdentify.py              |
-| Final results                    | "data/output/deIdentify/2023-03-14 14-17-10"                        | Honest broker              |
+File paths are relative to the common parent directory, whose absolute path is "..."
+
+| File(s) Description                  | File(s) path or directory                                                             | Process that uses the file(s) |
+| ------------------------------------ | ------------------------------------------------------------------------------------- | ----------------------------- |
+| Original OMOP data set               | "IRB202300242/Intermediate Results/OMOP Portion/data/output/..."                      | makePersonIDMaps.py           |
+| OMOP Person ID map                   | "IRB202300242/Concatenated Results/data/output/makePersonIDMap/.../person_id map.csv" | convertColumns.py             |
+| Original OMOP data set               | "IRB202300242/Intermediate Results/OMOP Portion/data/output/..."                      | convertColumns.py             |
+| Modified OMOP files                  | "IRB202300242/Concatenated Results/data/output/convertColumns/..."                    | getIDValues.py                |
+| Notes metadata data set              | "IRB202300242/Intermediate Results/Notes Portion/data/output/free_text"               | getIDValues.py                |
+| Notes portion de-identification maps | "IRB202300242/Intermediate Results/Notes Portion/data/output/mapping"                 | makeMapsFromOthers.py         |
+| ID Sets (map intermediate files)     | "IRB202300242/Concatenated Results/data/output/getIDValues/..."                       | makeMapsFromOthers.py         |
+| De-identification maps               | "IRB202300242/Concatenated Results/data/output/makeMapsFromOthers/..."                | deIdentify.py                 |
+| Modified OMOP files                  | "IRB202300242/Concatenated Results/data/output/convertColumns/..."                    | deIdentify.py                 |
+| Notes metadata data set              | "IRB202300242/Intermediate Results/Notes Portion/data/output/free_text"               | deIdentify.py                 |
+| De-identified data set               | "IRB202300242/Concatenated Results/data/output/deIdentify/..."                        | deleteColumns.py              |
+| Reduced de-identified data set       | "IRB202300242/Concatenated Results/data/output/deleteColumns/..."                     | gatherFiles.py                |
+| De-identified notes data set         | "IRB202300242/Intermediate Results/De-identified Notes/..."                           | gatherFiles.py                |
+| Final results                        |                                                                                       | Honest broker                 |
 
 ____________________________________________________________
