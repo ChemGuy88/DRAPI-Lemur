@@ -14,8 +14,8 @@ from hermanCode.hermanCode import getTimestamp, make_dir_path
 
 # Arguments
 LOG_LEVEL = "DEBUG"
-PORTIONS_OUTPUT_DIR_PATH_MAC = {"Notes": Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Shukla/IRB202001660 DatReq02/Intermediate Results/Notes Portion/data/output/free_text"),
-                                "OMOP": Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Shukla/IRB202001660 DatReq02/Intermediate Results/OMOP Portion/data/output/2023-03-09 10-57-42")}
+PORTIONS_OUTPUT_DIR_PATH_MAC = {"Notes": Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/.../.../Intermediate Results/Notes Portion/data/output/free_text"),  # TODO
+                                "OMOP": Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/.../.../Intermediate Results/OMOP Portion/data/output/...")}  # TODO
 PORTIONS_OUTPUT_DIR_PATH_WINDOWS = {"Notes": Path(""),
                                     "OMOP": Path("")}
 
@@ -53,7 +53,7 @@ if isAccessible:
 else:
     # If the above option doesn't work, manually copy the database to the `input` directory.
     # portionsOutputDirPath = None
-    print("Not implement")
+    print("Not implemented")
     sys.exit()
 
 # Directory creation: General

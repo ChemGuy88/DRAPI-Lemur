@@ -17,7 +17,7 @@ from common import OLD_MAPS_DIR_PATH
 # Arguments
 LOG_LEVEL = "DEBUG"
 
-NEW_MAPS_DIR_PATH = Path("data/output/makeMapsFromOthers/2023-03-31 11-37-45")
+NEW_MAPS_DIR_PATH = Path("data/output/makeMapsFromOthers/...")  # TODO
 
 # Functions
 

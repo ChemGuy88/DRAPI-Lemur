@@ -18,11 +18,11 @@ from hermanCode.hermanCode import getTimestamp, make_dir_path, makeMap, makeSetC
 from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, COLUMNS_TO_DE_IDENTIFY, OLD_MAPS_DIR_PATH
 
 # Arguments
-SETS_PATH = Path("data/output/getIDValues/2023-03-31 11-32-26")
+SETS_PATH = Path("data/output/getIDValues/...")  # TODO
 
 CHUNK_SIZE = 50000
 
-IRB_NUMBER = "IRB202300242"
+IRB_NUMBER = None  # TODO
 
 VARIABLE_SUFFIXES = {"AuthoringProviderKey": {"columnSuffix": "provider",
                                               "deIdIDSuffix": "PROV"},

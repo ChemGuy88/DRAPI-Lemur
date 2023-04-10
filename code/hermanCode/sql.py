@@ -56,6 +56,7 @@ def checkStatus(statusType=Literal["C2S", "death"],
                 location=Literal["gnv", "jax"],
                 listOfMRNs=List[str]) -> pd.DataFrame:
     """
+    This functions performs the Consent-to-Share ("C2S") check before release, to ensure deceased or opted-out patients aren't contacted.
     """
 
     # Determine query type

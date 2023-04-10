@@ -17,7 +17,7 @@ from common import COLUMNS_TO_DE_IDENTIFY, NOTES_PORTION_DIR_MAC, NOTES_PORTION_
 
 # Arguments
 
-CONCATENATED_MAPS_DIR_PATH = Path("data/output/concatenateMaps/2023-03-31 11-39-10")
+CONCATENATED_MAPS_DIR_PATH = Path("data/output/concatenateMaps/...")  # TODO
 
 MAPS_DIR_PATH = CONCATENATED_MAPS_DIR_PATH
 

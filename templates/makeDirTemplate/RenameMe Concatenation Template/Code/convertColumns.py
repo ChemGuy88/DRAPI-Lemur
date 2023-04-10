@@ -26,7 +26,7 @@ NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 LIST_OF_PORTION_CONDITIONS = [OMOP_PORTION_FILE_CRITERIA]
 
-PERSON_ID_MAP_PATH = Path("data/output/makePersonIDMap/2023-03-24 17-17-14/person_id map.csv")
+PERSON_ID_MAP_PATH = Path("data/output/makePersonIDMap/.../person_id map.csv")  # TODO
 
 CHUNK_SIZE = 50000
 

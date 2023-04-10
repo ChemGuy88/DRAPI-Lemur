@@ -19,8 +19,8 @@ from hermanCode.hermanCode import getTimestamp, make_dir_path
 # Arguments
 LOG_LEVEL = "DEBUG"
 
-OMOP_PORTION_DIR_MAC = Path("data/output/deIdentify/2023-03-31 11-44-24")
-OMOP_PORTION_DIR_WIN = Path("data/output/deIdentify/2023-03-31 11-44-24")
+OMOP_PORTION_DIR_MAC = Path("data/output/deIdentify/...")  # TODO
+OMOP_PORTION_DIR_WIN = Path("data/output/deIdentify/...")  # TODO
 
 MAC_PATHS = [OMOP_PORTION_DIR_MAC]
 WIN_PATHS = [OMOP_PORTION_DIR_WIN]
