@@ -14,7 +14,7 @@ __all__ = ["COLUMNS_TO_DE_IDENTIFY",
 from pathlib import Path
 
 # Argument meta variables
-PROJECT_ROOT_DIRECTORY = Path(__file__).absolute().parent.parent.parent
+PROJECT_ROOT_DIRECTORY = Path(__file__).absolute().parent.parent
 NOTES_ROOT_DIRECTORY = PROJECT_ROOT_DIRECTORY.joinpath("Intermediate Results",
                                                        "Notes Portion",
                                                        "data",
