@@ -1,5 +1,5 @@
 """
-Copied from "/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Bian/IRB202202436/Intermediate Results/OMOP Portion/Code/deidentify.py"
+Copied from "/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Guo/IRB202201080/code/DataPullProject"
 """
 
 from sqlite3 import Timestamp
