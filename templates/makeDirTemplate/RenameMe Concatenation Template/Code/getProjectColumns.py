@@ -5,6 +5,7 @@ Get all variables/columns of tables/files in the project.
 import logging
 import os
 import sys
+from collections import OrderedDict
 from pathlib import Path
 # Third-party packages
 import numpy as np
@@ -14,17 +15,15 @@ from hermanCode.hermanCode import getTimestamp, make_dir_path
 
 # Arguments
 LOG_LEVEL = "DEBUG"
-PORTIONS_OUTPUT_DIR_PATH_MAC = {"Notes": Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/.../.../Intermediate Results/Notes Portion/data/output/free_text"),  # TODO
-                                "OMOP": Path("/Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/.../.../Intermediate Results/OMOP Portion/data/output/...")}  # TODO
-PORTIONS_OUTPUT_DIR_PATH_WINDOWS = {"Notes": Path(""),
-                                    "OMOP": Path("")}
+PORTIONS_OUTPUT_DIR_PATH_MAC = {"All": Path("data/output/deleteColumns/...")}  # TODO
+PORTIONS_OUTPUT_DIR_PATH_WIN = {"All": Path("data/output/deleteColumns/...")}  # TODO
 
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent
+IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -40,20 +39,20 @@ if logsDir:
 sqlDir = projectDir.joinpath("sql")
 
 # Variables: Path construction: OS-specific
-isAccessible = np.all([path.exists() for path in PORTIONS_OUTPUT_DIR_PATH_MAC.values()]) or np.all([path.exists() for path in PORTIONS_OUTPUT_DIR_PATH_WINDOWS.values()])
+isAccessible = np.all([path.exists() for path in PORTIONS_OUTPUT_DIR_PATH_MAC.values()]) or np.all([path.exists() for path in PORTIONS_OUTPUT_DIR_PATH_WIN.values()])
 if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
         portionsOutputDirPath = PORTIONS_OUTPUT_DIR_PATH_MAC
     elif operatingSystem == "win32":
-        portionsOutputDirPath = PORTIONS_OUTPUT_DIR_PATH_WINDOWS
+        portionsOutputDirPath = PORTIONS_OUTPUT_DIR_PATH_WIN
     else:
         raise Exception("Unsupported operating system")
 else:
     # If the above option doesn't work, manually copy the database to the `input` directory.
     # portionsOutputDirPath = None
-    print("Not implemented")
+    print("Not implement")
     sys.exit()
 
 # Directory creation: General
@@ -76,20 +75,12 @@ if __name__ == "__main__":
     logging.info(f"""Begin running "{thisFilePath}".""")
     logging.info(f"""All other paths will be reported in debugging relative to `projectDir`: "{projectDir}".""")
 
-    # Script
-
-    def theThing(variable, funcs):
-        """
-        Applies one variable to multiple functions
-        """
-        return
-
     # Get columns
     columns = {}
     for portionName, portionPath in portionsOutputDirPath.items():
         content_paths = [Path(dirObj) for dirObj in os.scandir(portionPath)]
         content_names = "\n  ".join(sorted([path.name for path in content_paths]))
-        dirRelativePath = portionPath.relative_to(IRBDir)
+        dirRelativePath = portionPath.absolute().relative_to(IRBDir)
         logging.info(f"""Reading files from the directory "{dirRelativePath}". Below are its contents:""")
         for fpath in sorted(content_paths):
             logging.info(f"""  {fpath.name}""")
@@ -97,7 +88,7 @@ if __name__ == "__main__":
             conditions = [lambda x: x.is_file(), lambda x: x.suffix == ".csv", lambda x: x.name != ".DS_Store"]
             conditionResults = [func(file) for func in conditions]
             if all(conditionResults):
-                logging.debug(f"""  Reading "{file.relative_to(IRBDir)}".""")
+                logging.debug(f"""  Reading "{file.absolute().relative_to(IRBDir)}".""")
                 df = pd.read_csv(file, dtype=str, nrows=10)
                 columns[file.name] = df.columns
 
@@ -105,8 +96,9 @@ if __name__ == "__main__":
     logging.info("""Printing columns by file.""")
     allColumns = set()
     it = 0
-    for key, value in columns.items():
-        if it > 0:
+    columnsOrdered = OrderedDict(sorted(columns.items()))
+    for key, value in columnsOrdered.items():
+        if it > -1:
             logging.info(key)
             logging.info("")
             for el in sorted(value):

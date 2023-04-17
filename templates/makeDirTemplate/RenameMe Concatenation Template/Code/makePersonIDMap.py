@@ -39,7 +39,7 @@ runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon
+IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")

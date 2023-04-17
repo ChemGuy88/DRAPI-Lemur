@@ -12,36 +12,51 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path, map2di
-from common import COLUMNS_TO_DE_IDENTIFY, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+from hermanCode.hermanCode import getTimestamp, make_dir_path, map2di, makeMap
+from common import COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
 
-# Arguments
-
+# Arguments: General
 CONCATENATED_MAPS_DIR_PATH = Path("data/output/concatenateMaps/...")  # TODO
 
 MAPS_DIR_PATH = CONCATENATED_MAPS_DIR_PATH
+
+IRB_NUMBER = None
 
 CHUNK_SIZE = 50000
 
 LOG_LEVEL = "DEBUG"
 
-MAC_PATHS = [NOTES_PORTION_DIR_MAC,
-             OMOP_PORTION_DIR_MAC]
-WIN_PATHS = [NOTES_PORTION_DIR_WIN,
-             OMOP_PORTION_DIR_WIN]
+# Arguments: OMOP data set selection
+USE_MODIFIED_OMOP_DATA_SET = True
 
-NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
+# Arguments: Portion Paths and conditions
+if USE_MODIFIED_OMOP_DATA_SET:
+    OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
+    OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
+else:
+    OMOPPortionDirMac = OMOP_PORTION_DIR_WIN
+    OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
-LIST_OF_PORTION_CONDITIONS = [NOTES_PORTION_FILE_CRITERIA,
-                              OMOP_PORTION_FILE_CRITERIA]
+MAC_PATHS = [BO_PORTION_DIR,
+             NOTES_PORTION_DIR_MAC,
+             OMOPPortionDirMac,
+             ZIP_CODE_PORTION_DIR]
+WIN_PATHS = [BO_PORTION_DIR,
+             NOTES_PORTION_DIR_WIN,
+             OMOPPortionDirWin,
+             ZIP_CODE_PORTION_DIR]
+
+LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
+                              NOTES_PORTION_FILE_CRITERIA,
+                              OMOP_PORTION_FILE_CRITERIA,
+                              ZIP_CODE_PORTION_FILE_CRITERIA]
 
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon
+IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -94,15 +109,20 @@ if __name__ == "__main__":
     logging.info(f"""Begin running "{thisFilePath}".""")
     logging.info(f"""All other paths will be reported in debugging relative to `IRBDir`: "{IRBDir}".""")
 
-    # Load maps
+    # Load de-identification maps for each variable that needs to be de-identified
+    logging.info("""Loading de-identification maps for each variable that needs to be de-identified.""")
     mapsDi = {}
     mapsColumnNames = {}
     for varName in COLUMNS_TO_DE_IDENTIFY:
-        varPath = MAPS_DIR_PATH.joinpath(f"{varName} map.csv")
-        map_ = pd.read_csv(varPath)
-        mapDi = map2di(map_)
-        mapsDi[varName] = mapDi
-        mapsColumnNames[varName] = map_.columns[-1]
+        if varName in VARIABLE_ALIASES.keys():
+            map_ = makeMap(IDset=set(), IDName=varName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[varName]["deIdIDSuffix"], columnSuffix=varName)
+            mapsColumnNames[varName] = map_.columns[-1]
+        else:
+            varPath = MAPS_DIR_PATH.joinpath(f"{varName} map.csv")
+            map_ = pd.read_csv(varPath)
+            mapDi = map2di(map_)
+            mapsDi[varName] = mapDi
+            mapsColumnNames[varName] = map_.columns[-1]
 
     # De-identify columns
     logging.info("""De-identifying files.""")
@@ -119,7 +139,9 @@ if __name__ == "__main__":
                 fileHeaders = True
                 # Read file
                 logging.info("""    File has met all conditions for processing.""")
+                logging.info("""  ..  Reading file to count the number of chunks.""")
                 numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
+                logging.info(f"""  ..  This file has {numChunks} chunks.""")
                 dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
                 for it, dfChunk in enumerate(dfChunks, start=1):
                     dfChunk = pd.DataFrame(dfChunk)
@@ -130,7 +152,11 @@ if __name__ == "__main__":
                         logging.info(f"""  ..    Working on column "{columnName}".""")
                         if columnName in COLUMNS_TO_DE_IDENTIFY:
                             logging.info("""  ..  ..  Column must be de-identified. De-identifying values.""")
-                            dfChunk[columnName] = dfChunk[columnName].apply(lambda IDNum: mapsDi[columnName][IDNum] if not pd.isna(IDNum) else IDNum)
+                            if columnName in VARIABLE_ALIASES.keys():
+                                mapsDiLookUpName = VARIABLE_ALIASES[columnName]
+                            else:
+                                mapsDiLookUpName = columnName
+                            dfChunk[columnName] = dfChunk[columnName].apply(lambda IDNum: mapsDi[mapsDiLookUpName][IDNum] if not pd.isna(IDNum) else IDNum)
                             dfChunk = dfChunk.rename(columns={columnName: mapsColumnNames[columnName]})
                     # Save chunk
                     dfChunk.to_csv(exportPath, mode=fileMode, header=fileHeaders, index=False)

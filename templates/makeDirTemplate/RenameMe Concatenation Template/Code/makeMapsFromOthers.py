@@ -15,71 +15,48 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from hermanCode.hermanCode import getTimestamp, make_dir_path, makeMap, makeSetComplement, ditchFloat
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, COLUMNS_TO_DE_IDENTIFY, OLD_MAPS_DIR_PATH
+from common import COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OLD_MAPS_DIR_PATH, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
-SETS_PATH = Path("data/output/getIDValues/...")  # TODO
+SETS_PATH = Path("data/output/getIDValues/...")
 
 CHUNK_SIZE = 50000
 
-IRB_NUMBER = None  # TODO
-
-VARIABLE_SUFFIXES = {"AuthoringProviderKey": {"columnSuffix": "provider",
-                                              "deIdIDSuffix": "PROV"},
-                     "AuthorizingProviderKey": {"columnSuffix": "provider",
-                                                "deIdIDSuffix": "PROV"},
-                     "CosignProviderKey": {"columnSuffix": "provider",
-                                           "deIdIDSuffix": "PROV"},
-                     "EncounterCSN": {"columnSuffix": "encounter",
-                                      "deIdIDSuffix": "ENC"},
-                     "EncounterKey": {"columnSuffix": "encounter",
-                                      "deIdIDSuffix": "ENC"},
-                     "MRN_GNV": {"columnSuffix": "patient",
-                                 "deIdIDSuffix": "PAT"},
-                     "MRN_JAX": {"columnSuffix": "patient",
-                                 "deIdIDSuffix": "PAT"},
-                     "NoteID": {"columnSuffix": "note",
-                                "deIdIDSuffix": "NOTE"},  # ?
-                     "NoteKey": {"columnSuffix": "note",
-                                 "deIdIDSuffix": "NOTE"},  # ?
-                     "OrderID": {"columnSuffix": "order",
-                                 "deIdIDSuffix": "ORD"},  # ?
-                     "OrderKey": {"columnSuffix": "order",
-                                  "deIdIDSuffix": "ORD"},  # ?
-                     "PatientKey": {"columnSuffix": "patient",
-                                    "deIdIDSuffix": "PAT"},
-                     "ProviderKey": {"columnSuffix": "provider",
-                                     "deIdIDSuffix": "PROV"},
-                     "location_id": {"columnSuffix": "location",
-                                     "deIdIDSuffix": "LOC"},
-                     "person_id": {"columnSuffix": "patient",
-                                   "deIdIDSuffix": "PAT"},
-                     "preceding_visit_occurrence_id": {"columnSuffix": "encounter",
-                                                       "deIdIDSuffix": "ENC"},
-                     "provider_id": {"columnSuffix": "provider",
-                                     "deIdIDSuffix": "PROV"},
-                     "visit_occurrence_id": {"columnSuffix": "encounter",
-                                             "deIdIDSuffix": "ENC"}}
-
-MAC_PATHS = [NOTES_PORTION_DIR_MAC,
-             OMOP_PORTION_DIR_MAC]
-WIN_PATHS = [NOTES_PORTION_DIR_WIN,
-             OMOP_PORTION_DIR_WIN]
-
-NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-
-LIST_OF_PORTION_CONDITIONS = [NOTES_PORTION_FILE_CRITERIA,
-                              OMOP_PORTION_FILE_CRITERIA]
+IRB_NUMBER = None
 
 LOG_LEVEL = "DEBUG"
+
+# Arguments: OMOP data set selection
+USE_MODIFIED_OMOP_DATA_SET = True
+
+# Arguments: Portion Paths and conditions
+if USE_MODIFIED_OMOP_DATA_SET:
+    OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
+    OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
+else:
+    OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
+    OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
+
+MAC_PATHS = [BO_PORTION_DIR,
+             NOTES_PORTION_DIR_MAC,
+             OMOPPortionDirMac,
+             ZIP_CODE_PORTION_DIR]
+WIN_PATHS = [BO_PORTION_DIR,
+             NOTES_PORTION_DIR_WIN,
+             OMOPPortionDirWin,
+             ZIP_CODE_PORTION_DIR]
+
+LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
+                              NOTES_PORTION_FILE_CRITERIA,
+                              OMOP_PORTION_FILE_CRITERIA,
+                              ZIP_CODE_PORTION_FILE_CRITERIA]
 
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon
+IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -142,7 +119,8 @@ if __name__ == "__main__":
     # Concatenate all old maps
     oldMaps = {}
     logging.debug("""Concatenating all similar pre-existing maps.""")
-    for variableName in COLUMNS_TO_DE_IDENTIFY:
+    mapNames = [variableName for variableName in COLUMNS_TO_DE_IDENTIFY if variableName not in VARIABLE_ALIASES]
+    for variableName in mapNames:
         logging.debug(f"""  Working on variable "{variableName}".""")
         if variableName in OLD_MAPS_DIR_PATH.keys():
             logging.debug("""    Variable has pre-existing map(s).""")
@@ -162,7 +140,7 @@ if __name__ == "__main__":
     setsToMapDataDir = runIntermediateDataDir.joinpath("valuesToMap")
     make_dir_path(setsToMapDataDir)
     logging.debug("""Getting the set difference between all old maps and the set of un-mapped values.""")
-    for variableName in COLUMNS_TO_DE_IDENTIFY:
+    for variableName in mapNames:
         logging.debug(f"""  Working on variable "{variableName}".""")
 
         # Get old set of IDs
@@ -204,7 +182,7 @@ if __name__ == "__main__":
     # Get numbers for new map
     logging.debug("""Getting numbers for new map.""")
     newNumbersDict = {}
-    for variableName in COLUMNS_TO_DE_IDENTIFY:
+    for variableName in mapNames:
         oldMap = oldMaps[variableName]
         if len(oldMap) > 0:
             oldNumbersSet = set(oldMap["deid_num"].values)

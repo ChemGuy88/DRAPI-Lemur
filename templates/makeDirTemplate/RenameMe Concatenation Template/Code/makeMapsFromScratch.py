@@ -69,7 +69,7 @@ SETS_PATH = None
 
 CHUNK_SIZE = 50000
 
-IRB_NUMBER = None  # TODO
+IRB_NUMBER = "IRB202202436"
 
 # Variables: Path construction: General
 runTimestamp = getTimestamp()

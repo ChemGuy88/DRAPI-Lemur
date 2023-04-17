@@ -14,34 +14,48 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from hermanCode.hermanCode import getTimestamp, make_dir_path
-from common import COLUMNS_TO_DE_IDENTIFY, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
+from common import COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
-LOG_LEVEL = "DEBUG"
-
-MAC_PATHS = [NOTES_PORTION_DIR_MAC,
-             MODIFIED_OMOP_PORTION_DIR_MAC]
-WIN_PATHS = [NOTES_PORTION_DIR_WIN,
-             MODIFIED_OMOP_PORTION_DIR_WIN]
-
-NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-
-LIST_OF_PORTION_CONDITIONS = [NOTES_PORTION_FILE_CRITERIA,
-                              OMOP_PORTION_FILE_CRITERIA]
+IRB_NUMBER = "IRB202202436"
 
 SETS_PATH = None
 
 CHUNK_SIZE = 50000
 
-IRB_NUMBER = None  # TODO
+LOG_LEVEL = "DEBUG"
+
+# Arguments: OMOP data set selection
+USE_MODIFIED_OMOP_DATA_SET = True
+
+# Arguments: Portion Paths and conditions
+if USE_MODIFIED_OMOP_DATA_SET:
+    OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
+    OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
+else:
+    OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
+    OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
+
+MAC_PATHS = [BO_PORTION_DIR,
+             NOTES_PORTION_DIR_MAC,
+             OMOPPortionDirMac,
+             ZIP_CODE_PORTION_DIR]
+WIN_PATHS = [BO_PORTION_DIR,
+             NOTES_PORTION_DIR_WIN,
+             OMOPPortionDirWin,
+             ZIP_CODE_PORTION_DIR]
+
+LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
+                              NOTES_PORTION_FILE_CRITERIA,
+                              OMOP_PORTION_FILE_CRITERIA,
+                              ZIP_CODE_PORTION_FILE_CRITERIA]
 
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon
+IRBDir = projectDir.parent.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -62,10 +76,8 @@ if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
-        notesPortionDir, omopPortionDir = MAC_PATHS
         listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
-        notesPortionDir, omopPortionDir = WIN_PATHS
         listOfPortionDirs = WIN_PATHS[:]
     else:
         raise Exception("Unsupported operating system")
@@ -73,6 +85,7 @@ else:
     # If the above option doesn't work, manually copy the database to the `input` directory.
     notesPortionDir = None
     omopPortionDir = None
+    listOfPortionDirs = [notesPortionDir, omopPortionDir]
 
 # Directory creation: General
 make_dir_path(runIntermediateDataDir)
@@ -99,8 +112,9 @@ if __name__ == "__main__":
         logging.info(f"""Using the set of values previously collected from "{SETS_PATH}".""")
     else:
         logging.info("""Getting the set of values for each variable to de-identify.""")
+        mapNames = [columnName for columnName in COLUMNS_TO_DE_IDENTIFY if columnName not in VARIABLE_ALIASES.keys()]
         columnSetsVarsDi = {columnName: {"fpath": runOutputDir.joinpath(f"{columnName}.txt"),
-                                         "fileMode": "w"} for columnName in COLUMNS_TO_DE_IDENTIFY}
+                                         "fileMode": "w"} for columnName in mapNames}
         for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
             # Act on directory
             logging.info(f"""Working on directory "{directory.absolute().relative_to(IRBDir)}".""")
@@ -119,13 +133,17 @@ if __name__ == "__main__":
                             if columnName in COLUMNS_TO_DE_IDENTIFY:
                                 logging.info("""  ..  ..  Column must be de-identified. Collecting values.""")
                                 valuesSet = sorted(list(set(dfChunk[columnName].dropna().values)))
-                                columnSetFpath = columnSetsVarsDi[columnName]["fpath"]
-                                columnSetFileMode = columnSetsVarsDi[columnName]["fileMode"]
+                                if columnName in VARIABLE_ALIASES.keys():
+                                    mapLookUpName = VARIABLE_ALIASES[columnName]
+                                else:
+                                    mapLookUpName = columnName
+                                columnSetFpath = columnSetsVarsDi[mapLookUpName]["fpath"]
+                                columnSetFileMode = columnSetsVarsDi[mapLookUpName]["fileMode"]
                                 with open(columnSetFpath, columnSetFileMode) as file:
                                     for value in valuesSet:
                                         file.write(str(value))
                                         file.write("\n")
-                                columnSetsVarsDi[columnName]["fileMode"] = "a"
+                                columnSetsVarsDi[mapLookUpName]["fileMode"] = "a"
                                 logging.info(f"""  ..  ..  Values saved to "{columnSetFpath.absolute().relative_to(IRBDir)}" in the project directory.""")
                 else:
                     logging.info("""    This file does not need to be processed.""")
