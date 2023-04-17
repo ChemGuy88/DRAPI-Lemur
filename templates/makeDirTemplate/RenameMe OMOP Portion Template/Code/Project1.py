@@ -1,5 +1,5 @@
 """
-Originally from "/Volumes/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Guo/IRB202201080/code/DataPullProject/Project1.py" but since heavily hermanized.
+Originally from "/Volumes/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Guo/IRB202201080/code/DataPullProject/Project1.py" but since modified.
 
 NOTE The path that the CSVs are saved to is imported from the YAML file.
 """
@@ -17,8 +17,8 @@ import sqlalchemy as sa
 import yaml
 # Super-local libraries
 from hermanCode.hermanCode import make_dir_path, getTimestamp
-from hermanCode.omopScripts.omop import editConfig, interpretPath
-from hermanCode.omopScripts import deidentify
+from hermanCode.omopDataDumpScripts.omop import editConfig, interpretPath
+from hermanCode.omopDataDumpScripts import deidentify
 
 # Arguments
 LOG_LEVEL = "DEBUG"  # Lowest level available is "9"
