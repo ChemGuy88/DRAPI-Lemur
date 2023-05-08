@@ -17,7 +17,7 @@ from common import OLD_MAPS_DIR_PATH
 # Arguments
 LOG_LEVEL = "DEBUG"
 
-NEW_MAPS_DIR_PATH = Path("data/output/makeMapsFromOthers/2023-03-31 11-37-45")
+NEW_MAPS_DIR_PATH = Path("data/output/makeMapsFromOthers/...")  # TODO
 
 # Functions
 
@@ -34,7 +34,7 @@ runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon
+IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")

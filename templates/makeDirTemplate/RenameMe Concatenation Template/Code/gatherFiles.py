@@ -20,8 +20,8 @@ PROJECT_ROOT_DIRECTORY = Path("").absolute().parent
 
 INPUT_FILE_PATHS = []
 
-INPUT_DIRECTORY_PATHS = [Path("data/output/deleteColumns/2023-03-31 12-00-40"),
-                         PROJECT_ROOT_DIRECTORY.joinpath("Intermediate Results/De-identified Notes/2023-03-30")]
+INPUT_DIRECTORY_PATHS = [Path("data/output/deleteColumns/..."),  # TODO
+                         PROJECT_ROOT_DIRECTORY.joinpath("Intermediate Results/De-identified Notes/...")]  # TODO
 
 OUTPUT_DIRECTORY_PATH = Path("")
 

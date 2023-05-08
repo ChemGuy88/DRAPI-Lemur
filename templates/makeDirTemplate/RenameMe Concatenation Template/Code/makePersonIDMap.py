@@ -32,14 +32,14 @@ SETS_PATH = None
 
 CHUNK_SIZE = 50000
 
-IRB_NUMBER = "IRB202300242"
+IRB_NUMBER = None  # TODO
 
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon
+IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")

@@ -3,7 +3,6 @@ De-identify files
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
 # NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
-# TODO Needs up sync `hermanCode` on Windows
 # TODO Assign portion name to each path (per OS) so that portion files are stored in their respective folders, this prevents file from being overwritten in the unlikely, but possible, case files from different portions have the same name.
 # TODO Investigate if a symlink can be made for files that are copied without alteration, to save space and time on larger projects.
 """
@@ -19,17 +18,33 @@ from hermanCode.hermanCode import getTimestamp, make_dir_path
 # Arguments
 LOG_LEVEL = "DEBUG"
 
-OMOP_PORTION_DIR_MAC = Path("data/output/deIdentify/2023-03-31 11-44-24")
-OMOP_PORTION_DIR_WIN = Path("data/output/deIdentify/2023-03-31 11-44-24")
+BO_FILES_TO_RELEASE = ["Bian_IRB202202436.csv"]
+NOTES_METADATA_FILES_TO_RELEASE = ["provider_metadata.csv",
+                                   "subjects_note_metadata.csv",
+                                   "subjects_order_impression_metadata.csv",
+                                   "subjects_order_metadata.csv",
+                                   "subjects_order_narrative_metadata.csv",
+                                   "subjects_order_result_comment_metadata.csv"]
+OMOP_FILES_TO_RELEASE = ["condition_occurrence.csv",
+                         "death.csv",
+                         "device_exposure.csv",
+                         "drug_exposure.csv",
+                         "measurement.csv",
+                         "measurement_laboratories.csv",
+                         "person.csv",
+                         "procedure_occurrence.csv"]
+ZIP_CODE_FILES_TO_RELEASE = ["zipcodes.csv"]
+FILES_TO_RELEASE = BO_FILES_TO_RELEASE + NOTES_METADATA_FILES_TO_RELEASE + OMOP_FILES_TO_RELEASE + ZIP_CODE_FILES_TO_RELEASE
 
-MAC_PATHS = [OMOP_PORTION_DIR_MAC]
-WIN_PATHS = [OMOP_PORTION_DIR_WIN]
+CONCATENATED_PORTIONS_DIR_MAC = Path("data/output/deIdentify/...")
+CONCATENATED_PORTIONS_DIR_WIN = Path("data/output/deIdentify/...")
 
-NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
+MAC_PATHS = [CONCATENATED_PORTIONS_DIR_MAC]
+WIN_PATHS = [CONCATENATED_PORTIONS_DIR_WIN]
 
-LIST_OF_PORTION_CONDITIONS = [NOTES_PORTION_FILE_CRITERIA,
-                              OMOP_PORTION_FILE_CRITERIA]
+CONCATENATED_PORTIONS_FILE_CRITERIA = [lambda pathObj: pathObj.name in FILES_TO_RELEASE]
+
+LIST_OF_PORTION_CONDITIONS = [CONCATENATED_PORTIONS_FILE_CRITERIA]
 
 COLUMNS_TO_DELETE = ["address_1",
                      "address_2",
@@ -42,6 +57,35 @@ COLUMNS_TO_DELETE = ["address_1",
                      "person_source_value",
                      "procedure_occurrence_id",
                      "visit_detail_id"]
+COLUMNS_TO_DELETE_DICT = {"Bian_IRB202202436": ["Accession #",
+                                                "Medical Record Number",
+                                                "Managing Physician",
+                                                "Prim  surgeon Code",
+                                                "F/u Physicians"],
+                          "condition_occurrence": [None],
+                          "death": ["cause_concept_id",
+                                    "cause_source_concept_id",
+                                    "cause_source_value"],
+                          "device_exposure": [None],
+                          "drug_exposure": ["sig"],
+                          # Why were the below variables for "measurement" not released before? They seem useful.
+                          "measurement": ["measurement_concept_id",         # Totally populated
+                                          "measurement_source_concept_id",  # Totally populated
+                                          "measurement_time",               # Totally populated
+                                          "measurement_type_concept_id",    # Totally populated
+                                          "operator_concept_id",            # Totally un-populated (all nans)
+                                          "unit_concept_id",                # Populated
+                                          "value_as_concept_id"],           # Totally un-populated (all nans)
+                          "measurement_laboratories": ["measurement_concept_id",
+                                                       "measurement_datetime",
+                                                       "measurement_id",
+                                                       "measurement_source_concept_id",
+                                                       "measurement_time",
+                                                       "measurement_type_concept_id",
+                                                       "operator_concept_id",
+                                                       "unit_concept_id",
+                                                       "value_as_concept_id"],
+                          "person": [None]}
 
 CHUNK_SIZE = 50000
 
@@ -50,7 +94,7 @@ runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon
+IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -71,10 +115,8 @@ if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
-        omopPortionDir = OMOP_PORTION_DIR_MAC
         listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
-        omopPortionDir = OMOP_PORTION_DIR_WIN
         listOfPortionDirs = WIN_PATHS[:]
     else:
         raise Exception("Unsupported operating system")
@@ -127,7 +169,11 @@ if __name__ == "__main__":
                     for columnName in dfChunk.columns:
                         # Work on column
                         logging.info(f"""  ..    Working on column "{columnName}".""")
-                        if columnName in COLUMNS_TO_DELETE:
+                        if file.stem in COLUMNS_TO_DELETE_DICT.keys():
+                            listOfColumns = COLUMNS_TO_DELETE + COLUMNS_TO_DELETE_DICT[file.stem]
+                        else:
+                            listOfColumns = COLUMNS_TO_DELETE
+                        if columnName in listOfColumns:
                             logging.info("""  ..  ..  Column must be deleted. Deleting column.""")
                             dfChunk = dfChunk.drop(columns=columnName)
                     # Save chunk
