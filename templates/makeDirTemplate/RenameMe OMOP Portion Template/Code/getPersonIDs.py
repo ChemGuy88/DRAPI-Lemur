@@ -134,7 +134,7 @@ if __name__ == "__main__":
     logging.info(f"""The map of patient keys to person IDs, and those missing or found, was saved to "{personIDsFoundExportPath}".""")
 
     # Save results: person IDs
-    personIDs = personIDsFound2["person_id"].drop_duplicates().sort_values()
+    personIDs = personIDsFound["person_id"].drop_duplicates().dropna().sort_values().astype(int)
     personIDsExportPath = runOutputDir.joinpath("personIDs.csv")
     personIDs.to_csv(personIDsExportPath, index=False)
     logging.info(f"""Person IDs were saved to "{personIDsExportPath.relative_to(projectDir)}".""")

@@ -45,19 +45,19 @@ File paths are relative to the common parent directory, whose absolute path is "
 
 | File(s) Description                  | File(s) path or directory                                                             | Process that uses the file(s) |
 | ------------------------------------ | ------------------------------------------------------------------------------------- | ----------------------------- |
-| Original OMOP data set               | "IRB202300242/Intermediate Results/OMOP Portion/data/output/..."                      | makePersonIDMaps.py           |
-| OMOP Person ID map                   | "IRB202300242/Concatenated Results/data/output/makePersonIDMap/.../person_id map.csv" | convertColumns.py             |
-| Original OMOP data set               | "IRB202300242/Intermediate Results/OMOP Portion/data/output/..."                      | convertColumns.py             |
-| Modified OMOP files                  | "IRB202300242/Concatenated Results/data/output/convertColumns/..."                    | getIDValues.py                |
-| Notes metadata data set              | "IRB202300242/Intermediate Results/Notes Portion/data/output/free_text"               | getIDValues.py                |
-| Notes portion de-identification maps | "IRB202300242/Intermediate Results/Notes Portion/data/output/mapping"                 | makeMapsFromOthers.py         |
-| ID Sets (map intermediate files)     | "IRB202300242/Concatenated Results/data/output/getIDValues/..."                       | makeMapsFromOthers.py         |
-| De-identification maps               | "IRB202300242/Concatenated Results/data/output/makeMapsFromOthers/..."                | deIdentify.py                 |
-| Modified OMOP files                  | "IRB202300242/Concatenated Results/data/output/convertColumns/..."                    | deIdentify.py                 |
-| Notes metadata data set              | "IRB202300242/Intermediate Results/Notes Portion/data/output/free_text"               | deIdentify.py                 |
-| De-identified data set               | "IRB202300242/Concatenated Results/data/output/deIdentify/..."                        | deleteColumns.py              |
-| Reduced de-identified data set       | "IRB202300242/Concatenated Results/data/output/deleteColumns/..."                     | gatherFiles.py                |
-| De-identified notes data set         | "IRB202300242/Intermediate Results/De-identified Notes/..."                           | gatherFiles.py                |
+| Original OMOP data set               | "IRB000000000/Intermediate Results/OMOP Portion/data/output/..."                      | makePersonIDMaps.py           |
+| OMOP Person ID map                   | "IRB000000000/Concatenated Results/data/output/makePersonIDMap/.../person_id map.csv" | convertColumns.py             |
+| Original OMOP data set               | "IRB000000000/Intermediate Results/OMOP Portion/data/output/..."                      | convertColumns.py             |
+| Modified OMOP files                  | "IRB000000000/Concatenated Results/data/output/convertColumns/..."                    | getIDValues.py                |
+| Notes metadata data set              | "IRB000000000/Intermediate Results/Notes Portion/data/output/free_text"               | getIDValues.py                |
+| Notes portion de-identification maps | "IRB000000000/Intermediate Results/Notes Portion/data/output/mapping"                 | makeMapsFromOthers.py         |
+| ID Sets (map intermediate files)     | "IRB000000000/Concatenated Results/data/output/getIDValues/..."                       | makeMapsFromOthers.py         |
+| De-identification maps               | "IRB000000000/Concatenated Results/data/output/makeMapsFromOthers/..."                | deIdentify.py                 |
+| Modified OMOP files                  | "IRB000000000/Concatenated Results/data/output/convertColumns/..."                    | deIdentify.py                 |
+| Notes metadata data set              | "IRB000000000/Intermediate Results/Notes Portion/data/output/free_text"               | deIdentify.py                 |
+| De-identified data set               | "IRB000000000/Concatenated Results/data/output/deIdentify/..."                        | deleteColumns.py              |
+| Reduced de-identified data set       | "IRB000000000/Concatenated Results/data/output/deleteColumns/..."                     | gatherFiles.py                |
+| De-identified notes data set         | "IRB000000000/Intermediate Results/De-identified Notes/..."                           | gatherFiles.py                |
 | Final results                        |                                                                                       | Honest broker                 |
 
 ____________________________________________________________
