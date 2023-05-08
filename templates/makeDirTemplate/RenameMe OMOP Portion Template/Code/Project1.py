@@ -1,7 +1,7 @@
 """
-Originally from "/Volumes/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Guo/IRB202201080/code/DataPullProject/Project1.py" but since modified.
+OMOP Data Pull Script
 
-NOTE The path that the CSVs are saved to is imported from the YAML file.
+Please be sure to review the README for this script before running.
 """
 
 __all__ = []
@@ -16,12 +16,21 @@ import pandas as pd
 import sqlalchemy as sa
 import yaml
 # Super-local libraries
-from hermanCode.hermanCode import make_dir_path, getTimestamp
-from hermanCode.omopDataDumpScripts.omop import editConfig, interpretPath
-from hermanCode.omopDataDumpScripts import deidentify
+from drapi.drapi import make_dir_path, getTimestamp
+from drapi.omopDataDumpScripts.omop import editConfig, interpretPath
+from drapi.omopDataDumpScripts import deidentify
 
 # Arguments
 LOG_LEVEL = "DEBUG"  # Lowest level available is "9"
+
+# Arguments: SQL server settings
+if False:
+    # TODO Not implemented. See `db_connect`
+    USERNAME_ENVIRONMENT_VARIABLE = "USER"
+    PASSWORD_ENVIRONMENT_VARIABLE = "HFA_UFADPWD"
+    SERVER = "DWSRSRCH01.shands.ufl.edu"  # AKA `HOST`
+    DATABASE = "DWS_OMOP_PROD"
+    USERDOMAIN = "UFAD"
 
 # Variables
 timestamp = getTimestamp()
@@ -29,6 +38,13 @@ config_file0 = os.path.join("Config1.yml")
 config_file = os.path.join("Data", "Output", "Config2.yml")
 editConfig(config_file0, config_file, timestamp)
 base_dir = Path(__file__).parent.parent
+
+# Variables: SQL server settings
+if False:
+    # TODO Not implemented. See `db_connect`
+    username = os.environ[USERNAME_ENVIRONMENT_VARIABLE]
+    userid = fr"{USERDOMAIN}\{username}"
+    userpwd = os.environ[PASSWORD_ENVIRONMENT_VARIABLE]
 
 
 def db_connect(host, database):
