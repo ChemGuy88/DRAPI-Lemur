@@ -298,7 +298,7 @@ def map2di(map_: pd.DataFrame):
     di = {}
     errors = []
     for _, row in map_.iterrows():
-        oldValue, _, newValue = row.values
+        oldValue, _, newValue, *_ = row.values
         if oldValue in di.keys() and di[oldValue] != newValue:
             errors.append({oldValue: newValue})
         di[oldValue] = newValue
