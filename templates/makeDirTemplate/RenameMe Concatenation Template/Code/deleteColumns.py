@@ -29,10 +29,14 @@ OMOP_FILES_TO_RELEASE = ["condition_occurrence.csv",
                          "death.csv",
                          "device_exposure.csv",
                          "drug_exposure.csv",
-                         "measurement.csv",
+                         "location.csv",
                          "measurement_laboratories.csv",
+                         "measurement.csv",
+                         "observation_period.csv",
+                         "observation.csv",
                          "person.csv",
-                         "procedure_occurrence.csv"]
+                         "procedure_occurrence.csv",
+                         "visit_occurrence.csv"]
 ZIP_CODE_FILES_TO_RELEASE = ["zipcodes.csv"]
 FILES_TO_RELEASE = BO_FILES_TO_RELEASE + NOTES_METADATA_FILES_TO_RELEASE + OMOP_FILES_TO_RELEASE + ZIP_CODE_FILES_TO_RELEASE
 
@@ -46,46 +50,30 @@ CONCATENATED_PORTIONS_FILE_CRITERIA = [lambda pathObj: pathObj.name in FILES_TO_
 
 LIST_OF_PORTION_CONDITIONS = [CONCATENATED_PORTIONS_FILE_CRITERIA]
 
-COLUMNS_TO_DELETE = ["address_1",
-                     "address_2",
+COLUMNS_TO_DELETE = ["person_source_value",
+                     # The columns below are non-informative because they only uniquely identify the row in the table
                      "condition_occurrence_id",
                      "device_exposure_id",
                      "drug_exposure_id",
                      "location_source_value",
                      "measurement_id",
                      "observation_id",
-                     "person_source_value",
                      "procedure_occurrence_id",
                      "visit_detail_id"]
-COLUMNS_TO_DELETE_DICT = {"Bian_IRB202202436": ["Accession #",
-                                                "Medical Record Number",
-                                                "Managing Physician",
-                                                "Prim  surgeon Code",
-                                                "F/u Physicians"],
-                          "condition_occurrence": [None],
-                          "death": ["cause_concept_id",
-                                    "cause_source_concept_id",
-                                    "cause_source_value"],
-                          "device_exposure": [None],
+COLUMNS_TO_DELETE_DICT = {"condition_occurrence": [],
+                          "death": [],
+                          "device_exposure": [],
                           "drug_exposure": ["sig"],
-                          # Why were the below variables for "measurement" not released before? They seem useful.
-                          "measurement": ["measurement_concept_id",         # Totally populated
-                                          "measurement_source_concept_id",  # Totally populated
-                                          "measurement_time",               # Totally populated
-                                          "measurement_type_concept_id",    # Totally populated
-                                          "operator_concept_id",            # Totally un-populated (all nans)
-                                          "unit_concept_id",                # Populated
-                                          "value_as_concept_id"],           # Totally un-populated (all nans)
-                          "measurement_laboratories": ["measurement_concept_id",
-                                                       "measurement_datetime",
-                                                       "measurement_id",
-                                                       "measurement_source_concept_id",
-                                                       "measurement_time",
-                                                       "measurement_type_concept_id",
-                                                       "operator_concept_id",
-                                                       "unit_concept_id",
-                                                       "value_as_concept_id"],
-                          "person": [None]}
+                          "encounters": [],
+                          "location": ["address_1",
+                                       "address_2"],
+                          "measurement": [],
+                          "measurement_laboratories": [],
+                          "observation": [],
+                          "observation_period": [],
+                          "person": [],
+                          "procedure_occurrence": [],
+                          "visit_occurrence": []}
 
 CHUNK_SIZE = 50000
 

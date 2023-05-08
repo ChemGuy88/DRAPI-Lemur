@@ -17,8 +17,8 @@ person_id: 'data/output/getPersonIDs/2023-03-08 16-09-44/personIDs.csv'
 
 #####   DATA RELEASE SELECTION   #####
 data_release:
-  # - identified
-  - deidentified
+  - identified
+  # - deidentified
   # - limited
 
 #####   BEGINNING OF TABLE SELECTION   #####
@@ -240,6 +240,9 @@ data_selection:
     - CVP - Central Venous Pressure
     - CVP mean - Mean Central Venous Pressure
     - DBP - Unknown Method
+    - ETCO2
+    - ETCO2 - Oral/Nasal
+    - FIO2
     - GCS SCORE - Adult
     - GCS SCORE - Peds
     - HEART RATE
@@ -250,6 +253,8 @@ data_selection:
     - MAP - Cuff
     - MAP - Non Invasive
     - MAP - Pulmonary
+    - O2 FLOW RATE - L/MIN
+    - O2 FLOW RATE - mL/MIN
     - PAIN SCALE
     - PAIN SCALE - Peds Wong-Baker
     - PEEP
@@ -269,6 +274,7 @@ data_selection:
     - SOFA - RENAL
     - SOFA - RESPIRATION
     - SOFA_SCORE
+    - SPO2
     - TEMPERATURE
     - TIDAL VOLUME
     - TIDAL VOLUME - Spontaneous

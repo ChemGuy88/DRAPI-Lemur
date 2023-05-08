@@ -14,7 +14,8 @@ __all__ = ["COLUMNS_TO_DE_IDENTIFY",
 from pathlib import Path
 
 # Argument meta variables
-PROJECT_ROOT_DIRECTORY = Path(__file__).absolute().parent.parent
+IRB_NUMBER = None  # TODO
+PROJECT_ROOT_DIRECTORY = Path(__file__).absolute().parent.parent.parent
 NOTES_ROOT_DIRECTORY = PROJECT_ROOT_DIRECTORY.joinpath("Intermediate Results",
                                                        "Notes Portion",
                                                        "data",
@@ -102,9 +103,14 @@ NOTES_PORTION_DIR_WIN = NOTES_ROOT_DIRECTORY.joinpath(r"free_text")
 OMOP_PORTION_DIR_MAC = PROJECT_ROOT_DIRECTORY.joinpath("Intermediate Results/OMOP Portion/data/output/...")  # TODO
 OMOP_PORTION_DIR_WIN = PROJECT_ROOT_DIRECTORY.joinpath(r"Intermediate Results\OMOP Portion\data\output\...")  # TODO
 
-# File criteria
 MODIFIED_OMOP_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
 MODIFIED_OMOP_PORTION_DIR_WIN = Path("data/output/convertColumns/...")  # TODO
+
+# File criteria
+NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
+OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
+BO_PORTION_FILE_CRITERIA = [None]  # TODO
+ZIP_CODE_PORTION_FILE_CRITERIA = [None]  # TODO
 
 # Maps
 OLD_MAPS_DIR_PATH = {"EncounterCSN": [NOTES_ROOT_DIRECTORY.joinpath("mapping/map_encounter.csv")],

@@ -32,8 +32,6 @@ SETS_PATH = None
 
 CHUNK_SIZE = 50000
 
-IRB_NUMBER = None  # TODO
-
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
