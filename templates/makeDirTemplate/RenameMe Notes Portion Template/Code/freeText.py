@@ -8,7 +8,7 @@ import shutil
 import sqlalchemy as sa
 from datetime import datetime as dt
 from datetime import timedelta
-from hermanCode.hermanCode import make_dir_path, replace_sql_query
+from drapi.drapi import make_dir_path, replace_sql_query
 from pathlib import Path
 
 # Arguments: Script settings
@@ -19,6 +19,8 @@ ID_TYPE = ""                     # Pick from "EncounterCSN", "EncounterKey", or 
 NOTE_VERSION = ""                # Pick from "all", or "last"
 DE_IDENTIFICATION_MODE = ""      # Pick from "deid", "lds", or "phi"
 LOG_LEVEL = ""                   # See the "logging" module for valid values for the `loglevel` parameter.
+SQL_ENCOUNTER_EFFECTIVE_DATE_START = '2012-01-01'  # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
+SQL_ENCOUNTER_EFFECTIVE_DATE_END = '2023-12-31'  # The end of date range of encounters to collect. Format: YYYY-MM-DD
 
 # Arguments: SQL connection settings
 USERDOMAIN = "UFAD"
@@ -107,6 +109,8 @@ def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_d
         logging.debug(f"Reading query file: {query_file}")
         query = read_sql_file(os.path.join(sql_dir, query_file))
         query = replace_sql_query(query, "XXXXX", id_str)
+        query = replace_sql_query(query, "{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_START}", SQL_ENCOUNTER_EFFECTIVE_DATE_START)
+        query = replace_sql_query(query, "{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_END}", SQL_ENCOUNTER_EFFECTIVE_DATE_END)
         message = f"Using the following query:\n>>> Begin query >>>\n{query}\n<<< End query <<<"
         logging.log(9, message)
         result = db_execute_read_query(query, host, database_prod)

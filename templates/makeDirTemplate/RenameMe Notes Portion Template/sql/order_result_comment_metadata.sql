@@ -45,6 +45,6 @@ and ps.PATNT_KEY in ( XXXXX ) --all Patient Keys
 --and x.ENCNTR_CSN_ID in ( XXXXX ) --all CSNs
 --and ped.PATNT_ENCNTR_KEY in (XXXXX) -- all Patient Encounter Keys
 and ped.TEST_IND='N'
-and ped.ENCNTR_EFF_DATE >= '2013-01-01'
-and ped.ENCNTR_EFF_DATE <= '2020-12-31'
+and ped.ENCNTR_EFF_DATE >= '{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_START}'
+and ped.ENCNTR_EFF_DATE <= '{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_END}'
 and (ped.TEST_IND='N' or ped.TEST_IND is null)
