@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path, personIDs2patientKeys
+from drapi.drapi import getTimestamp, make_dir_path, personIDs2patientKeys
 from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 
 # Arguments

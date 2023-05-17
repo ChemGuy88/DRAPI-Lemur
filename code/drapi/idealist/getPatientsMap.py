@@ -13,7 +13,7 @@ import os
 import sqlite3
 import sys
 # Local imports
-from hermanCode.hermanCode import sqlite2df, getTimestamp
+from drapi.drapi import sqlite2df, getTimestamp
 
 # Arguments
 DATABASE_FILE_NAME = "deiden_2021-05-01.db"

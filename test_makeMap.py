@@ -1,7 +1,7 @@
 """
 """
 
-from hermanCode.hermanCode import makeMap
+from drapi.drapi import makeMap
 
 map1 = makeMap(IDset=set([1, 2, 3]),
                IDName="varName",

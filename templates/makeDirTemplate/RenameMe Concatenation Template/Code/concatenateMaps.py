@@ -11,7 +11,7 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, make_dir_path
 from common import OLD_MAPS_DIR_PATH
 
 # Arguments

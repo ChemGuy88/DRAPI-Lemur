@@ -13,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path, makeMap
+from drapi.drapi import getTimestamp, make_dir_path, makeMap
 from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 
 # Arguments

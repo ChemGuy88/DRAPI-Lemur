@@ -13,7 +13,7 @@ union sd and snewc, call this sfinal
 return sfinal
 """
 
-from Code.hermanCode.hermanCode import makeSetComplement
+from Code.drapi.drapi import makeSetComplement
 
 
 # Test suite 1

@@ -11,8 +11,8 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path
-from hermanCode.idealist.idealist import idealistMap2dict
+from drapi.drapi import getTimestamp, make_dir_path
+from drapi.idealist.idealist import idealistMap2dict
 from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 
 # Arguments

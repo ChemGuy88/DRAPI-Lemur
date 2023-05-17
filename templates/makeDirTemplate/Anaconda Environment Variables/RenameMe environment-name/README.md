@@ -17,7 +17,7 @@ Note `env-name` is the name of the anaconda environment, and `convenience` can b
 set "IPYTHONDIR=%CONDA_PREFIX%\etc\ipython"
 set "HFA_UFADUID=herman"
 set "HFA_UFADPWD=mypassword"
-set "PYTHONPATH=%USERPROFILE%\Documents\GitHub\hermanCode\Code"
+set "PYTHONPATH=%USERPROFILE%\Documents\GitHub\drapi\code"
 set "EMPTY_VAR="
 ```
 

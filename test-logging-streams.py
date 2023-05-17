@@ -7,7 +7,7 @@ So far I've discovered that having just one file and stream handler at the top l
 import logging
 import os
 from datetime import datetime as dt
-from hermanCode.hermanCode import replace_sql_query, make_dir_path
+from drapi.drapi import replace_sql_query, make_dir_path
 from pathlib import Path
 
 loglevel = "DEBUG"

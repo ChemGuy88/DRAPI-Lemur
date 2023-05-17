@@ -9,8 +9,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 # Local libraries
-from hermanCode.hermanCode import replace_sql_query, getTimestamp, make_dir_path, makeChunks
-from hermanCode.idealist.getMap import patientMapDf
+from drapi.drapi import replace_sql_query, getTimestamp, make_dir_path, makeChunks
+from drapi.idealist.getMap import patientMapDf
 
 # Arguments
 LOG_LEVEL = "DEBUG"

@@ -14,7 +14,7 @@ Outline:
 import os
 import pandas as pd
 import sqlalchemy as sa
-from hermanCode.hermanCode import getTimestamp, isValidPatientID, replace_sql_query
+from drapi.drapi import getTimestamp, isValidPatientID, replace_sql_query
 from pathlib import Path
 
 # Arguments

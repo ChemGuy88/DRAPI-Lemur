@@ -13,7 +13,7 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, make_dir_path
 
 # Arguments
 LOG_LEVEL = "DEBUG"

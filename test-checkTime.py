@@ -9,7 +9,7 @@ from typing import Union
 # Third-party libraries
 import pandas as pd
 # Local libraries
-from hermanCode.hermanCode import getTimestamp
+from drapi.drapi import getTimestamp
 
 
 def checkTime(nowTime: Union[datetime.datetime, datetime.time], min: str = "07:00:00", max: str = "23:00:00"):

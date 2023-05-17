@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 import sqlite3
 # Local imports
-from hermanCode.hermanCode import sqlite2df, getTimestamp, replace_sql_query, makeChunks
+from drapi.drapi import sqlite2df, getTimestamp, replace_sql_query, makeChunks
 
 # Arguments
 QUERY_PATH = Path("sql/encounterNumber2patientKey.SQL")
