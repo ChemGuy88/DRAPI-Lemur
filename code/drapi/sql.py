@@ -2,15 +2,12 @@
 SQL helper functions
 """
 
-import logging
 import os
 from pathlib import Path
-from typing import List
-from typing_extensions import Literal
 # Third-party libraries
-import pandas as pd
+pass
 # Local libraries
-from hermanCode.hermanCode import replace_sql_query
+pass
 
 # Arguments
 MODULE_ROOT_DIRECTORY_PATH = Path(__file__).absolute().parent.parent.parent
@@ -50,44 +47,3 @@ def labelMRNColumns(query):
     """
     # TODO
     return
-
-
-def checkStatus(statusType=Literal["C2S", "death"],
-                location=Literal["gnv", "jax"],
-                listOfMRNs=List[str]) -> pd.DataFrame:
-    """
-    This functions performs the Consent-to-Share ("C2S") check before release, to ensure deceased or opted-out patients aren't contacted.
-    """
-
-    # Determine query type
-    if statusType == "C2S":
-        queryFilePath = MODULE_ROOT_DIRECTORY_PATH.joinpath("sql/Consent2Share.sql")
-    elif statusType == "death":
-        queryFilePath = MODULE_ROOT_DIRECTORY_PATH.joinpath("sql/LADMF.sql")
-
-    # Define values for query: LOCATION_NAME, LOCATION_TYPE
-    location_lower_case = location.lower()
-    if location_lower_case == "gnv":
-        locationNameForQuery = "UF"
-        locationValueForQuery = "101"
-    elif location_lower_case == "jax":
-        locationNameForQuery = "Jax"
-        locationValueForQuery = "110"
-
-    # Define value for query: LIST_OF_MRNS
-    MRNValuesForQuery = ",".join(f"'{MRNNumber}'" for MRNNumber in listOfMRNs)
-
-    # Load query template
-    with open(queryFilePath, "r") as file:
-        query0 = file.read()
-
-    # Prepare query
-    query = replace_sql_query(query=query0, old="{<PYTHON_PLACEHOLDER : LOCATION_NAME>}", new=locationNameForQuery)
-    query = replace_sql_query(query=query, old="{<PYTHON_PLACEHOLDER : LOCATION_TYPE>}", new=locationValueForQuery)
-    query = replace_sql_query(query=query, old="{<PYTHON_PLACEHOLDER : LIST_OF_MRNS>}", new=MRNValuesForQuery)
-
-    # Run query
-    logging.debug(query)
-    queryResult = pd.read_sql(sql=query, con=conStr)
-
-    return queryResult
