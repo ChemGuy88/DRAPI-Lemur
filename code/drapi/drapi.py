@@ -84,22 +84,22 @@ def getTimestamp():
     return dt.now().strftime("%Y-%m-%d %H-%M-%S")
 
 
+def successiveParents(pathObj: Path, numLevels: int) -> Path:
+    """
+    Successively get the parents of the Path object submitted.
+    """
+    while numLevels > 0:
+        pathObj = pathObj.parent
+        numLevels -= 1
+    return pathObj, numLevels
+
+
 def getLastIDNum(df, columnName="deid_num"):
     """
     Gets the last ID number in a de-identification map.
     """
     numbers = df[columnName].astype(int)
     return max(numbers)
-
-
-def setIndex(table: pd.DataFrame,
-             columnName: str) -> pd.DataFrame:
-    """
-    Re-indexes a Pandas dataframe using an existing column
-    """
-    table.index = table[columnName]
-    table = table.drop(columns=columnName)
-    return table
 
 
 def makeMap(IDset: set,

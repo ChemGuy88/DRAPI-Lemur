@@ -4,26 +4,18 @@ This is a template Python script.
 
 import logging
 import os
-import sys
 from pathlib import Path
 # Third-party packages
-import numpy as np
 # import pandas as pd
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, successiveParents, make_dir_path
 
 # Arguments
+PROJECT_DIR_DEPTH = 2
+IRB_DIR_DEPTH = 2
+IDR_DATA_REQUEST_DIR_DEPTH = 5
+
 LOG_LEVEL = "DEBUG"
-PATH_1_FOR_MAC = None
-PATH_2_FOR_MAC = None
-PATH_1_FOR_WINDOWS = None
-PATH_2_FOR_WINDOWS = None
-PATH_1_SET_MANUALLY = None
-PATH_2_SET_MANUALLY = None
-MAC_PATHS = [PATH_1_FOR_MAC,
-             PATH_2_FOR_MAC]
-WIN_PATHS = [PATH_1_FOR_WINDOWS,
-             PATH_2_FOR_WINDOWS]
 
 # Arguments: SQL connection settings
 SERVER = "DWSRSRCH01.shands.ufl.edu"
@@ -37,39 +29,19 @@ PWD = os.environ["HFA_UFADPWD"]
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+IRBDir = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
-    intermediateDataDir = dataDir.joinpath("intermediate")
     outputDataDir = dataDir.joinpath("output")
-    if intermediateDataDir:
-        runIntermediateDataDir = intermediateDataDir.joinpath(thisFileStem, runTimestamp)
     if outputDataDir:
-        runOutputDataDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
+        runOutputDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
 logsDir = projectDir.joinpath("logs")
 if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 sqlDir = projectDir.joinpath("sql")
-
-# Variables: Path construction: OS-specific
-isAccessible = np.all([path.exists() for path in MAC_PATHS]) or np.all([path.exists() for path in WIN_PATHS])
-if isAccessible:
-    # If you have access to either of the below directories, use this block.
-    operatingSystem = sys.platform
-    if operatingSystem == "darwin":
-        commonVariable1 = PATH_1_FOR_MAC
-        commonVariable2 = PATH_2_FOR_MAC
-    elif operatingSystem == "win32":
-        commonVariable1 = PATH_1_FOR_WINDOWS
-        commonVariable2 = PATH_2_FOR_WINDOWS
-    else:
-        raise Exception("Unsupported operating system")
-else:
-    # If the above option doesn't work, manually copy the database to the `input` directory.
-    commonVariable1 = PATH_1_SET_MANUALLY
-    commonVariable2 = PATH_2_SET_MANUALLY
 
 # Variables: Path construction: Project-specific
 pass
@@ -85,8 +57,7 @@ conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
 pass
 
 # Directory creation: General
-make_dir_path(runIntermediateDataDir)
-make_dir_path(runOutputDataDir)
+make_dir_path(runOutputDir)
 make_dir_path(runLogsDir)
 
 # Directory creation: Project-specific
