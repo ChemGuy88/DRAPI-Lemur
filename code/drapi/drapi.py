@@ -84,7 +84,7 @@ def getTimestamp():
     return dt.now().strftime("%Y-%m-%d %H-%M-%S")
 
 
-def successiveParents(pathObj: Path, numLevels: int) -> Path:
+def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
     """
     Successively get the parents of the Path object submitted.
     """

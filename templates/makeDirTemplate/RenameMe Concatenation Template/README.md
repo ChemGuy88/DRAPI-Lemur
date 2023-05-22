@@ -1,6 +1,6 @@
 # README file for IRB000000000
 
-# Request Date: DD/MM/YYYY
+# Request Date: MM/DD/YYYY
 
 # PI: 
  - ...
