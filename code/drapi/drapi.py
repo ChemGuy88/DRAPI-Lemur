@@ -5,6 +5,7 @@ Herman's utility functions commonly used in his projects
 import logging
 import os
 import re
+from array import array
 from datetime import datetime as dt
 from itertools import islice
 from pathlib import Path
@@ -368,6 +369,44 @@ def str2bool(value, navalue=""):
     return newValue
 
 
+def deconstructStudyID(string):
+    """
+    Deconstructs a de-identified study ID into its component parts, assuming the following format: STUDY-TYPESTUDY-NUMBER_SERIAL-NUMBER
+    Where "STUDY_TYPE" is the study type, e.g., "CED", "IRB", or "WIRB"
+          "STUDY-NUMBER" is the study serial number, usually a 9-digit number where the first four numbers is a four-digit year.
+          "SERIAL-NUMBER" is the de-identified study-specific serial number of a patient or other subject.
+    For example: "IRB202300123_222"
+    """
+    pattern = r"(?P<studyType>\w+)(?P<studyNumber>\d{9})_(?P<PHI_type>\w+)_(?P<deIdentificationNumber>\d+)"
+    regexObj = re.search(pattern, string)
+    if regexObj:
+        di = regexObj.groupdict()
+        return di
+    else:
+        raise Exception("String is of an unexpected format. See function docstring for expected format.")
+
+
+def studyID2tuple(string):
+    """
+    Extracts the numeric portion of a string.
+
+    Assumes the following format: STUDY-TYPESTUDY-NUMBER_SERIAL-NUMBER
+    Where "STUDY_TYPE" is the study type, e.g., "CED", "IRB", or "WIRB"
+          "STUDY-NUMBER" is the study serial number, usually a 9-digit number where the first four numbers is a four-digit year.
+          "SERIAL-NUMBER" is the de-identified study-specific serial number of a patient or other subject.
+    For example: "IRB202300123_222"
+
+    This is intended for use when sorting columns by the numeric value of the string, and not the text value.
+    """
+    di = deconstructStudyID(string)
+    studyType = di["studyType"]
+    studyNumber = int(di["studyNumber"])
+    PHI_type = di["PHI_type"]
+    deIdentificationNumber = int(di["deIdentificationNumber"])
+    tu = studyType, studyNumber, PHI_type, deIdentificationNumber
+    return tu
+
+
 def isValidPatientID(value):
     """
     Checks if the value is a valid UFHealth patient ID. Invalid patient IDs are defined as negative integers
@@ -403,7 +442,7 @@ def ditchFloat(value):
     return standardValue
 
 
-def makeChunks(array_range, chunkSize):
+def makeChunks(array_range: array, chunkSize: int) -> tuple:
     """
     Inspired by GeekForGeeks.com (https://www.geeksforgeeks.org/break-list-chunks-size-n-python/)
 
