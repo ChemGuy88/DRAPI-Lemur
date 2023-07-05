@@ -6,16 +6,16 @@ import logging
 import os
 from pathlib import Path
 # Third-party packages
-# import pandas as pd
+import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, make_dir_path
 
 # Arguments
 PROJECT_DIR_DEPTH = 2
-IRB_DIR_DEPTH = 2
-IDR_DATA_REQUEST_DIR_DEPTH = 5
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
 
-LOG_LEVEL = "DEBUG"
+LOG_LEVEL = "INFO"
 
 # Arguments: SQL connection settings
 SERVER = "DWSRSRCH01.shands.ufl.edu"
@@ -30,7 +30,7 @@ runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
-IRBDir = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
 IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
@@ -78,9 +78,29 @@ if __name__ == "__main__":
 
     logging.info(f"""Begin running "{thisFilePath}".""")
     logging.info(f"""All other paths will be reported in debugging relative to `projectDir`: "{projectDir}".""")
+    logging.info(f"""Script arguments:
+
+    # Arguments
+    ``: "{"..."}"
+
+    # Arguments: General
+    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}"
+    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}"
+    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}"
+
+    `LOG_LEVEL` = "{LOG_LEVEL}"
+
+    # Arguments: SQL connection settings
+    `SERVER` = "{SERVER}"
+    `DATABASE` = "{DATABASE}"
+    `USERDOMAIN` = "{USERDOMAIN}"
+    `USERNAME` = "{USERNAME}"
+    `UID` = "{UID}"
+    `PWD` = censored
+    """)
 
     # Script
-    pass
+    _ = pd
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")
