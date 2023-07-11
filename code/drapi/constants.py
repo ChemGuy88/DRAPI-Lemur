@@ -7,7 +7,8 @@ See Noah's data request for my attempt at using these standards: /Volumes/FILES/
 
 __all__ = ["DeIdIDName2DeIdIDSuffix",
            "IDName2DeIdIDName",
-           "mapDtypes"]
+           "mapDtypes",
+           "DATA_TYPES"]
 
 IDName2DeIdIDNameRoot = {"ENCNTR_CSN_ID": "enc",
                          "IDENT_ID_INT": "pat",
@@ -23,3 +24,22 @@ DeIdIDName2DeIdIDSuffix = {"pat": "PAT",
 mapDtypes = {0: int,
              1: int,
              2: str}
+
+DATA_TYPES = {"Accct Number - Enter DateTime Comb": "String",
+              "Acct Number - Exit DateTime Comb": "String",
+              "At Station": "String",
+              "EPIC Patient ID": "String",
+              "Encounter #": "Numeric",
+              "Encounter # (CSN)": "Numeric",
+              "Encounter # (Primary CSN)": "Numeric",
+              "Encounter Key (Primary CSN)": "Numeric",
+              "Enterprise ID": "Numeric",
+              "From Station": "String",
+              "Location of Svc": "String",
+              "Location of Svc ID": "Numeric",
+              "MRN (Jax)": "Numeric",
+              "MRN (UF)": "Numeric",
+              "Patient Encounter Key": "Numeric",
+              "Patient Key": "Numeric",
+              "Patnt Key": "Numeric",
+              "To Station": "String"}
