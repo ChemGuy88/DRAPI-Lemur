@@ -2,11 +2,14 @@
 Herman's utility functions commonly used in his projects
 """
 
+import datetime as dt
 import logging
 import os
 import re
 from array import array
-from datetime import datetime as dt
+from datetime import datetime
+from datetime import date
+from datetime import time
 from dateutil.parser import parse
 from itertools import islice
 from pathlib import Path
@@ -83,7 +86,7 @@ def make_dir_path(directory_path: str) -> None:
 
 
 def getTimestamp():
-    return dt.now().strftime("%Y-%m-%d %H-%M-%S")
+    return dt.datetimenow().strftime("%Y-%m-%d %H-%M-%S")
 
 
 def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
@@ -469,6 +472,17 @@ def ditchFloat(value):
     else:
         raise ValueError(f"""Unexpected data type "{type(value)}" for value "{value}". Expect only string, float, or integers.""")
     return standardValue
+
+
+def handleDatetimeForJson(obj):
+    """
+    JSON serializer for objects not serializable by default json code
+
+    h/t to https://stackoverflow.com/a/22238613/5478086
+    """
+    if isinstance(obj, (datetime, date, time)):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 
 def makeChunks(array_range: array, chunkSize: int) -> tuple:
