@@ -438,7 +438,7 @@ def isDatetime(string):
     """
     """
     try:
-        datetimeValue, unparsedTokens = parse(string, fuzzy=False)
+        _ = parse(string, fuzzy=False)
         return True
     except ValueError:
         return False
@@ -455,7 +455,7 @@ def ditchFloat(value):
         elif isNumber(value):
             standardValue = int(float(value))
         elif isDatetime(value):
-            standardValue, unparsedTokens = parse(value, fuzzy=False)
+            standardValue = parse(value, fuzzy=False)
         else:
             raise ValueError(f"""Unexpected format in string value. We expected a string with a number, numeric, or datetime format.""")
     elif isinstance(value, int) or isinstance(value, np.integer) or isinstance(value, float):
