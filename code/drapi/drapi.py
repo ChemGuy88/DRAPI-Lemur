@@ -441,7 +441,7 @@ def isValidPatientID(value):
 
 def isDatetime(string):
     """
-    Checks if a string contains a datetime format
+    Checks if a string contains a datetime format.
     """
     try:
         _ = parse(string, fuzzy=False)
@@ -460,6 +460,8 @@ def ditchFloat(value):
             standardValue = int(value)
         elif isNumber(value):
             standardValue = int(float(value))
+        elif isDatetime(value):
+            standardValue = parse(value, fuzzy=False)
         else:
             raise ValueError(f"""Unexpected format in string value "{value}". We expected a string with a number, numeric, or datetime format.""")
     elif isinstance(value, int) or isinstance(value, np.integer) or isinstance(value, float):
