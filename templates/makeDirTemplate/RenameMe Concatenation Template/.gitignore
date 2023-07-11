@@ -1,5 +1,5 @@
 # >>> [start] Things added by Herman >>>
-**/logs/
+**/logs/*
 **/*.7z
 **/.DS_Store
 **/*.bat
@@ -11,8 +11,8 @@
 # <<< [end] Things added by Herman <<<
 
 # >>> [start] Default IDR files >>>
-data/
-documents/
+data/*
+documents/*
 settings.yaml
 types.yaml
 # <<< [end] Default IDR files <<<

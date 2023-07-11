@@ -7,6 +7,7 @@ import os
 import re
 from array import array
 from datetime import datetime as dt
+from dateutil.parser import parse
 from itertools import islice
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -110,7 +111,8 @@ def makeMap(IDset: set,
             suffix: str,
             columnSuffix: str,
             groups: dict = {0: {"criteria": [lambda x: x < 0],
-                                "deidNum": 0}}) -> pd.DataFrame:
+                                "deidNum": 0}},
+            deIdentifiedIDColumnHeaderFormatStyle: Literal["old", "lemur"] = "lemur") -> pd.DataFrame:
     """
     Makes an IDR de-identification map.
 
@@ -119,15 +121,24 @@ def makeMap(IDset: set,
         `IDName`, the name of the ID
         `startFrom`, the integer number to start from
         `groups`, ID values to group or map in a many-to-one fashion. E.g., invalid IDs (negative numbers) are usually all mapped to the same de-identified number, like "0".
+        `deIdentifiedIDColumnHeaderFormatStyle`, a string, one of {"old, "lemur"}. The formats are as follow:
+            | Format Style  | de-Identififed ID Column Header   | 
+            | ------------- | -------------------------------   |
+            | "old"         | `f"deid_{columnSuffix}_id"`       |
+            | "lemur"       | `f"de-Identified {IDName}"`       |
     OUTPUT
         `map_`, a Pandas DataFrame with the following format:
-        | `IDName` | deid_num   | deid_{`columnSuffix`}_id |
+        | `IDName` | deid_num   | de-Identififed ID Column Header |
         | -------- | --------   | ------------------------ |
         | IDset[0] | numbers[0] | ... |
         | ...      | ...        | ... |
     """
+    if deIdentifiedIDColumnHeaderFormatStyle == "old":
+        deIdentifiedIDColumnHeader = f"deid_{columnSuffix}_id"
+    elif deIdentifiedIDColumnHeaderFormatStyle == "lemur":
+        deIdentifiedIDColumnHeader = f"de-Identified {IDName}"
     if len(IDset) == 0:
-        return pd.DataFrame(columns=[IDName, "deid_num", f"deid_{columnSuffix}_id"])
+        return pd.DataFrame(columns=[IDName, "deid_num", deIdentifiedIDColumnHeader])
     else:
         pass
     if isinstance(startFrom, int):
@@ -155,7 +166,7 @@ def makeMap(IDset: set,
         deid_id = f"{irbNumber}_{suffix}_{deid_num}"
         mapDi[IDNum] = {IDName: IDNum,
                         "deid_num": deid_num,
-                        f"deid_{columnSuffix}_id": deid_id}
+                        deIdentifiedIDColumnHeader: deid_id}
     newMap = pd.DataFrame.from_dict(mapDi, orient="index")
     newMap.index = range(1, len(newMap) + 1)
     return newMap
@@ -425,7 +436,7 @@ def isValidPatientID(value):
 
 def ditchFloat(value):
     """
-    Gets rid of float types if value is string, integer, or float.
+    Gets rid of float types if value is string, integer, float, or datetime
     """
     if isinstance(value, str):
         value = str(value)
@@ -438,7 +449,10 @@ def ditchFloat(value):
     elif isinstance(value, int) or isinstance(value, np.integer) or isinstance(value, float):
         standardValue = int(value)
     else:
-        raise ValueError(f"""Unexpected data type "{type(value)}" for value "{value}". Expect only string, float, or integers.""")
+        try:
+            standardValue, unparsedTokens = parse(value, fuzzy_with_tokens=True)
+        except ValueError:
+            raise ValueError(f"""Unexpected data type "{type(value)}" for value "{value}". Expect only string, float, or integers.""")
     return standardValue
 
 
