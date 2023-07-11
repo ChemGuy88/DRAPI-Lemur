@@ -86,7 +86,7 @@ def make_dir_path(directory_path: str) -> None:
 
 
 def getTimestamp():
-    return dt.datetimenow().strftime("%Y-%m-%d %H-%M-%S")
+    return dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
 
 def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
