@@ -434,6 +434,16 @@ def isValidPatientID(value):
     return result
 
 
+def isDatetime(string):
+    """
+    """
+    try:
+        datetimeValue, unparsedTokens = parse(string, fuzzy=False)
+        return True
+    except ValueError:
+        return False
+
+
 def ditchFloat(value):
     """
     Gets rid of float types if value is string, integer, float, or datetime
@@ -444,15 +454,14 @@ def ditchFloat(value):
             standardValue = int(value)
         elif isNumber(value):
             standardValue = int(float(value))
+        elif isDatetime(value):
+            standardValue, unparsedTokens = parse(value, fuzzy=False)
         else:
-            raise ValueError(f"""Unexpected data type "{type(value)}" for value "{value}". Expect only string, float, or integers.""")
+            raise ValueError(f"""Unexpected format in string value. We expected a string with a number, numeric, or datetime format.""")
     elif isinstance(value, int) or isinstance(value, np.integer) or isinstance(value, float):
         standardValue = int(value)
     else:
-        try:
-            standardValue, unparsedTokens = parse(value, fuzzy_with_tokens=True)
-        except ValueError:
-            raise ValueError(f"""Unexpected data type "{type(value)}" for value "{value}". Expect only string, float, or integers.""")
+        raise ValueError(f"""Unexpected data type "{type(value)}" for value "{value}". Expect only string, float, or integers.""")
     return standardValue
 
 
