@@ -332,7 +332,9 @@ def isNumber(string):
         return True
     except ValueError as error:
         msg = error.args[0]
-        if "invalid literal for int() with base 10:" in msg:
+        if "invalid literal for int() with base 10:" in msg:  # This must be an old Python exception message
+            return False
+        elif "could not convert string to float:" in msg:  # I think this is the new exception message
             return False
         else:
             raise Exception(error)
