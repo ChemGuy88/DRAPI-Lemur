@@ -122,10 +122,11 @@ def makeMap(IDset: set,
         `startFrom`, the integer number to start from
         `groups`, ID values to group or map in a many-to-one fashion. E.g., invalid IDs (negative numbers) are usually all mapped to the same de-identified number, like "0".
         `deIdentifiedIDColumnHeaderFormatStyle`, a string, one of {"old, "lemur"}. The formats are as follow:
-            | Format Style  | de-Identififed ID Column Header   | 
+            | Format Style  | de-Identififed ID Column Header   |
             | ------------- | -------------------------------   |
             | "old"         | `f"deid_{columnSuffix}_id"`       |
             | "lemur"       | `f"de-Identified {IDName}"`       |
+
     OUTPUT
         `map_`, a Pandas DataFrame with the following format:
         | `IDName` | deid_num   | de-Identififed ID Column Header |
@@ -333,6 +334,8 @@ def isNumber(string):
         msg = error.args[0]
         if "invalid literal for int() with base 10:" in msg:
             return False
+        else:
+            raise Exception(error)
 
 
 def float2str(value, navalue=""):
@@ -436,6 +439,7 @@ def isValidPatientID(value):
 
 def isDatetime(string):
     """
+    Checks if a string contains a datetime format
     """
     try:
         _ = parse(string, fuzzy=False)
@@ -454,10 +458,8 @@ def ditchFloat(value):
             standardValue = int(value)
         elif isNumber(value):
             standardValue = int(float(value))
-        elif isDatetime(value):
-            standardValue = parse(value, fuzzy=False)
         else:
-            raise ValueError(f"""Unexpected format in string value. We expected a string with a number, numeric, or datetime format.""")
+            raise ValueError(f"""Unexpected format in string value "{value}". We expected a string with a number, numeric, or datetime format.""")
     elif isinstance(value, int) or isinstance(value, np.integer) or isinstance(value, float):
         standardValue = int(value)
     else:
