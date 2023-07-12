@@ -107,13 +107,44 @@ def getLastIDNum(df, columnName="deid_num"):
     return max(numbers)
 
 
+def isNumber(string):
+    """
+    Checks if the string represents a number
+
+    For a discussion see https://stackoverflow.com/questions/354038/how-do-i-check-if-a-string-represents-a-number-float-or-int
+    """
+    try:
+        int(float(string))
+        return True
+    except ValueError as error:
+        msg = error.args[0]
+        if "invalid literal for int() with base 10:" in msg:  # This must be an old Python exception message
+            return False
+        elif "could not convert string to float:" in msg:  # I think this is the new exception message
+            return False
+        else:
+            raise Exception(error)
+
+
+def mapGroupCriteria4unknownValue(value):
+    """
+    Checks if `value` is a number. If so, it checks if it's less than 0. If it's not a number, return `True`.
+
+    This is used in making de-identification maps, where negative ID values are usually used to represent unknown or null values.
+    """
+    if isNumber(value):
+        return float(value) < 0
+    else:
+        return False
+
+
 def makeMap(IDset: set,
             IDName: str,
             startFrom: Union[int, list],
             irbNumber: str,
             suffix: str,
             columnSuffix: str,
-            groups: dict = {0: {"criteria": [lambda x: x < 0],
+            groups: dict = {0: {"criteria": [mapGroupCriteria4unknownValue],
                                 "deidNum": 0}},
             deIdentifiedIDColumnHeaderFormatStyle: Literal["old", "lemur"] = "lemur") -> pd.DataFrame:
     """
@@ -322,25 +353,6 @@ def map2di(map_: pd.DataFrame):
         raise Exception(f"This map is not one to one. At least one ID is duplicated with multiple de-identified IDs: {errors}")
     else:
         return di
-
-
-def isNumber(string):
-    """
-    Checks if the string represents a number
-
-    For a discussion see https://stackoverflow.com/questions/354038/how-do-i-check-if-a-string-represents-a-number-float-or-int
-    """
-    try:
-        int(float(string))
-        return True
-    except ValueError as error:
-        msg = error.args[0]
-        if "invalid literal for int() with base 10:" in msg:  # This must be an old Python exception message
-            return False
-        elif "could not convert string to float:" in msg:  # I think this is the new exception message
-            return False
-        else:
-            raise Exception(error)
 
 
 def float2str(value, navalue=""):
