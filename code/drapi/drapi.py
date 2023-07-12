@@ -146,7 +146,7 @@ def makeMap(IDset: set,
             columnSuffix: str,
             groups: dict = {0: {"criteria": [mapGroupCriteria4unknownValue],
                                 "deidNum": 0}},
-            deIdentifiedIDColumnHeaderFormatStyle: Literal["old", "lemur"] = "lemur") -> pd.DataFrame:
+            deIdentifiedIDColumnHeaderFormatStyle: Literal["classic", "lemur"] = "lemur") -> pd.DataFrame:
     """
     Makes an IDR de-identification map.
 
@@ -168,12 +168,21 @@ def makeMap(IDset: set,
         | IDset[0] | numbers[0] | ... |
         | ...      | ...        | ... |
     """
-    if deIdentifiedIDColumnHeaderFormatStyle == "old":
+    # Assign header formats: de-Identififed ID Column Header
+    if deIdentifiedIDColumnHeaderFormatStyle == "classic":
         deIdentifiedIDColumnHeader = f"deid_{columnSuffix}_id"
     elif deIdentifiedIDColumnHeaderFormatStyle == "lemur":
-        deIdentifiedIDColumnHeader = f"de-Identified {IDName}"
+        deIdentifiedIDColumnHeader = f"De-identified {IDName}"
+    # Assign header formats: de-Identififed ID Column Header
+    if deIdentifiedIDColumnHeaderFormatStyle == "classic":
+        deIdentificationSerialNumberHeader = "deid_num"
+    elif deIdentifiedIDColumnHeaderFormatStyle == "lemur":
+        deIdentificationSerialNumberHeader = "De-identification Serial Number"
+
     if len(IDset) == 0:
-        return pd.DataFrame(columns=[IDName, "deid_num", deIdentifiedIDColumnHeader])
+        return pd.DataFrame(columns=[IDName,
+                                     deIdentificationSerialNumberHeader,
+                                     deIdentifiedIDColumnHeader])
     else:
         pass
     if isinstance(startFrom, int):
@@ -200,7 +209,7 @@ def makeMap(IDset: set,
             deid_num = numbers.pop(0)
         deid_id = f"{irbNumber}_{suffix}_{deid_num}"
         mapDi[IDNum] = {IDName: IDNum,
-                        "deid_num": deid_num,
+                        deIdentificationSerialNumberHeader: deid_num,
                         deIdentifiedIDColumnHeader: deid_id}
     newMap = pd.DataFrame.from_dict(mapDi, orient="index")
     newMap.index = range(1, len(newMap) + 1)
