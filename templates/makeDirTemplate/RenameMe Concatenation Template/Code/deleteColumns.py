@@ -13,12 +13,10 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, make_dir_path, successiveParents
 
 # Arguments
-LOG_LEVEL = "DEBUG"
-
-BO_FILES_TO_RELEASE = ["Bian_IRB202202436.csv"]
+BO_FILES_TO_RELEASE = ["..."]  # TODO
 NOTES_METADATA_FILES_TO_RELEASE = ["provider_metadata.csv",
                                    "subjects_note_metadata.csv",
                                    "subjects_order_impression_metadata.csv",
@@ -46,10 +44,14 @@ CONCATENATED_PORTIONS_DIR_WIN = Path("data/output/deIdentify/...")
 MAC_PATHS = [CONCATENATED_PORTIONS_DIR_MAC]
 WIN_PATHS = [CONCATENATED_PORTIONS_DIR_WIN]
 
-CONCATENATED_PORTIONS_FILE_CRITERIA = [lambda pathObj: pathObj.name in FILES_TO_RELEASE]
+CONCATENATED_PORTIONS_FILE_CRITERIA = [lambda pathObj: pathObj.absolute() in FILES_TO_RELEASE,
+                                       lambda pathObj: pathObj.suffix.lower() == ".csv",
+                                       lambda pathObj: pathObj.is_file()]
 
 LIST_OF_PORTION_CONDITIONS = [CONCATENATED_PORTIONS_FILE_CRITERIA]
 
+COLUMNS_TO_DELETE = ["MRN (Jax)",
+                     "De-identified MRN (Jax)"]
 COLUMNS_TO_DELETE = ["person_source_value",
                      # The columns below are non-informative because they only uniquely identify the row in the table
                      "condition_occurrence_id",
@@ -77,12 +79,20 @@ COLUMNS_TO_DELETE_DICT = {"condition_occurrence": [],
 
 CHUNK_SIZE = 50000
 
+# Arguments: Meta Variables
+PROJECT_DIR_DEPTH = 2
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+LOG_LEVEL = "INFO"
+
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")

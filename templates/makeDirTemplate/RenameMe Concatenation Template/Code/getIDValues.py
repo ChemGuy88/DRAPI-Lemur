@@ -13,15 +13,13 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, make_dir_path, successiveParents
 from common import COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
 SETS_PATH = None
 
 CHUNK_SIZE = 50000
-
-LOG_LEVEL = "DEBUG"
 
 # Arguments: OMOP data set selection
 USE_MODIFIED_OMOP_DATA_SET = True
@@ -48,12 +46,20 @@ LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
                               OMOP_PORTION_FILE_CRITERIA,
                               ZIP_CODE_PORTION_FILE_CRITERIA]
 
+# Arguments: Meta-variables
+PROJECT_DIR_DEPTH = 2
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+LOG_LEVEL = "INFO"
+
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -81,12 +87,11 @@ if isAccessible:
         raise Exception("Unsupported operating system")
 else:
     # If the above option doesn't work, manually copy the database to the `input` directory.
+    boPortionDir = BO_PORTION_DIR
     notesPortionDir = None
     omopPortionDir = None
     listOfPortionDirs = [notesPortionDir, omopPortionDir]
-
 # Directory creation: General
-make_dir_path(runIntermediateDataDir)
 make_dir_path(runOutputDir)
 make_dir_path(runLogsDir)
 

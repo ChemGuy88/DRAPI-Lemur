@@ -14,15 +14,14 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, makeMap, makeSetComplement, ditchFloat
+from drapi.constants import DATA_TYPES
+from drapi.drapi import getTimestamp, successiveParents, make_dir_path, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
 from common import IRB_NUMBER, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OLD_MAPS_DIR_PATH, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
 SETS_PATH = Path("data/output/getIDValues/...")
 
 CHUNK_SIZE = 50000
-
-LOG_LEVEL = "DEBUG"
 
 # Arguments: OMOP data set selection
 USE_MODIFIED_OMOP_DATA_SET = True
@@ -49,12 +48,20 @@ LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
                               OMOP_PORTION_FILE_CRITERIA,
                               ZIP_CODE_PORTION_FILE_CRITERIA]
 
+# Arguments: Meta-variables
+PROJECT_DIR_DEPTH = 2
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+LOG_LEVEL = "INFO"
+
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -75,10 +82,12 @@ if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
+        boPortionDir = BO_PORTION_DIR
         notesPortionDir = NOTES_PORTION_DIR_MAC
         omopPortionDir = OMOP_PORTION_DIR_MAC
         listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
+        boPortionDir = BO_PORTION_DIR
         notesPortionDir = NOTES_PORTION_DIR_WIN
         omopPortionDir = OMOP_PORTION_DIR_WIN
         listOfPortionDirs = WIN_PATHS[:]
@@ -112,56 +121,64 @@ if __name__ == "__main__":
     # Get set of values
     # NOTE The code that used to be in this section was moved to "getIDValues.py"
     getIDValuesOutput = SETS_PATH
-    logging.debug(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(IRBDir)}".""")
 
     # Concatenate all old maps
     oldMaps = {}
-    logging.debug("""Concatenating all similar pre-existing maps.""")
+    logging.info("""Concatenating all similar pre-existing maps.""")
     mapNames = [variableName for variableName in COLUMNS_TO_DE_IDENTIFY if variableName not in VARIABLE_ALIASES]
     for variableName in mapNames:
-        logging.debug(f"""  Working on variable "{variableName}".""")
+        logging.info(f"""  Working on variable "{variableName}".""")
         if variableName in OLD_MAPS_DIR_PATH.keys():
-            logging.debug("""    Variable has pre-existing map(s).""")
+            logging.info("""    Variable has pre-existing map(s).""")
             listOfMapPaths = OLD_MAPS_DIR_PATH[variableName]
             dfConcat = pd.DataFrame()
             for mapPath in listOfMapPaths:
-                logging.debug(f"""  ..  Reading pre-existing map from "{mapPath}".""")
+                logging.info(f"""  ..  Reading pre-existing map from "{mapPath}".""")
                 df = pd.DataFrame(pd.read_csv(mapPath))
                 dfConcat = pd.concat([dfConcat, df])
             oldMaps[variableName] = dfConcat
         elif variableName not in OLD_MAPS_DIR_PATH.keys():
-            logging.debug("""    Variable has no pre-existing map.""")
+            logging.info("""    Variable has no pre-existing map.""")
             oldMaps[variableName] = pd.DataFrame()
 
     # Get the set difference between all old maps and the set of un-mapped values
     valuesToMap = {}
     setsToMapDataDir = runIntermediateDataDir.joinpath("valuesToMap")
     make_dir_path(setsToMapDataDir)
-    logging.debug("""Getting the set difference between all old maps and the set of un-mapped values.""")
+    logging.info("""Getting the set difference between all old maps and the set of un-mapped values.""")
     for variableName in mapNames:
-        logging.debug(f"""  Working on variable "{variableName}".""")
+        logging.info(f"""  Working on variable "{variableName}".""")
+        variableDataType = DATA_TYPES[variableName]
 
         # Get old set of IDs
-        logging.debug("""    Getting the old set of IDs.""")
+        logging.info("""    Getting the old set of IDs.""")
         oldMap = oldMaps[variableName]
         if len(oldMap) > 0:
             oldIDSet = set(oldMap[variableName].values)
             oldIDSet = set([ditchFloat(el) for el in oldIDSet])  # NOTE: Hack. Convert values to type int or string
         elif len(oldMap) == 0:
             oldIDSet = set()
-        logging.debug(f"""    The size of this set is {len(oldIDSet):,}.""")
+        logging.info(f"""    The size of this set is {len(oldIDSet):,}.""")
 
         # Get new set of IDs
         newSetPath = getIDValuesOutput.joinpath(f"{variableName}.txt")
-        logging.debug(f"""    Getting the new set of IDs from "{newSetPath.absolute().relative_to(IRBDir)}".""")
+        logging.info(f"""    Getting the new set of IDs from "{newSetPath.absolute().relative_to(IRBDir)}".""")
         newIDSet = set()
         with open(newSetPath, "r") as file:
             text = file.read()
-            lines = text.split()
+            lines = text.split("\n")[:-1]
         for line in lines:
             newIDSet.add(line)
-        newIDSet = set([ditchFloat(el) for el in newIDSet])  # NOTE: Hack. Convert values to type int or string
-        logging.debug(f"""    The size of this set is {len(newIDSet):,}.""")
+        if variableDataType.lower() == "numeric":
+            newIDSet = set([ditchFloat(el) for el in newIDSet])  # NOTE: Hack. Convert values to type int or string
+        elif variableDataType.lower() == "string":
+            pass
+        else:
+            msg = "The table column is expected to have a data type associated with it."
+            logging.error(msg)
+            raise ValueError(msg)
+        logging.info(f"""    The size of this set is {len(newIDSet):,}.""")
 
         # Set difference
         IDSetDiff = newIDSet.difference(oldIDSet)
@@ -170,15 +187,29 @@ if __name__ == "__main__":
         # Save new subset to `setsToMapDataDir`
         fpath = setsToMapDataDir.joinpath(f"{variableName}.JSON")
         with open(fpath, "w") as file:
-            li = [ditchFloat(IDNumber) for IDNumber in IDSetDiff]  # NOTE: Hack. Convert values to type int or string
-            file.write(json.dumps(li))
+            if variableDataType.lower() == "numeric":
+                li = [ditchFloat(IDNumber) for IDNumber in IDSetDiff]  # NOTE: Hack. Convert values to type int or string
+            elif variableDataType.lower() == "string":
+                li = list(IDSetDiff)
+            else:
+                msg = "The table column is expected to have a data type associated with it."
+                logging.error(msg)
+                raise Exception(msg)
+            file.write(json.dumps(li, default=handleDatetimeForJson))
         if len(IDSetDiff) == 0:
             series = pd.Series(dtype=int)
         else:
-            series = pd.Series(sorted(list(IDSetDiff)))
+            if variableDataType.lower() == "numeric":
+                series = pd.Series(sorted(list(IDSetDiff)))
+            elif variableDataType.lower() == "string":
+                series = pd.Series(sorted([str(el) for el in IDSetDiff]))
+            else:
+                msg = "The table column is expected to have a data type associated with it."
+                logging.error(msg)
+                raise Exception(msg)
 
     # Get numbers for new map
-    logging.debug("""Getting numbers for new map.""")
+    logging.info("""Getting numbers for new map.""")
     newNumbersDict = {}
     for variableName in mapNames:
         oldMap = oldMaps[variableName]
@@ -198,16 +229,24 @@ if __name__ == "__main__":
         newNumbersDict[variableName] = newNumbers
 
     # Map un-mapped values
-    logging.debug("""Mapping un-mapped values.""")
+    logging.info("""Mapping un-mapped values.""")
     for file in setsToMapDataDir.iterdir():
         variableName = file.stem
+        variableDataType = DATA_TYPES[variableName]
         logging.info(f"""  Working on un-mapped values for variable "{variableName}" located at "{file.absolute().relative_to(IRBDir)}".""")
         # Map contents
         values = valuesToMap[variableName]
-        values = set(int(float(value)) for value in values)  # NOTE: Hack. Convert values to type int or string
+        if variableDataType.lower() == "numeric":
+            values = set(int(float(value)) for value in values)  # NOTE: Hack. Convert values to type int or string
+        elif variableDataType.lower() == "string":
+            pass
+        else:
+            msg = "The table column is expected to have a data type associated with it."
+            logging.error(msg)
+            raise Exception(msg)
         numbers = sorted(list(newNumbersDict[variableName]))
         deIdIDSuffix = VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]
-        map_ = makeMap(IDset=values, IDName=variableName, startFrom=numbers, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName)
+        map_ = makeMap(IDset=values, IDName=variableName, startFrom=numbers, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName, deIdentifiedIDColumnHeaderFormatStyle="lemur")
         # Save map
         mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
         map_.to_csv(mapPath, index=False)

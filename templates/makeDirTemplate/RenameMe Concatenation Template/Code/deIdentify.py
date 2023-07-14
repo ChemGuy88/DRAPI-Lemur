@@ -12,17 +12,14 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, map2di, makeMap
-from common import IRB_NUMBER, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
+from drapi.constants import DATA_TYPES
+from drapi.drapi import getTimestamp, successiveParents, make_dir_path, map2di, makeMap
+from common import IRB_NUMBER, projectRootDirectory, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
 
-# Arguments: General
+# Arguments
 CONCATENATED_MAPS_DIR_PATH = Path("data/output/concatenateMaps/...")  # TODO
 
 MAPS_DIR_PATH = CONCATENATED_MAPS_DIR_PATH
-
-CHUNK_SIZE = 50000
-
-LOG_LEVEL = "DEBUG"
 
 # Arguments: OMOP data set selection
 USE_MODIFIED_OMOP_DATA_SET = True
@@ -49,12 +46,23 @@ LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
                               OMOP_PORTION_FILE_CRITERIA,
                               ZIP_CODE_PORTION_FILE_CRITERIA]
 
+# Arguments; General
+CHUNK_SIZE = 50000
+
+# Arguments: Meta Variables
+PROJECT_DIR_DEPTH = 2
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+LOG_LEVEL = "INFO"
+
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -113,7 +121,7 @@ if __name__ == "__main__":
     mapsColumnNames = {}
     for varName in COLUMNS_TO_DE_IDENTIFY:
         if varName in VARIABLE_ALIASES.keys():
-            map_ = makeMap(IDset=set(), IDName=varName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[varName]["deIdIDSuffix"], columnSuffix=varName)
+            map_ = makeMap(IDset=set(), IDName=varName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[varName]["deIdIDSuffix"], columnSuffix=varName, deIdentifiedIDColumnHeaderFormatStyle="lemur")
             mapsColumnNames[varName] = map_.columns[-1]
         else:
             varPath = MAPS_DIR_PATH.joinpath(f"{varName} map.csv")
@@ -149,12 +157,21 @@ if __name__ == "__main__":
                         # Work on column
                         logging.info(f"""  ..    Working on column "{columnName}".""")
                         if columnName in COLUMNS_TO_DE_IDENTIFY:
-                            logging.info("""  ..  ..  Column must be de-identified. De-identifying values.""")
+                            variableDataType = DATA_TYPES[columnName]
+                            logging.info(f"""  ..  ..  Column must be de-identified. De-identifying values. Values are being treated as the following data type: "{variableDataType}".""")
                             if columnName in VARIABLE_ALIASES.keys():
                                 mapsDiLookUpName = VARIABLE_ALIASES[columnName]
                             else:
                                 mapsDiLookUpName = columnName
-                            dfChunk[columnName] = dfChunk[columnName].apply(lambda IDNum: mapsDi[mapsDiLookUpName][IDNum] if not pd.isna(IDNum) else IDNum)
+                            # Look up values in de-identification maps according to data type. NOTE We are relying on pandas assigning the correct data type to the look-up values in the de-identification map.
+                            if variableDataType.lower() == "numeric":
+                                dfChunk[columnName] = dfChunk[columnName].apply(lambda IDNum: mapsDi[mapsDiLookUpName][IDNum] if not pd.isna(IDNum) else IDNum)
+                            elif variableDataType.lower() == "string":
+                                dfChunk[columnName] = dfChunk[columnName].apply(lambda IDvalue: mapsDi[mapsDiLookUpName][str(IDvalue)] if not pd.isna(IDvalue) else IDvalue)
+                            else:
+                                msg = "The table column is expected to have a data type associated with it."
+                                logging.error(msg)
+                                raise ValueError(msg)
                             dfChunk = dfChunk.rename(columns={columnName: mapsColumnNames[columnName]})
                     # Save chunk
                     dfChunk.to_csv(exportPath, mode=fileMode, header=fileHeaders, index=False)
