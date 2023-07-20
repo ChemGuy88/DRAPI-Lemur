@@ -13,54 +13,16 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, makeMap
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+from drapi.drapi import getTimestamp, make_dir_path, makeMap, successiveParents
+from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, VARIABLE_SUFFIXES
 
 # Arguments
 LOG_LEVEL = "DEBUG"
-
-VARIABLE_SUFFIXES = {"AuthoringProviderKey": {"columnSuffix": "provider",
-                                              "deIdIDSuffix": "PROV"},
-                     "AuthorizingProviderKey": {"columnSuffix": "provider",
-                                                "deIdIDSuffix": "PROV"},
-                     "CosignProviderKey": {"columnSuffix": "provider",
-                                           "deIdIDSuffix": "PROV"},
-                     "EncounterCSN": {"columnSuffix": "encounter",
-                                      "deIdIDSuffix": "ENC"},
-                     "EncounterKey": {"columnSuffix": "encounter",
-                                      "deIdIDSuffix": "ENC"},
-                     "MRN_GNV": {"columnSuffix": "patient",
-                                 "deIdIDSuffix": "PAT"},
-                     "MRN_JAX": {"columnSuffix": "patient",
-                                 "deIdIDSuffix": "PAT"},
-                     "NoteID": {"columnSuffix": "note",
-                                "deIdIDSuffix": "NOTE"},  # ?
-                     "NoteKey": {"columnSuffix": "note",
-                                 "deIdIDSuffix": "NOTE"},  # ?
-                     "OrderID": {"columnSuffix": "order",
-                                 "deIdIDSuffix": "ORD"},  # ?
-                     "OrderKey": {"columnSuffix": "order",
-                                  "deIdIDSuffix": "ORD"},  # ?
-                     "PatientKey": {"columnSuffix": "patient",
-                                    "deIdIDSuffix": "PAT"},
-                     "ProviderKey": {"columnSuffix": "provider",
-                                     "deIdIDSuffix": "PROV"},
-                     "person_id": {"columnSuffix": "patient",
-                                   "deIdIDSuffix": "PAT"},
-                     "preceding_visit_occurrence_id": {"columnSuffix": "encounter",
-                                                       "deIdIDSuffix": "ENC"},
-                     "provider_id": {"columnSuffix": "provider",
-                                     "deIdIDSuffix": "PROV"},
-                     "visit_occurrence_id": {"columnSuffix": "encounter",
-                                             "deIdIDSuffix": "ENC"}}
 
 MAC_PATHS = [NOTES_PORTION_DIR_MAC,
              OMOP_PORTION_DIR_MAC]
 WIN_PATHS = [NOTES_PORTION_DIR_WIN,
              OMOP_PORTION_DIR_WIN]
-
-NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 
 LIST_OF_PORTION_CONDITIONS = [NOTES_PORTION_FILE_CRITERIA,
                               OMOP_PORTION_FILE_CRITERIA]
@@ -69,14 +31,28 @@ SETS_PATH = None
 
 CHUNK_SIZE = 50000
 
-IRB_NUMBER = "IRB202202436"
+# Arguments: Meta-variables
+CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
+PROJECT_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH  # The concatenation suite of scripts is considered to be the "project".
+IRB_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH + 2
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+ROOT_DIRECTORY = "DATA_REQUEST_DIRECTORY"  # TODO One of the following:
+                                           # ["IDR_DATA_REQUEST_DIRECTORY",      # noqa
+                                           #  "IRB_DIRECTORY",                   # noqa
+                                           #  "DATA_REQUEST_DIRECTORY",          # noqa
+                                           #  "CONCATENATED_RESULTS_DIRECTORY"]  # noqa
+
+LOG_LEVEL = "INFO"
 
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -90,6 +66,15 @@ logsDir = projectDir.joinpath("logs")
 if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 sqlDir = projectDir.joinpath("sql")
+
+if ROOT_DIRECTORY == "CONCATENATED_RESULTS_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
 
 # Variables: Path construction: OS-specific
 isAccessible = all([path.exists() for path in MAC_PATHS]) or all([path.exists() for path in WIN_PATHS])
@@ -129,7 +114,7 @@ if __name__ == "__main__":
                         level=LOG_LEVEL)
 
     logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `IRBDir`: "{IRBDir}".""")
+    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
 
     # Get set of values
     # Imported from "getIDValues.py"
@@ -137,7 +122,7 @@ if __name__ == "__main__":
     # Map values
     for file in SETS_PATH.iterdir():
         variableName = file.stem
-        logging.info(f"""  Working on variable "{variableName}" located at "{file.absolute().relative_to(IRBDir)}".""")
+        logging.info(f"""  Working on variable "{variableName}" located at "{file.absolute().relative_to(rootDirectory)}".""")
         # Read file
         try:
             df = pd.read_table(file, header=None)
@@ -164,14 +149,14 @@ if __name__ == "__main__":
         # Save map
         mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
         map_.to_csv(mapPath, index=False)
-        logging.info(f"""    De-identification map saved to "{mapPath.absolute().relative_to(IRBDir)}".""")
+        logging.info(f"""    De-identification map saved to "{mapPath.absolute().relative_to(rootDirectory)}".""")
 
     # Clean up
     # TODO If input directory is empty, delete
     # TODO Delete intermediate run directory
 
     # Output location summary
-    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")

@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, make_dir_path, successiveParents
-from common import COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
 SETS_PATH = None
@@ -47,9 +47,16 @@ LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
                               ZIP_CODE_PORTION_FILE_CRITERIA]
 
 # Arguments: Meta-variables
-PROJECT_DIR_DEPTH = 2
-IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
+PROJECT_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH  # The concatenation suite of scripts is considered to be the "project".
+IRB_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH + 2
 IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+ROOT_DIRECTORY = "DATA_REQUEST_DIRECTORY"  # TODO One of the following:
+                                           # ["IDR_DATA_REQUEST_DIRECTORY",      # noqa
+                                           #  "IRB_DIRECTORY",                   # noqa
+                                           #  "DATA_REQUEST_DIRECTORY",          # noqa
+                                           #  "CONCATENATED_RESULTS_DIRECTORY"]  # noqa
 
 LOG_LEVEL = "INFO"
 
@@ -58,7 +65,8 @@ runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
-IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
 IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
@@ -73,6 +81,15 @@ logsDir = projectDir.joinpath("logs")
 if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 sqlDir = projectDir.joinpath("sql")
+
+if ROOT_DIRECTORY == "CONCATENATED_RESULTS_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
 
 # Variables: Path construction: OS-specific
 isAccessible = all([path.exists() for path in MAC_PATHS]) or all([path.exists() for path in WIN_PATHS])
@@ -108,7 +125,7 @@ if __name__ == "__main__":
                         level=LOG_LEVEL)
 
     logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `IRBDir`: "{IRBDir}".""")
+    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
 
     # Get set of values
     if SETS_PATH:
@@ -120,9 +137,9 @@ if __name__ == "__main__":
                                          "fileMode": "w"} for columnName in mapNames}
         for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
             # Act on directory
-            logging.info(f"""Working on directory "{directory.absolute().relative_to(IRBDir)}".""")
+            logging.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
             for file in directory.iterdir():
-                logging.info(f"""  Working on file "{file.absolute().relative_to(IRBDir)}".""")
+                logging.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
                 conditions = [condition(file) for condition in fileConditions]
                 if all(conditions):
                     # Read file
@@ -147,13 +164,13 @@ if __name__ == "__main__":
                                         file.write(str(value))
                                         file.write("\n")
                                 columnSetsVarsDi[mapLookUpName]["fileMode"] = "a"
-                                logging.info(f"""  ..  ..  Values saved to "{columnSetFpath.absolute().relative_to(IRBDir)}" in the project directory.""")
+                                logging.info(f"""  ..  ..  Values saved to "{columnSetFpath.absolute().relative_to(rootDirectory)}" in the project directory.""")
                 else:
                     logging.info("""    This file does not need to be processed.""")
 
     # Return path to sets fo ID values
     # TODO If this is implemented as a function, instead of a stand-alone script, return `runOutputDir` to define `setsPathDir` in the "makeMap" scripts.
-    logging.info(f"""Finished collecting the set of ID values to de-identify. The set files are located in "{runOutputDir.relative_to(projectDir)}".""")
+    logging.info(f"""Finished collecting the set of ID values to de-identify. The set files are located in "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")

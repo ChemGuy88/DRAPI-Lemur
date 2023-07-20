@@ -12,9 +12,9 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.constants import DATA_TYPES
-from drapi.drapi import getTimestamp, successiveParents, make_dir_path, map2di, makeMap
-from common import IRB_NUMBER, projectRootDirectory, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
+from drapi.constants.constants import DATA_TYPES
+from drapi.drapi import getTimestamp, successiveParents, make_dir_path, fileName2variableName, map2di, makeMap
+from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
 CONCATENATED_MAPS_DIR_PATH = Path("data/output/concatenateMaps/...")  # TODO
@@ -29,7 +29,7 @@ if USE_MODIFIED_OMOP_DATA_SET:
     OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
     OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
 else:
-    OMOPPortionDirMac = OMOP_PORTION_DIR_WIN
+    OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
 MAC_PATHS = [BO_PORTION_DIR,
@@ -49,10 +49,17 @@ LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
 # Arguments; General
 CHUNK_SIZE = 50000
 
-# Arguments: Meta Variables
-PROJECT_DIR_DEPTH = 2
-IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+# Arguments: Meta-variables
+CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
+PROJECT_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH  # The concatenation suite of scripts is considered to be the "project".
+IRB_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH + 2
 IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+ROOT_DIRECTORY = "DATA_REQUEST_DIRECTORY"  # TODO One of the following:
+                                           # ["IDR_DATA_REQUEST_DIRECTORY",      # noqa
+                                           #  "IRB_DIRECTORY",                   # noqa
+                                           #  "DATA_REQUEST_DIRECTORY",          # noqa
+                                           #  "CONCATENATED_RESULTS_DIRECTORY"]  # noqa
 
 LOG_LEVEL = "INFO"
 
@@ -61,7 +68,8 @@ runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
-IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
 IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
@@ -76,6 +84,15 @@ logsDir = projectDir.joinpath("logs")
 if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 sqlDir = projectDir.joinpath("sql")
+
+if ROOT_DIRECTORY == "CONCATENATED_RESULTS_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
 
 # Variables: Path construction: OS-specific
 isAccessible = all([path.exists() for path in MAC_PATHS]) or all([path.exists() for path in WIN_PATHS])
@@ -113,13 +130,14 @@ if __name__ == "__main__":
                         level=LOG_LEVEL)
 
     logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `IRBDir`: "{IRBDir}".""")
+    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
 
     # Load de-identification maps for each variable that needs to be de-identified
     logging.info("""Loading de-identification maps for each variable that needs to be de-identified.""")
     mapsDi = {}
     mapsColumnNames = {}
-    for varName in COLUMNS_TO_DE_IDENTIFY:
+    variablesCollected = [fileName2variableName(fname) for fname in MAPS_DIR_PATH.iterdir()]
+    for varName in variablesCollected:
         if varName in VARIABLE_ALIASES.keys():
             map_ = makeMap(IDset=set(), IDName=varName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[varName]["deIdIDSuffix"], columnSuffix=varName, deIdentifiedIDColumnHeaderFormatStyle="lemur")
             mapsColumnNames[varName] = map_.columns[-1]
@@ -134,9 +152,9 @@ if __name__ == "__main__":
     logging.info("""De-identifying files.""")
     for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
         # Act on directory
-        logging.info(f"""Working on directory "{directory.absolute().relative_to(IRBDir)}".""")
+        logging.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
         for file in directory.iterdir():
-            logging.info(f"""  Working on file "{file.absolute().relative_to(IRBDir)}".""")
+            logging.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
             conditions = [condition(file) for condition in fileConditions]
             if all(conditions):
                 # Set file options
@@ -156,7 +174,7 @@ if __name__ == "__main__":
                     for columnName in dfChunk.columns:
                         # Work on column
                         logging.info(f"""  ..    Working on column "{columnName}".""")
-                        if columnName in COLUMNS_TO_DE_IDENTIFY:
+                        if columnName in COLUMNS_TO_DE_IDENTIFY:  # Keep this reference to `COLUMNS_TO_DE_IDENTIFY` as a way to make sure that all variables were collected during `getIDValues` and the `makeMap` scripts.
                             variableDataType = DATA_TYPES[columnName]
                             logging.info(f"""  ..  ..  Column must be de-identified. De-identifying values. Values are being treated as the following data type: "{variableDataType}".""")
                             if columnName in VARIABLE_ALIASES.keys():
@@ -177,12 +195,12 @@ if __name__ == "__main__":
                     dfChunk.to_csv(exportPath, mode=fileMode, header=fileHeaders, index=False)
                     fileMode = "a"
                     fileHeaders = False
-                    logging.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(IRBDir)}".""")
+                    logging.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(rootDirectory)}".""")
             else:
                 logging.info("""    This file does not need to be processed.""")
 
     # Output location summary
-    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")

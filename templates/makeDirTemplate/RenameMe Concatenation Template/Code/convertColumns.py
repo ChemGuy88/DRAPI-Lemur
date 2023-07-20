@@ -11,12 +11,11 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, make_dir_path, successiveParents
 from drapi.idealist.idealist import idealistMap2dict
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 
 # Arguments
-LOG_LEVEL = "DEBUG"
 COLUMNS_TO_CONVERT_DI = {"person_id": "PatientKey"}
 
 MAC_PATHS = [OMOP_PORTION_DIR_MAC]
@@ -30,12 +29,28 @@ PERSON_ID_MAP_PATH = Path("data/output/makePersonIDMap/.../person_id map.csv")  
 
 CHUNK_SIZE = 50000
 
+# Arguments: Meta-variables
+CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
+PROJECT_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH  # The concatenation suite of scripts is considered to be the "project".
+IRB_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH + 2
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+ROOT_DIRECTORY = "DATA_REQUEST_DIRECTORY"  # TODO One of the following:
+                                           # ["IDR_DATA_REQUEST_DIRECTORY",      # noqa
+                                           #  "IRB_DIRECTORY",                   # noqa
+                                           #  "DATA_REQUEST_DIRECTORY",          # noqa
+                                           #  "CONCATENATED_RESULTS_DIRECTORY"]  # noqa
+
+LOG_LEVEL = "INFO"
+
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -50,16 +65,23 @@ if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 sqlDir = projectDir.joinpath("sql")
 
+if ROOT_DIRECTORY == "CONCATENATED_RESULTS_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
+
 # Variables: Path construction: OS-specific
 isAccessible = all([path.exists() for path in MAC_PATHS]) or all([path.exists() for path in WIN_PATHS])
 if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
-        omopPortionDir = OMOP_PORTION_DIR_MAC
         listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
-        omopPortionDir = OMOP_PORTION_DIR_WIN
         listOfPortionDirs = WIN_PATHS[:]
     else:
         raise Exception("Unsupported operating system")
@@ -86,7 +108,7 @@ if __name__ == "__main__":
                         level=LOG_LEVEL)
 
     logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `IRBDir`: "{IRBDir}".""")
+    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
 
     # Load person ID map
     personIDMap = pd.read_csv(PERSON_ID_MAP_PATH)
@@ -100,7 +122,7 @@ if __name__ == "__main__":
         # Act on directory
         logging.info(f"""Working on directory "{directory.relative_to(IRBDir)}".""")
         for file in directory.iterdir():
-            logging.info(f"""  Working on file "{file.absolute().relative_to(IRBDir)}".""")
+            logging.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
             conditions = [condition(file) for condition in fileConditions]
             if all(conditions):
                 # Set file options
@@ -124,7 +146,7 @@ if __name__ == "__main__":
                     dfChunk.to_csv(exportPath, mode=fileMode, header=fileHeaders, index=False)
                     fileMode = "a"
                     fileHeaders = False
-                    logging.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(IRBDir)}".""")
+                    logging.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(rootDirectory)}".""")
             else:
                 logging.info("""    This file does not need to be processed.""")
 
@@ -133,7 +155,7 @@ if __name__ == "__main__":
     # TODO Delete intermediate run directory
 
     # Output location summary
-    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")

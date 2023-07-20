@@ -4,7 +4,6 @@ Makes de-identification maps, building on existing maps.
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
 # NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 # NOTE Expects integer IDs, so no string IDs like Epic Patient IDs.
-# TODO Needs to combine similar IDs, like different providers IDs.
 """
 
 import json
@@ -16,10 +15,10 @@ import pandas as pd
 # Local packages
 from drapi.constants.constants import DATA_TYPES
 from drapi.drapi import getTimestamp, successiveParents, make_dir_path, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
-from common import IRB_NUMBER, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OLD_MAPS_DIR_PATH, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
+from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OLD_MAPS_DIR_PATH, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
-SETS_PATH = Path("data/output/getIDValues/...")
+SETS_PATH = Path("data/output/getIDValues/2023-07-18 14-20-48")
 
 CHUNK_SIZE = 50000
 
@@ -34,14 +33,14 @@ else:
     OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
-MAC_PATHS = [BO_PORTION_DIR,
+MAC_PATHS = [BO_PORTION_DIR_MAC,
              NOTES_PORTION_DIR_MAC,
              OMOPPortionDirMac,
-             ZIP_CODE_PORTION_DIR]
-WIN_PATHS = [BO_PORTION_DIR,
+             ZIP_CODE_PORTION_DIR_MAC]
+WIN_PATHS = [BO_PORTION_DIR_WIN,
              NOTES_PORTION_DIR_WIN,
              OMOPPortionDirWin,
-             ZIP_CODE_PORTION_DIR]
+             ZIP_CODE_PORTION_DIR_WIN]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
                               NOTES_PORTION_FILE_CRITERIA,
@@ -49,9 +48,16 @@ LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
                               ZIP_CODE_PORTION_FILE_CRITERIA]
 
 # Arguments: Meta-variables
-PROJECT_DIR_DEPTH = 2
-IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
+PROJECT_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH  # The concatenation suite of scripts is considered to be the "project".
+IRB_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH + 2
 IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+ROOT_DIRECTORY = "DATA_REQUEST_DIRECTORY"  # TODO One of the following:
+                                           # ["IDR_DATA_REQUEST_DIRECTORY",      # noqa
+                                           #  "IRB_DIRECTORY",                   # noqa
+                                           #  "DATA_REQUEST_DIRECTORY",          # noqa
+                                           #  "CONCATENATED_RESULTS_DIRECTORY"]  # noqa
 
 LOG_LEVEL = "INFO"
 
@@ -60,7 +66,8 @@ runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
-IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
 IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
@@ -76,18 +83,27 @@ if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 sqlDir = projectDir.joinpath("sql")
 
+if ROOT_DIRECTORY == "CONCATENATED_RESULTS_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
+
 # Variables: Path construction: OS-specific
 isAccessible = all([path.exists() for path in MAC_PATHS]) or all([path.exists() for path in WIN_PATHS])
 if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
-        boPortionDir = BO_PORTION_DIR
+        boPortionDir = BO_PORTION_DIR_MAC
         notesPortionDir = NOTES_PORTION_DIR_MAC
         omopPortionDir = OMOP_PORTION_DIR_MAC
         listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
-        boPortionDir = BO_PORTION_DIR
+        boPortionDir = BO_PORTION_DIR_WIN
         notesPortionDir = NOTES_PORTION_DIR_WIN
         omopPortionDir = OMOP_PORTION_DIR_WIN
         listOfPortionDirs = WIN_PATHS[:]
@@ -116,18 +132,18 @@ if __name__ == "__main__":
                         level=LOG_LEVEL)
 
     logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `IRBDir`: "{IRBDir}".""")
+    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
 
     # Get set of values
     # NOTE The code that used to be in this section was moved to "getIDValues.py"
     getIDValuesOutput = SETS_PATH
-    logging.info(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(rootDirectory)}".""")
 
     # Concatenate all old maps
     oldMaps = {}
     logging.info("""Concatenating all similar pre-existing maps.""")
-    mapNames = [variableName for variableName in COLUMNS_TO_DE_IDENTIFY if variableName not in VARIABLE_ALIASES]
-    for variableName in mapNames:
+    collectedVariables = [fname.stem for fname in getIDValuesOutput.iterdir()]
+    for variableName in collectedVariables:
         logging.info(f"""  Working on variable "{variableName}".""")
         if variableName in OLD_MAPS_DIR_PATH.keys():
             logging.info("""    Variable has pre-existing map(s).""")
@@ -147,7 +163,7 @@ if __name__ == "__main__":
     setsToMapDataDir = runIntermediateDataDir.joinpath("valuesToMap")
     make_dir_path(setsToMapDataDir)
     logging.info("""Getting the set difference between all old maps and the set of un-mapped values.""")
-    for variableName in mapNames:
+    for variableName in collectedVariables:
         logging.info(f"""  Working on variable "{variableName}".""")
         variableDataType = DATA_TYPES[variableName]
 
@@ -163,7 +179,7 @@ if __name__ == "__main__":
 
         # Get new set of IDs
         newSetPath = getIDValuesOutput.joinpath(f"{variableName}.txt")
-        logging.info(f"""    Getting the new set of IDs from "{newSetPath.absolute().relative_to(IRBDir)}".""")
+        logging.info(f"""    Getting the new set of IDs from "{newSetPath.absolute().relative_to(rootDirectory)}".""")
         newIDSet = set()
         with open(newSetPath, "r") as file:
             text = file.read()
@@ -211,7 +227,7 @@ if __name__ == "__main__":
     # Get numbers for new map
     logging.info("""Getting numbers for new map.""")
     newNumbersDict = {}
-    for variableName in mapNames:
+    for variableName in collectedVariables:
         oldMap = oldMaps[variableName]
         if len(oldMap) > 0:
             oldNumbersSet = set(oldMap["deid_num"].values)
@@ -233,7 +249,7 @@ if __name__ == "__main__":
     for file in setsToMapDataDir.iterdir():
         variableName = file.stem
         variableDataType = DATA_TYPES[variableName]
-        logging.info(f"""  Working on un-mapped values for variable "{variableName}" located at "{file.absolute().relative_to(IRBDir)}".""")
+        logging.info(f"""  Working on un-mapped values for variable "{variableName}" located at "{file.absolute().relative_to(rootDirectory)}".""")
         # Map contents
         values = valuesToMap[variableName]
         if variableDataType.lower() == "numeric":
@@ -250,14 +266,14 @@ if __name__ == "__main__":
         # Save map
         mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
         map_.to_csv(mapPath, index=False)
-        logging.info(f"""    De-identification map saved to "{mapPath.absolute().relative_to(IRBDir)}".""")
+        logging.info(f"""    De-identification map saved to "{mapPath.absolute().relative_to(rootDirectory)}".""")
 
     # Clean up
     # TODO If input directory is empty, delete
     # TODO Delete intermediate run directory
 
     # Output location summary
-    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")

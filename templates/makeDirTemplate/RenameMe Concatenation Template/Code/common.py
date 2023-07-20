@@ -18,18 +18,18 @@ from drapi.drapi import successiveParents
 
 # Argument meta variables
 IRB_NUMBER = None  # TODO
-PROJECT_ROOT_DIRECTORY_DEPTH = 3  # TODO  # NOTE To prevent unexpected results, like moving, writing, or deleting the wrong files, set this to folder that is the immediate parent of concatenated result and the intermediate results folder.
+DATA_REQUEST_ROOT_DIRECTORY_DEPTH = 3  # TODO  # NOTE To prevent unexpected results, like moving, writing, or deleting the wrong files, set this to folder that is the immediate parent of concatenated result and the intermediate results folder.
 
-projectRootDirectory, _ = successiveParents(Path(__file__).absolute(), PROJECT_ROOT_DIRECTORY_DEPTH)
-NOTES_ROOT_DIRECTORY = projectRootDirectory.joinpath("Intermediate Results",
-                                                     "Notes Portion",
-                                                     "data",
-                                                     "output")
+dataRequestRootDirectory, _ = successiveParents(Path(__file__).absolute(), DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
+NOTES_ROOT_DIRECTORY = dataRequestRootDirectory.joinpath("Intermediate Results",
+                                                         "Notes Portion",
+                                                         "data",
+                                                         "output")
 # Project arguments
 COLUMNS_TO_DE_IDENTIFY = LIST_OF_PHI_VARIABLES_BO + LIST_OF_PHI_VARIABLES_NOTES + LIST_OF_PHI_VARIABLES_OMOP
 
 # `VARIABLE_ALIASES` NOTE: Some variable names are not standardized. This argument is used by the de-identification process when looking for the de-identification map. This way several variables can be de-identified with the same map.
-VARIABLE_ALIASES = {"csn": "EncounterCSN",
+VARIABLE_ALIASES = {"csn": "EncounterCSN",  # TODO This is just an example. Add or remove from this dictionary as necessary.
                     "PatientKey": "Patient Key",
                     "patient_key": "Patient Key",
                     "Patnt Key": "Patient Key"}
@@ -40,15 +40,20 @@ for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
     VARIABLE_SUFFIXES.update(variableSuffixDict)
 
 # Portion directories
-BO_PORTION_DIR = projectRootDirectory.joinpath("Intermediate Results/BO Portion/data/output/getData/2023-06-28 14-16-28")
+BO_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/BO Portion/data/output/getData/...")  # TODO
+BO_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath("Intermediate Results/BO Portion/data/output/getData/...")  # TODO
+
 NOTES_PORTION_DIR_MAC = NOTES_ROOT_DIRECTORY.joinpath("free_text")
 NOTES_PORTION_DIR_WIN = NOTES_ROOT_DIRECTORY.joinpath(r"free_text")
 
-OMOP_PORTION_DIR_MAC = projectRootDirectory.joinpath("Intermediate Results/OMOP Portion/data/output/...")  # TODO
-OMOP_PORTION_DIR_WIN = projectRootDirectory.joinpath(r"Intermediate Results\OMOP Portion\data\output\...")  # TODO
+OMOP_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/OMOP Portion/data/output/...")  # TODO
+OMOP_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\OMOP Portion\data\output\...")  # TODO
 
 MODIFIED_OMOP_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
 MODIFIED_OMOP_PORTION_DIR_WIN = Path("data/output/convertColumns/...")  # TODO
+
+ZIP_CODE_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
+ZIP_CODE_PORTION_DIR_WIN = Path("data/output/convertColumns/...")  # TODO
 
 # File criteria
 NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
@@ -66,7 +71,7 @@ OLD_MAPS_DIR_PATH = {"EncounterCSN": [NOTES_ROOT_DIRECTORY.joinpath("mapping/map
 
 # Quality assurance
 if __name__ == "__main__":
-    ALL_VARS = [projectRootDirectory,
+    ALL_VARS = [dataRequestRootDirectory,
                 NOTES_ROOT_DIRECTORY,
                 NOTES_PORTION_DIR_MAC,
                 NOTES_PORTION_DIR_WIN,

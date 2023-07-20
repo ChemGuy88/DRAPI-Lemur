@@ -12,19 +12,14 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, personIDs2patientKeys
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+from drapi.drapi import getTimestamp, make_dir_path, personIDs2patientKeys, successiveParents
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
-LOG_LEVEL = "DEBUG"
-
 COLUMNS_TO_CONVERT = ["person_id"]
 
 MAC_PATHS = [OMOP_PORTION_DIR_MAC]
 WIN_PATHS = [OMOP_PORTION_DIR_WIN]
-
-NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 
 LIST_OF_PORTION_CONDITIONS = [OMOP_PORTION_FILE_CRITERIA]
 
@@ -32,12 +27,28 @@ SETS_PATH = None
 
 CHUNK_SIZE = 50000
 
+# Arguments: Meta-variables
+CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
+PROJECT_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH  # The concatenation suite of scripts is considered to be the "project".
+IRB_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH + 2
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+ROOT_DIRECTORY = "DATA_REQUEST_DIRECTORY"  # TODO One of the following:
+                                           # ["IDR_DATA_REQUEST_DIRECTORY",      # noqa
+                                           #  "IRB_DIRECTORY",                   # noqa
+                                           #  "DATA_REQUEST_DIRECTORY",          # noqa
+                                           #  "CONCATENATED_RESULTS_DIRECTORY"]  # noqa
+
+LOG_LEVEL = "INFO"
+
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -51,6 +62,15 @@ logsDir = projectDir.joinpath("logs")
 if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 sqlDir = projectDir.joinpath("sql")
+
+if ROOT_DIRECTORY == "CONCATENATED_RESULTS_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
 
 # Variables: Path construction: OS-specific
 isAccessible = all([path.exists() for path in MAC_PATHS]) or all([path.exists() for path in WIN_PATHS])

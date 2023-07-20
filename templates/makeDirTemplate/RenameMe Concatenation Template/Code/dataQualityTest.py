@@ -15,14 +15,11 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import ParserError
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path
-from common import BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA
+from drapi.drapi import getTimestamp, make_dir_path, successiveParents
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA
 
 # Arguments
 CHUNK_SIZE = 50000
-
-# Arguments: General
-LOG_LEVEL = "INFO"
 
 # Arguments: OMOP data set selection
 USE_MODIFIED_OMOP_DATA_SET = True
@@ -33,12 +30,28 @@ WIN_PATHS = [BO_PORTION_DIR]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA]
 
+# Arguments: Meta-variables
+CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
+PROJECT_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH  # The concatenation suite of scripts is considered to be the "project".
+IRB_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH + 2
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+ROOT_DIRECTORY = "DATA_REQUEST_DIRECTORY"  # TODO One of the following:
+                                           # ["IDR_DATA_REQUEST_DIRECTORY",      # noqa
+                                           #  "IRB_DIRECTORY",                   # noqa
+                                           #  "DATA_REQUEST_DIRECTORY",          # noqa
+                                           #  "CONCATENATED_RESULTS_DIRECTORY"]  # noqa
+
+LOG_LEVEL = "INFO"
+
 # Variables: Path construction: General
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
-IRBDir = projectDir.parent.parent  # Uncommon. TODO: Adjust directory depth/level as necessary
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
@@ -52,6 +65,15 @@ logsDir = projectDir.joinpath("logs")
 if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 sqlDir = projectDir.joinpath("sql")
+
+if ROOT_DIRECTORY == "CONCATENATED_RESULTS_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
 
 # Variables: Path construction: OS-specific
 isAccessible = all([path.exists() for path in MAC_PATHS]) or all([path.exists() for path in WIN_PATHS])
@@ -86,15 +108,15 @@ if __name__ == "__main__":
                         level=LOG_LEVEL)
 
     logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `IRBDir`: "{IRBDir}".""")
+    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
 
     # Data quality check
     logging.info("""Getting the set of values for each variable to de-identify.""")
     for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
         # Act on directory
-        logging.info(f"""Working on directory "{directory.absolute().relative_to(IRBDir)}".""")
+        logging.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
         for file in directory.iterdir():
-            logging.info(f"""  Working on file "{file.absolute().relative_to(IRBDir)}".""")
+            logging.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
             conditions = [condition(file) for condition in fileConditions]
             if all(conditions):
                 # Read file
@@ -117,4 +139,4 @@ if __name__ == "__main__":
     logging.info(f"""Finished collecting the set of ID values to de-identify. The set files are located in "{runOutputDir.relative_to(projectDir)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(IRBDir)}".""")
+    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")

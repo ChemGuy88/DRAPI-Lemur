@@ -13,7 +13,7 @@ from datetime import time
 from dateutil.parser import parse
 from itertools import islice
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import Callable, List, Tuple, Union
 from typing_extensions import Literal
 import sys
 # Third-party packages
@@ -89,6 +89,16 @@ def getTimestamp():
     return dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
 
 
+def getPercentDifference(x, y):
+    """
+    Calculates a percentage if the denominator is not 0, else it returns `"N/A"`.
+    """
+    if y != 0:
+        return f"{x / y: 0.2%}"
+    else:
+        return "N/A"
+
+
 def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
     """
     Successively get the parents of the Path object submitted.
@@ -97,6 +107,22 @@ def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
         pathObj = pathObj.parent
         numLevels -= 1
     return pathObj, numLevels
+
+
+def getFilesToRelease(filesToRelease: List[Path], fileCriteria: List[Callable]):
+    """
+    Applies the functions in the iterable `fileCriteria` to each Path object in `filesToRelease`.
+    """
+    filesToRelease = []
+    for file in filesToRelease:
+        criteria = []
+        for criteriaFunc in fileCriteria:
+            criteria.append(criteriaFunc(file))
+        criteriaMet = all(criteria)
+        if criteriaMet:
+            filesToRelease.append(file)
+        else:
+            pass
 
 
 def getLastIDNum(df, columnName="deid_num"):
@@ -124,6 +150,20 @@ def isNumber(string):
             return False
         else:
             raise Exception(error)
+
+
+def fileName2variableName(pathObj):
+    """
+    """
+    pattern = r"^(?P<variableName>.+) map"
+    string = pathObj.stem
+    obj = re.match(pattern, string)
+    if obj:
+        groupDict = obj.groupdict()
+        variableName = groupDict["variableName"]
+    else:
+        raise Exception("This file path objected was of an unexpected format.")
+    return variableName
 
 
 def mapGroupCriteria4unknownValue(value):
