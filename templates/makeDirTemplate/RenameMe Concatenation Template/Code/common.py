@@ -13,12 +13,12 @@ __all__ = ["COLUMNS_TO_DE_IDENTIFY",
 
 from pathlib import Path
 # Local packages
-from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_BO, LIST_OF_PHI_VARIABLES_NOTES, LIST_OF_PHI_VARIABLES_OMOP
+from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_BO, LIST_OF_PHI_VARIABLES_NOTES, LIST_OF_PHI_VARIABLES_OMOP, VARIABLE_SUFFIXES_BO, VARIABLE_SUFFIXES_NOTES, VARIABLE_SUFFIXES_OMOP
 from drapi.drapi import successiveParents
 
 # Argument meta variables
-IRB_NUMBER = None  # TODO  # TODO
-PROJECT_ROOT_DIRECTORY_DEPTH = 3  # TODO
+IRB_NUMBER = None  # TODO
+PROJECT_ROOT_DIRECTORY_DEPTH = 3  # TODO  # NOTE To prevent unexpected results, like moving, writing, or deleting the wrong files, set this to folder that is the immediate parent of concatenated result and the intermediate results folder.
 
 projectRootDirectory, _ = successiveParents(Path(__file__).absolute(), PROJECT_ROOT_DIRECTORY_DEPTH)
 NOTES_ROOT_DIRECTORY = projectRootDirectory.joinpath("Intermediate Results",
@@ -30,55 +30,14 @@ COLUMNS_TO_DE_IDENTIFY = LIST_OF_PHI_VARIABLES_BO + LIST_OF_PHI_VARIABLES_NOTES 
 
 # `VARIABLE_ALIASES` NOTE: Some variable names are not standardized. This argument is used by the de-identification process when looking for the de-identification map. This way several variables can be de-identified with the same map.
 VARIABLE_ALIASES = {"csn": "EncounterCSN",
-                    "Patient Key": "PatientKey",
-                    "patient_key": "PatientKey"}
+                    "PatientKey": "Patient Key",
+                    "patient_key": "Patient Key",
+                    "Patnt Key": "Patient Key"}
 
-VARIABLE_SUFFIXES = {"AuthoringProviderKey": {"columnSuffix": "provider",
-                                              "deIdIDSuffix": "PROV"},
-                     "AuthorizingProviderKey": {"columnSuffix": "provider",
-                                                "deIdIDSuffix": "PROV"},
-                     "CosignProviderKey": {"columnSuffix": "provider",
-                                           "deIdIDSuffix": "PROV"},
-                     "EncounterCSN": {"columnSuffix": "encounter",
-                                      "deIdIDSuffix": "ENC"},
-                     "EncounterKey": {"columnSuffix": "encounter",
-                                      "deIdIDSuffix": "ENC"},
-                     "LinkageNoteID": {"columnSuffix": "link_note",
-                                       "deIdIDSuffix": "LINK_NOTE"},
-                     "MRN_GNV": {"columnSuffix": "patient",
-                                 "deIdIDSuffix": "PAT"},
-                     "MRN_JAX": {"columnSuffix": "patient",
-                                 "deIdIDSuffix": "PAT"},
-                     "NoteID": {"columnSuffix": "note",
-                                "deIdIDSuffix": "NOTE"},
-                     "NoteKey": {"columnSuffix": "note",
-                                 "deIdIDSuffix": "NOTE"},
-                     "OrderID": {"columnSuffix": "order",
-                                 "deIdIDSuffix": "ORD"},
-                     "OrderKey": {"columnSuffix": "order",
-                                  "deIdIDSuffix": "ORD"},
-                     "OrderingProviderKey": {"columnSuffix": "order",
-                                             "deIdIDSuffix": "ORD"},
-                     "PatientKey": {"columnSuffix": "patient",
-                                    "deIdIDSuffix": "PAT"},
-                     "Patient Key": {"columnSuffix": "patient",
-                                     "deIdIDSuffix": "PAT"},
-                     "ProviderKey": {"columnSuffix": "provider",
-                                     "deIdIDSuffix": "PROV"},
-                     "csn": {"columnSuffix": "encounter",
-                             "deIdIDSuffix": "ENC"},
-                     "location_id": {"columnSuffix": "location",
-                                     "deIdIDSuffix": "LOC"},
-                     "patient_key": {"columnSuffix": "patient",
-                                     "deIdIDSuffix": "PAT"},
-                     "person_id": {"columnSuffix": "patient",
-                                   "deIdIDSuffix": "PAT"},
-                     "preceding_visit_occurrence_id": {"columnSuffix": "encounter",
-                                                       "deIdIDSuffix": "ENC"},
-                     "provider_id": {"columnSuffix": "provider",
-                                     "deIdIDSuffix": "PROV"},
-                     "visit_occurrence_id": {"columnSuffix": "encounter",
-                                             "deIdIDSuffix": "ENC"}}
+VARIABLE_SUFFIXES_LIST = [VARIABLE_SUFFIXES_BO, VARIABLE_SUFFIXES_NOTES, VARIABLE_SUFFIXES_OMOP]
+VARIABLE_SUFFIXES = dict()
+for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
+    VARIABLE_SUFFIXES.update(variableSuffixDict)
 
 # Portion directories
 BO_PORTION_DIR = projectRootDirectory.joinpath("Intermediate Results/BO Portion/data/output/getData/2023-06-28 14-16-28")
