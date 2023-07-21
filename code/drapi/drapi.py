@@ -109,6 +109,24 @@ def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
     return pathObj, numLevels
 
 
+def getCommonDirectoryParent(primaryPath: Path, secondaryPath: Path) -> Path:
+    """
+    """
+    commonPrefix = os.path.commonprefix([primaryPath, secondaryPath])
+    operatingSystem = sys.platform
+    if operatingSystem == "darwin":
+        if commonPrefix == "/":
+            pathResult = primaryPath
+        else:
+            pathResult = primaryPath.absolute().relative_to(secondaryPath)
+    elif operatingSystem == "win32":
+        if commonPrefix == "":
+            pathResult = primaryPath
+        else:
+            pathResult = primaryPath.absolute().relative_to(secondaryPath)
+    return pathResult
+
+
 def getFilesToRelease(filesToRelease: List[Path], fileCriteria: List[Callable]):
     """
     Applies the functions in the iterable `fileCriteria` to each Path object in `filesToRelease`.
