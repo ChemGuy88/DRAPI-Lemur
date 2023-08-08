@@ -27,30 +27,30 @@ def main(portionsOutputDirPath):
         content_names = "\n  ".join(sorted([path.name for path in content_paths]))
         _ = content_names
         dirRelativePath = portionPath.absolute().relative_to(rootDirectory)
-        logging.info(f"""Reading files from the directory "{dirRelativePath}". Below are its contents:""")
+        logger.info(f"""Reading files from the directory "{dirRelativePath}". Below are its contents:""")
         for fpath in sorted(content_paths):
-            logging.info(f"""  {fpath.name}""")
+            logger.info(f"""  {fpath.name}""")
         for file in content_paths:
             conditions = [lambda x: x.is_file(), lambda x: x.suffix.lower() == ".csv", lambda x: x.name != ".DS_Store"]
             conditionResults = [func(file) for func in conditions]
             if all(conditionResults):
-                logging.debug(f"""  Reading "{file.absolute().relative_to(rootDirectory)}".""")
+                logger.debug(f"""  Reading "{file.absolute().relative_to(rootDirectory)}".""")
                 df = pd.read_csv(file, dtype=str, nrows=10)
                 columns[file.name] = df.columns
 
     # Get all columns by file
-    logging.info("""Printing columns by file.""")
+    logger.info("""Printing columns by file.""")
     allColumns = set()
     it = 0
     columnsOrdered = OrderedDict(sorted(columns.items()))
     for key, value in columnsOrdered.items():
         if it > -1:
-            logging.info(key)
-            logging.info("")
+            logger.info(key)
+            logger.info("")
             for el in sorted(value):
-                logging.info(f"  {el}")
+                logger.info(f"  {el}")
                 allColumns.add(el)
-            logging.info("")
+            logger.info("")
         it += 1
 
     # Get all columns by portion
@@ -58,9 +58,9 @@ def main(portionsOutputDirPath):
     pass
 
     # Print the set of all columns
-    logging.info("""Printing the set of all columns.""")
+    logger.info("""Printing the set of all columns.""")
     for el in sorted(list(allColumns)):
-        logging.info(f"  {el}")
+        logger.info(f"  {el}")
 
 
 if __name__ == "__main__":
@@ -130,6 +130,25 @@ if __name__ == "__main__":
     elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
         rootDirectory = IDRDataRequestDir
 
+    # Logging block
+    logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
+    logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s)%(message)s""")
+
+    logger = logging.getLogger(__name__)
+
+    fileHandler = logging.FileHandler(logpath)
+    fileHandler.setLevel(LOG_LEVEL)
+    fileHandler.setFormatter(logFormat)
+
+    streamHandler = logging.StreamHandler()
+    streamHandler.setLevel(LOG_LEVEL)
+    streamHandler.setFormatter(logFormat)
+
+    logger.addHandler(fileHandler)
+    logger.addHandler(streamHandler)
+
+    logger.setLevel(LOG_LEVEL)
+
     # Variables: Path construction: OS-specific
     accesibilityTestMac = [path.exists() for path in PORTIONS_OUTPUT_DIR_PATH_DICT_MAC.values()]
     accesibilityTestWin = [path.exists() for path in PORTIONS_OUTPUT_DIR_PATH_DICT_WIN.values()]
@@ -148,28 +167,18 @@ if __name__ == "__main__":
     else:
         # If the above option doesn't work, manually copy the database to the `input` directory.
         # portionsOutputDirPath = None
-        print("Not implemented")
+        logger.critical("Not implemented")
         sys.exit()
 
     # Directory creation: General
     make_dir_path(runIntermediateDataDir)
     make_dir_path(runOutputDir)
     make_dir_path(runLogsDir)
-    # Logging block
-    logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-    fileHandler = logging.FileHandler(logpath)
-    fileHandler.setLevel(LOG_LEVEL)
-    streamHandler = logging.StreamHandler()
-    streamHandler.setLevel(LOG_LEVEL)
 
-    logging.basicConfig(format="[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s",
-                        handlers=[fileHandler, streamHandler],
-                        level=LOG_LEVEL)
-
-    logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Begin running "{thisFilePath}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
 
     main(portionsOutputDirPath)
 
     # End script
-    logging.info(f"""Finished running "{getCommonDirectoryParent(thisFilePath, rootDirectory)}".""")
+    logger.info(f"""Finished running "{getCommonDirectoryParent(thisFilePath, rootDirectory)}".""")
