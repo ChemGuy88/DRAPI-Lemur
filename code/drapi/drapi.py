@@ -204,7 +204,7 @@ def makeMap(IDset: set,
             columnSuffix: str,
             groups: dict = {0: {"criteria": [mapGroupCriteria4unknownValue],
                                 "deidNum": 0}},
-            deIdentifiedIDColumnHeaderFormatStyle: Literal["classic", "lemur"] = "lemur") -> pd.DataFrame:
+            deIdentificationMapStyle: Literal["classic", "lemur"] = "lemur") -> pd.DataFrame:
     """
     Makes an IDR de-identification map.
 
@@ -213,10 +213,10 @@ def makeMap(IDset: set,
         `IDName`, the name of the ID
         `startFrom`, the integer number to start from
         `groups`, ID values to group or map in a many-to-one fashion. E.g., invalid IDs (negative numbers) are usually all mapped to the same de-identified number, like "0".
-        `deIdentifiedIDColumnHeaderFormatStyle`, a string, one of {"old, "lemur"}. The formats are as follow:
+        `deIdentificationMapStyle`, a string, one of {"classic, "lemur"}. The formats are as follow:
             | Format Style  | de-Identififed ID Column Header   |
             | ------------- | -------------------------------   |
-            | "old"         | `f"deid_{columnSuffix}_id"`       |
+            | "clasic"      | `f"deid_{columnSuffix}_id"`       |
             | "lemur"       | `f"de-Identified {IDName}"`       |
 
     OUTPUT
@@ -227,14 +227,14 @@ def makeMap(IDset: set,
         | ...      | ...        | ... |
     """
     # Assign header formats: de-Identififed ID Column Header
-    if deIdentifiedIDColumnHeaderFormatStyle == "classic":
+    if deIdentificationMapStyle == "classic":
         deIdentifiedIDColumnHeader = f"deid_{columnSuffix}_id"
-    elif deIdentifiedIDColumnHeaderFormatStyle == "lemur":
+    elif deIdentificationMapStyle == "lemur":
         deIdentifiedIDColumnHeader = f"De-identified {IDName}"
     # Assign header formats: de-Identififed ID Column Header
-    if deIdentifiedIDColumnHeaderFormatStyle == "classic":
+    if deIdentificationMapStyle == "classic":
         deIdentificationSerialNumberHeader = "deid_num"
-    elif deIdentifiedIDColumnHeaderFormatStyle == "lemur":
+    elif deIdentificationMapStyle == "lemur":
         deIdentificationSerialNumberHeader = "De-identification Serial Number"
 
     if len(IDset) == 0:
@@ -250,7 +250,7 @@ def makeMap(IDset: set,
         numbers = startFrom[:]
         startFrom = numbers[0]
     numbers.extend([None])
-    IDli = sorted(list(IDset))
+    IDli = sortIntegersAndStrings(list(IDset))
     mapDi = {IDNum: {} for IDNum in IDli}
     for IDNum in IDli:
         fromGroup = False
@@ -432,6 +432,29 @@ def float2str(value, navalue=""):
     else:
         newValue = str(int(value))
     return newValue
+
+
+def numericOrString2integerOrString(value) -> Union[str, int]:
+    """
+    Determines if a value is numeric or string. If numeric, convert to an integer, else return as string.
+
+    Used by `makeMapsFromOthers.py`
+    """
+    if isNumber(value):
+        return int(float(value))
+    else:
+        return str(value)
+
+
+def sortIntegersAndStrings(li: list) -> list:
+    """
+    Sorts a list of integers and strings by sorted them separately and then concatenating the results.
+    """
+    series = pd.Series(li)
+    maskIntegers = series.apply(lambda el: isinstance(el, int))
+    maskStrings = series.apply(lambda el: isinstance(el, str))
+    li2 = sorted(series[maskIntegers].to_list()) + sorted(series[maskStrings].to_list())
+    return li2
 
 
 def str2int(value, navalue=-1):
