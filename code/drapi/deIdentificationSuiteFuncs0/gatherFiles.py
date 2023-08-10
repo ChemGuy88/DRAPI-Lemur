@@ -14,25 +14,20 @@ for file in input file paths
 
 from pathlib import Path
 
-# Arguments
 
-PROJECT_ROOT_DIRECTORY = Path("").absolute().parent
+def main(INPUT_FILE_PATHS, INPUT_DIRECTORY_PATHS):
+    """
+    """
+    # List all input files
+    inputFilePaths = [Path(string) for string in INPUT_FILE_PATHS]
+    inputDirectoryPaths = [Path(string) for string in INPUT_DIRECTORY_PATHS]
 
-INPUT_FILE_PATHS = []
+    # TODO Create compression archive
 
-INPUT_DIRECTORY_PATHS = [Path("data/output/deleteColumns/..."),  # TODO
-                         PROJECT_ROOT_DIRECTORY.joinpath("Intermediate Results/De-identified Notes/...")]  # TODO
+    # TODO Add all input files to compression archive
+    _ = inputFilePaths
+    _ = inputDirectoryPaths
 
-OUTPUT_DIRECTORY_PATH = Path("")
+    # TODO Move compression archive to destination directory
 
-# List all input files
-inputFilePaths = [Path(string) for string in INPUT_FILE_PATHS]
-inputDirectoryPaths = [Path(string) for string in INPUT_DIRECTORY_PATHS]
-
-# TODO Create compression archive
-
-# TODO Add all input files to compression archive
-
-# TODO Move compression archive to destination directory
-
-print("This is not implemented. Move files manually. See script arguments for what files need to be moved.")
+    print("This is not implemented. Move files manually. See script arguments for what files need to be moved.")
