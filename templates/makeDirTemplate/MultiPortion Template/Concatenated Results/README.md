@@ -52,8 +52,8 @@ File paths are relative to the common parent directory, whose absolute path is "
 | Notes metadata data set              | "IRB000000000/Intermediate Results/Notes Portion/data/output/free_text"               | getIDValues.py                |
 | Notes portion de-identification maps | "IRB000000000/Intermediate Results/Notes Portion/data/output/mapping"                 | makeMapsFromOthers.py         |
 | ID Sets (map intermediate files)     | "IRB000000000/Concatenated Results/data/output/getIDValues/..."                       | makeMapsFromOthers.py         |
-| Notes portion de-identification maps | "IRB202001660/Intermediate Results/Notes Portion/data/output/mapping"                 | concatenateMaps.py            |
-| De-identification maps               | "IRB202001660/Concatenated Results/data/output/makeMapsFromOthers/..."                | concatenateMaps.py            |
+| Notes portion de-identification maps | "IRB000000000/Intermediate Results/Notes Portion/data/output/mapping"                 | concatenateMaps.py            |
+| De-identification maps               | "IRB000000000/Concatenated Results/data/output/makeMapsFromOthers/..."                | concatenateMaps.py            |
 | De-identification maps               | "IRB000000000/Concatenated Results/data/output/makeMapsFromOthers/..."                | deIdentify.py                 |
 | Modified OMOP files                  | "IRB000000000/Concatenated Results/data/output/convertColumns/..."                    | deIdentify.py                 |
 | Notes metadata data set              | "IRB000000000/Intermediate Results/Notes Portion/data/output/free_text"               | deIdentify.py                 |

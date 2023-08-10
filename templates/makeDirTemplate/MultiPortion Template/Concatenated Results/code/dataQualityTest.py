@@ -88,8 +88,8 @@ if isAccessible:
         raise Exception("Unsupported operating system")
 else:
     # If the above option doesn't work, manually copy the database to the `input` directory.
-    boPortionDir = BO_PORTION_DIR
-    listOfPortionDirs = [boPortionDir]
+    print("Not implemented. Check settings in your script.")
+    sys.exit()
 
 # Directory creation: General
 make_dir_path(runOutputDir)

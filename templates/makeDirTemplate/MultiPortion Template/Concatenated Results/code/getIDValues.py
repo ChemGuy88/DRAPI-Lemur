@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, make_dir_path, successiveParents
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
 SETS_PATH = None
@@ -32,14 +32,14 @@ else:
     OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
-MAC_PATHS = [BO_PORTION_DIR,
+MAC_PATHS = [BO_PORTION_DIR_MAC,
              NOTES_PORTION_DIR_MAC,
              OMOPPortionDirMac,
-             ZIP_CODE_PORTION_DIR]
-WIN_PATHS = [BO_PORTION_DIR,
+             ZIP_CODE_PORTION_DIR_MAC]
+WIN_PATHS = [BO_PORTION_DIR_WIN,
              NOTES_PORTION_DIR_WIN,
              OMOPPortionDirWin,
-             ZIP_CODE_PORTION_DIR]
+             ZIP_CODE_PORTION_DIR_WIN]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
                               NOTES_PORTION_FILE_CRITERIA,
@@ -104,10 +104,9 @@ if isAccessible:
         raise Exception("Unsupported operating system")
 else:
     # If the above option doesn't work, manually copy the database to the `input` directory.
-    boPortionDir = BO_PORTION_DIR
-    notesPortionDir = None
-    omopPortionDir = None
-    listOfPortionDirs = [notesPortionDir, omopPortionDir]
+    print("Not implemented. Check settings in your script.")
+    sys.exit()
+
 # Directory creation: General
 make_dir_path(runOutputDir)
 make_dir_path(runLogsDir)

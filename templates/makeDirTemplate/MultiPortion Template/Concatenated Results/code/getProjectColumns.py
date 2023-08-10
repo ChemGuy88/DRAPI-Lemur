@@ -12,14 +12,14 @@ import numpy as np
 import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, make_dir_path, successiveParents
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
 
 # Arguments
 LOG_LEVEL = "DEBUG"
 PORTIONS_OUTPUT_DIR_PATH_MAC = {"All": Path("data/output/deleteColumns/..."),  # TODO
-                                "BO": BO_PORTION_DIR}
+                                "BO": BO_PORTION_DIR_MAC}
 PORTIONS_OUTPUT_DIR_PATH_WIN = {"All": Path("data/output/deleteColumns/..."),  # TODO
-                                "BO": BO_PORTION_DIR}
+                                "BO": BO_PORTION_DIR_WIN}
 
 # Arguments: Meta-variables
 CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
@@ -79,8 +79,7 @@ if isAccessible:
         raise Exception("Unsupported operating system")
 else:
     # If the above option doesn't work, manually copy the database to the `input` directory.
-    # portionsOutputDirPath = None
-    print("Not implement")
+    print("Not implemented. Check settings in your script.")
     sys.exit()
 
 # Directory creation: General

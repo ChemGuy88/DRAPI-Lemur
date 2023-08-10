@@ -14,7 +14,7 @@ import pandas as pd
 # Local packages
 from drapi.constants.constants import DATA_TYPES
 from drapi.drapi import getTimestamp, successiveParents, make_dir_path, fileName2variableName, map2di, makeMap
-from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR, ZIP_CODE_PORTION_FILE_CRITERIA
+from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
 CONCATENATED_MAPS_DIR_PATH = Path("data/output/concatenateMaps/...")  # TODO
@@ -32,14 +32,14 @@ else:
     OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
-MAC_PATHS = [BO_PORTION_DIR,
+MAC_PATHS = [BO_PORTION_DIR_MAC,
              NOTES_PORTION_DIR_MAC,
              OMOPPortionDirMac,
-             ZIP_CODE_PORTION_DIR]
-WIN_PATHS = [BO_PORTION_DIR,
+             ZIP_CODE_PORTION_DIR_MAC]
+WIN_PATHS = [BO_PORTION_DIR_WIN,
              NOTES_PORTION_DIR_WIN,
              OMOPPortionDirWin,
-             ZIP_CODE_PORTION_DIR]
+             ZIP_CODE_PORTION_DIR_WIN]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
                               NOTES_PORTION_FILE_CRITERIA,
@@ -100,17 +100,15 @@ if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
-        omopPortionDir = OMOP_PORTION_DIR_MAC
         listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
-        omopPortionDir = OMOP_PORTION_DIR_WIN
         listOfPortionDirs = WIN_PATHS[:]
     else:
         raise Exception("Unsupported operating system")
 else:
     # If the above option doesn't work, manually copy the database to the `input` directory.
-    notesPortionDir = None
-    omopPortionDir = None
+    print("Not implemented. Check settings in your script.")
+    sys.exit()
 
 # Directory creation: General
 make_dir_path(runIntermediateDataDir)

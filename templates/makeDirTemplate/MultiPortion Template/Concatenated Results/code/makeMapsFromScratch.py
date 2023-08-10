@@ -82,19 +82,15 @@ if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
-        notesPortionDir = NOTES_PORTION_DIR_MAC
-        omopPortionDir = OMOP_PORTION_DIR_MAC
         listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
-        notesPortionDir = NOTES_PORTION_DIR_WIN
-        omopPortionDir = OMOP_PORTION_DIR_WIN
         listOfPortionDirs = WIN_PATHS[:]
     else:
         raise Exception("Unsupported operating system")
 else:
     # If the above option doesn't work, manually copy the database to the `input` directory.
-    notesPortionDir = None
-    omopPortionDir = None
+    print("Not implemented. Check settings in your script.")
+    sys.exit()
 
 # Directory creation: General
 make_dir_path(runIntermediateDataDir)
