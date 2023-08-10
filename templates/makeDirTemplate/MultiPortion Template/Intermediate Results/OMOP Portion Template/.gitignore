@@ -2,7 +2,7 @@
 **/logs/
 **/*.7z
 **/.DS_Store
-**/*.bat
+# **/*.bat
 **/*.csv
 **/*.pdf
 **/*.tsv
