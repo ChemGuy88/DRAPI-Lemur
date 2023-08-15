@@ -5,24 +5,35 @@ Makes de-identification maps, building on existing maps.
 # NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 """
 
-import logging
 import re
 from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getPercentDifference
+from drapi.drapi import getPercentDifference, getTimestamp, make_dir_path
 
 
-def main(NEW_MAPS_DIR_PATH, OLD_MAPS_DIR_PATH, thisFilePath, ROOT_DIRECTORY, rootDirectory, runOutputDir):
+def concatenateMaps(NEW_MAPS_DIR_PATH,
+                    OLD_MAPS_DIR_PATH,
+                    pipelineOutputDir,
+                    logger,
+                    ROOT_DIRECTORY,
+                    rootDirectory):
     """
     """
+    functionName = __name__.split(".")[-1]
+    runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
+    make_dir_path(runOutputDir)
+    logger.info(f"""Begin running "{functionName}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Function arguments:
 
-    logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    # Arguments
+    ``: "{""}"
+    """)
 
     # Map new maps to variable names
-    logging.info("""Mapping new maps to variable names.""")
+    logger.info("""Mapping new maps to variable names.""")
     pattern = r"^([a-zA-Z_0-9\(\) ]+) map"
     newMapsFileDict = {}
     for fpath in NEW_MAPS_DIR_PATH.iterdir():
@@ -35,7 +46,7 @@ def main(NEW_MAPS_DIR_PATH, OLD_MAPS_DIR_PATH, thisFilePath, ROOT_DIRECTORY, roo
         newMapsFileDict[variableName] = [fpath]
 
     # Match old and new maps by variable name
-    logging.info("""Matching old and new maps by variable name.""")
+    logger.info("""Matching old and new maps by variable name.""")
     variableNameSet = set()
     variableNameSet.update(OLD_MAPS_DIR_PATH.keys())
     variableNameSet.update(newMapsFileDict.keys())
@@ -46,14 +57,14 @@ def main(NEW_MAPS_DIR_PATH, OLD_MAPS_DIR_PATH, thisFilePath, ROOT_DIRECTORY, roo
         matchedMaps[variableName].extend(li)
 
     # Load, concatenate, and save maps by variable names
-    logging.info("""Loading, concatenating, and saving maps by variable names.""")
+    logger.info("""Loading, concatenating, and saving maps by variable names.""")
     concatenatedMapsDict = {}
     for variableName, li in matchedMaps.items():
-        logging.info(f"""  Working on variable "{variableName}".""")
+        logger.info(f"""  Working on variable "{variableName}".""")
         concatenatedMap = pd.DataFrame()
         for fpath in li:
             fpath = Path(fpath)
-            logging.info(f"""    Working on map located at "{fpath.absolute().relative_to(rootDirectory)}".""")
+            logger.info(f"""    Working on map located at "{fpath.absolute().relative_to(rootDirectory)}".""")
             df = pd.read_csv(fpath)
             columns = df.columns[:-1].to_list()
             columns = columns + [f"deid_{variableName}_id"]  # NOTE: Hack. Conform de-identified column name to this format.
@@ -73,14 +84,14 @@ def main(NEW_MAPS_DIR_PATH, OLD_MAPS_DIR_PATH, thisFilePath, ROOT_DIRECTORY, roo
                                  "Total IDs": numIDs,
                                  "Percent Similarity": percentDifference}
     resultsdf = pd.DataFrame.from_dict(results, orient="index")
-    logging.debug(f"Concatenation summary:\n{resultsdf.to_string()}")
+    logger.info(f"Concatenation summary:\n{resultsdf.to_string()}")
 
     # Clean up
     # TODO If input directory is empty, delete
     # TODO Delete intermediate run directory
 
     # Output location summary
-    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Finished running "{functionName}".""")

@@ -7,46 +7,68 @@ Iterates over the files that would be processed in the pipeline and runs quality
 """
 
 
-import logging
+from pathlib import Path
 # Third-party packages
 import pandas as pd
 from pandas.errors import ParserError
+# Local packages
+from drapi.drapi import getTimestamp, make_dir_path
 
 
-def main(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS, CHUNK_SIZE, thisFilePath, ROOT_DIRECTORY, rootDirectory, runOutputDir):
+def dataQualityTest(listOfPortionDirs,
+                    LIST_OF_PORTION_CONDITIONS,
+                    CHUNK_SIZE,
+                    pipelineOutputDir,
+                    logger,
+                    ROOT_DIRECTORY,
+                    rootDirectory):
     """
     """
-    logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    functionName = __name__.split(".")[-1]
+    runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
+    make_dir_path(runOutputDir)
+    logger.info(f"""Begin running "{functionName}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Function arguments:
+
+    # Arguments
+    `listOfPortionDirs`: "{listOfPortionDirs}"
+    `LIST_OF_PORTION_CONDITIONS`: "{LIST_OF_PORTION_CONDITIONS}"
+    `CHUNK_SIZE`: "{CHUNK_SIZE}"
+    `pipelineOutputDir`: "{pipelineOutputDir}"
+    `logger`: "{logger}"
+    `ROOT_DIRECTORY`: "{ROOT_DIRECTORY}"
+    `rootDirectory`: "{rootDirectory}"
+    """)
 
     # Data quality check
-    logging.info("""Getting the set of values for each variable to de-identify.""")
+    logger.info("""Getting the set of values for each variable to de-identify.""")
     for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
         # Act on directory
-        logging.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
+        logger.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
         for file in directory.iterdir():
-            logging.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
+            logger.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
             conditions = [condition(file) for condition in fileConditions]
             if all(conditions):
                 # Read file
-                logging.info("""    This file has met all conditions for testing.""")
+                logger.info("""    This file has met all conditions for testing.""")
                 # Test 1: Make sure all lines have the same number of delimiters
-                logging.info("""  ..  Test 1: Make sure all lines have the same number of delimiters.""")
+                logger.info("""  ..  Test 1: Make sure all lines have the same number of delimiters.""")
                 try:
-                    numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
-                    _ = numChunks
-                    logging.info("""  ..    There are no apparent problems reading this file.""")
+                    for it, _ in enumerate(pd.read_csv(file, chunksize=CHUNK_SIZE), start=1):
+                        logger.info(f"""  ..    Working on chunk {it}...""")
+                    logger.info("""  ..    There are no apparent problems reading this file.""")
                 except ParserError as err:
                     msg = err.args[0]
-                    logging.info(f"""  ..    This file raised an error: "{msg}".""")
+                    logger.info(f"""  ..    This file raised an error: "{msg}".""")
                 # Test 2: ...
                 pass
             else:
-                logging.info("""    This file does not need to be tested.""")
+                logger.info("""    This file does not need to be tested.""")
 
     # Return path to sets fo ID values
     # TODO If this is implemented as a function, instead of a stand-alone script, return `runOutputDir` to define `setsPathDir` in the "makeMap" scripts.
-    logging.info(f"""Finished collecting the set of ID values to de-identify. The set files are located in "{runOutputDir.relative_to(rootDirectory)}".""")
+    logger.info(f"""Finished performing the battery of tests. Results, if any, will be located the run output directory: "{runOutputDir.relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Finished running "{functionName}".""")

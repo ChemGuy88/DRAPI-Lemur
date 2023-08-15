@@ -15,9 +15,22 @@ for file in input file paths
 from pathlib import Path
 
 
-def main(INPUT_FILE_PATHS, INPUT_DIRECTORY_PATHS):
+def gatherFiles(INPUT_FILE_PATHS,
+                INPUT_DIRECTORY_PATHS,
+                logger,
+                ROOT_DIRECTORY,
+                rootDirectory):
     """
     """
+    functionName = __name__.split(".")[-1]
+    logger.info(f"""Begin running "{functionName}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Function arguments:
+
+    # Arguments
+    ``: "{""}"
+    """)
+
     # List all input files
     inputFilePaths = [Path(string) for string in INPUT_FILE_PATHS]
     inputDirectoryPaths = [Path(string) for string in INPUT_DIRECTORY_PATHS]

@@ -7,66 +7,82 @@ Makes de-identification maps, building on existing maps.
 """
 
 import json
-import logging
+from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
 from drapi.constants.constants import DATA_TYPES
-from drapi.drapi import make_dir_path, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
+from drapi.drapi import make_dir_path, getTimestamp, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
 
 
-def main(SETS_PATH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES, IRB_NUMBER, thisFilePath, ROOT_DIRECTORY, rootDirectory, runIntermediateDataDir, runOutputDir):
+def makeMapsFromOthers(SETS_PATH,
+                       OLD_MAPS_DIR_PATH,
+                       VARIABLE_SUFFIXES,
+                       IRB_NUMBER,
+                       ROOT_DIRECTORY,
+                       rootDirectory,
+                       runIntermediateDataDir,
+                       pipelineOutputDir,
+                       logger):
     """
     """
-    logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    functionName = __name__.split(".")[-1]
+    runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
+    make_dir_path(runOutputDir)
+    logger.info(f"""Begin running "{functionName}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Function arguments:
+
+    # Arguments
+    ``: "{""}"
+    """)
 
     # Get set of values
     # NOTE The code that used to be in this section was moved to "getIDValues.py"
     getIDValuesOutput = SETS_PATH
-    logging.info(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(rootDirectory)}".""")
 
     # Concatenate all old maps
     oldMaps = {}
-    logging.info("""Concatenating all similar pre-existing maps.""")
+    logger.info("""Concatenating all similar pre-existing maps.""")
     collectedVariables = [fname.stem for fname in getIDValuesOutput.iterdir()]
     for variableName in collectedVariables:
-        logging.info(f"""  Working on variable "{variableName}".""")
+        logger.info(f"""  Working on variable "{variableName}".""")
         if variableName in OLD_MAPS_DIR_PATH.keys():
-            logging.info("""    Variable has pre-existing map(s).""")
+            logger.info("""    Variable has pre-existing map(s).""")
             listOfMapPaths = OLD_MAPS_DIR_PATH[variableName]
             dfConcat = pd.DataFrame()
             for mapPath in listOfMapPaths:
-                logging.info(f"""  ..  Reading pre-existing map from "{mapPath}".""")
+                logger.info(f"""  ..  Reading pre-existing map from "{mapPath}".""")
                 df = pd.DataFrame(pd.read_csv(mapPath))
                 dfConcat = pd.concat([dfConcat, df])
             oldMaps[variableName] = dfConcat
         elif variableName not in OLD_MAPS_DIR_PATH.keys():
-            logging.info("""    Variable has no pre-existing map.""")
+            logger.info("""    Variable has no pre-existing map.""")
             oldMaps[variableName] = pd.DataFrame()
 
     # Get the set difference between all old maps and the set of un-mapped values
     valuesToMap = {}
     setsToMapDataDir = runIntermediateDataDir.joinpath("valuesToMap")
     make_dir_path(setsToMapDataDir)
-    logging.info("""Getting the set difference between all old maps and the set of un-mapped values.""")
+    logger.info("""Getting the set difference between all old maps and the set of un-mapped values.""")
     for variableName in collectedVariables:
-        logging.info(f"""  Working on variable "{variableName}".""")
+        logger.info(f"""  Working on variable "{variableName}".""")
         variableDataType = DATA_TYPES[variableName]
 
         # Get old set of IDs
-        logging.info("""    Getting the old set of IDs.""")
+        logger.info("""    Getting the old set of IDs.""")
         oldMap = oldMaps[variableName]
         if len(oldMap) > 0:
             oldIDSet = set(oldMap[variableName].values)
             oldIDSet = set([ditchFloat(el) for el in oldIDSet])  # NOTE: Hack. Convert values to type int or string
         elif len(oldMap) == 0:
             oldIDSet = set()
-        logging.info(f"""    The size of this set is {len(oldIDSet):,}.""")
+        logger.info(f"""    The size of this set is {len(oldIDSet):,}.""")
 
         # Get new set of IDs
         newSetPath = getIDValuesOutput.joinpath(f"{variableName}.txt")
-        logging.info(f"""    Getting the new set of IDs from "{newSetPath.absolute().relative_to(rootDirectory)}".""")
+        logger.info(f"""    Getting the new set of IDs from "{newSetPath.absolute().relative_to(rootDirectory)}".""")
         newIDSet = set()
         with open(newSetPath, "r") as file:
             text = file.read()
@@ -79,9 +95,9 @@ def main(SETS_PATH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES, IRB_NUMBER, thisFilePa
             pass
         else:
             msg = "The table column is expected to have a data type associated with it."
-            logging.error(msg)
+            logger.error(msg)
             raise ValueError(msg)
-        logging.info(f"""    The size of this set is {len(newIDSet):,}.""")
+        logger.info(f"""    The size of this set is {len(newIDSet):,}.""")
 
         # Set difference
         IDSetDiff = newIDSet.difference(oldIDSet)
@@ -96,7 +112,7 @@ def main(SETS_PATH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES, IRB_NUMBER, thisFilePa
                 li = list(IDSetDiff)
             else:
                 msg = "The table column is expected to have a data type associated with it."
-                logging.error(msg)
+                logger.error(msg)
                 raise Exception(msg)
             file.write(json.dumps(li, default=handleDatetimeForJson))
         if len(IDSetDiff) == 0:
@@ -108,11 +124,11 @@ def main(SETS_PATH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES, IRB_NUMBER, thisFilePa
                 series = pd.Series(sorted([str(el) for el in IDSetDiff]))  # NOTE TODO I don't know why this variable exists, if it was ever used, or what it's for.
             else:
                 msg = "The table column is expected to have a data type associated with it."
-                logging.error(msg)
+                logger.error(msg)
                 raise Exception(msg)
 
     # Get numbers for new map
-    logging.info("""Getting numbers for new map.""")
+    logger.info("""Getting numbers for new map.""")
     newNumbersDict = {}
     for variableName in collectedVariables:
         oldMap = oldMaps[variableName]
@@ -132,11 +148,11 @@ def main(SETS_PATH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES, IRB_NUMBER, thisFilePa
         newNumbersDict[variableName] = newNumbers
 
     # Map un-mapped values
-    logging.info("""Mapping un-mapped values.""")
+    logger.info("""Mapping un-mapped values.""")
     for file in setsToMapDataDir.iterdir():
         variableName = file.stem
         variableDataType = DATA_TYPES[variableName]
-        logging.info(f"""  Working on un-mapped values for variable "{variableName}" located at "{file.absolute().relative_to(rootDirectory)}".""")
+        logger.info(f"""  Working on un-mapped values for variable "{variableName}" located at "{file.absolute().relative_to(rootDirectory)}".""")
         # Map contents
         values = valuesToMap[variableName]
         if variableDataType.lower() == "numeric":
@@ -145,7 +161,7 @@ def main(SETS_PATH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES, IRB_NUMBER, thisFilePa
             pass
         else:
             msg = "The table column is expected to have a data type associated with it."
-            logging.error(msg)
+            logger.error(msg)
             raise Exception(msg)
         numbers = sorted(list(newNumbersDict[variableName]))
         deIdIDSuffix = VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]
@@ -153,14 +169,14 @@ def main(SETS_PATH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES, IRB_NUMBER, thisFilePa
         # Save map
         mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
         map_.to_csv(mapPath, index=False)
-        logging.info(f"""    De-identification map saved to "{mapPath.absolute().relative_to(rootDirectory)}".""")
+        logger.info(f"""    De-identification map saved to "{mapPath.absolute().relative_to(rootDirectory)}".""")
 
     # Clean up
     # TODO If input directory is empty, delete
     # TODO Delete intermediate run directory
 
     # Output location summary
-    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Finished running "{functionName}".""")

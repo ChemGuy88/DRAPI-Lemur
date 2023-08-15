@@ -6,23 +6,42 @@ De-identify files
 # TODO Assign portion name to each path (per OS) so that portion files are stored in their respective folders, this prevents file from being overwritten in the unlikely, but possible, case files from different portions have the same name.
 """
 
-import logging
+from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
 from drapi.constants.constants import DATA_TYPES
-from drapi.drapi import fileName2variableName, map2di, makeMap
+from drapi.drapi import getTimestamp, make_dir_path, fileName2variableName, map2di, makeMap
 
 
-def main(MAPS_DIR_PATH, listOfPortionDirs, LIST_OF_PORTION_CONDITIONS, IRB_NUMBER, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, CHUNK_SIZE, thisFilePath, ROOT_DIRECTORY, rootDirectory, runOutputDir):
+def deIdentify(MAPS_DIR_PATH,
+               listOfPortionDirs,
+               LIST_OF_PORTION_CONDITIONS,
+               IRB_NUMBER,
+               COLUMNS_TO_DE_IDENTIFY,
+               VARIABLE_ALIASES,
+               VARIABLE_SUFFIXES,
+               CHUNK_SIZE,
+               pipelineOutputDir,
+               logger,
+               ROOT_DIRECTORY,
+               rootDirectory,
+               runOutputDir):
     """
     """
+    functionName = __name__.split(".")[-1]
+    runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
+    make_dir_path(runOutputDir)
+    logger.info(f"""Begin running "{functionName}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Function arguments:
 
-    logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    # Arguments
+    ``: "{""}"
+    """)
 
     # Load de-identification maps for each variable that needs to be de-identified
-    logging.info("""Loading de-identification maps for each variable that needs to be de-identified.""")
+    logger.info("""Loading de-identification maps for each variable that needs to be de-identified.""")
     mapsDi = {}
     mapsColumnNames = {}
     variablesCollected = [fileName2variableName(fname) for fname in MAPS_DIR_PATH.iterdir()]
@@ -38,12 +57,12 @@ def main(MAPS_DIR_PATH, listOfPortionDirs, LIST_OF_PORTION_CONDITIONS, IRB_NUMBE
             mapsColumnNames[varName] = map_.columns[-1]
 
     # De-identify columns
-    logging.info("""De-identifying files.""")
+    logger.info("""De-identifying files.""")
     for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
         # Act on directory
-        logging.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
+        logger.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
         for file in directory.iterdir():
-            logging.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
+            logger.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
             conditions = [condition(file) for condition in fileConditions]
             if all(conditions):
                 # Set file options
@@ -51,21 +70,21 @@ def main(MAPS_DIR_PATH, listOfPortionDirs, LIST_OF_PORTION_CONDITIONS, IRB_NUMBE
                 fileMode = "w"
                 fileHeaders = True
                 # Read file
-                logging.info("""    File has met all conditions for processing.""")
-                logging.info("""  ..  Reading file to count the number of chunks.""")
+                logger.info("""    File has met all conditions for processing.""")
+                logger.info("""  ..  Reading file to count the number of chunks.""")
                 numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
-                logging.info(f"""  ..  This file has {numChunks} chunks.""")
+                logger.info(f"""  ..  This file has {numChunks} chunks.""")
                 dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
                 for it, dfChunk in enumerate(dfChunks, start=1):
                     dfChunk = pd.DataFrame(dfChunk)
                     # Work on chunk
-                    logging.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
+                    logger.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
                     for columnName in dfChunk.columns:
                         # Work on column
-                        logging.info(f"""  ..    Working on column "{columnName}".""")
+                        logger.info(f"""  ..    Working on column "{columnName}".""")
                         if columnName in COLUMNS_TO_DE_IDENTIFY:  # Keep this reference to `COLUMNS_TO_DE_IDENTIFY` as a way to make sure that all variables were collected during `getIDValues` and the `makeMap` scripts.
                             variableDataType = DATA_TYPES[columnName]
-                            logging.info(f"""  ..  ..  Column must be de-identified. De-identifying values. Values are being treated as the following data type: "{variableDataType}".""")
+                            logger.info(f"""  ..  ..  Column must be de-identified. De-identifying values. Values are being treated as the following data type: "{variableDataType}".""")
                             if columnName in VARIABLE_ALIASES.keys():
                                 mapsDiLookUpName = VARIABLE_ALIASES[columnName]
                             else:
@@ -77,19 +96,19 @@ def main(MAPS_DIR_PATH, listOfPortionDirs, LIST_OF_PORTION_CONDITIONS, IRB_NUMBE
                                 dfChunk[columnName] = dfChunk[columnName].apply(lambda IDvalue: mapsDi[mapsDiLookUpName][str(IDvalue)] if not pd.isna(IDvalue) else IDvalue)
                             else:
                                 msg = "The table column is expected to have a data type associated with it."
-                                logging.error(msg)
+                                logger.error(msg)
                                 raise ValueError(msg)
                             dfChunk = dfChunk.rename(columns={columnName: mapsColumnNames[columnName]})
                     # Save chunk
                     dfChunk.to_csv(exportPath, mode=fileMode, header=fileHeaders, index=False)
                     fileMode = "a"
                     fileHeaders = False
-                    logging.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(rootDirectory)}".""")
+                    logger.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(rootDirectory)}".""")
             else:
-                logging.info("""    This file does not need to be processed.""")
+                logger.info("""    This file does not need to be processed.""")
 
     # Output location summary
-    logging.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Finished running "{functionName}".""")
