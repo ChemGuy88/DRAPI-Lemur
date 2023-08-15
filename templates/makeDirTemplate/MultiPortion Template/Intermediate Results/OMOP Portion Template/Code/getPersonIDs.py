@@ -8,7 +8,7 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from hermanCode.hermanCode import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, make_dir_path
 
 # Arguments
 PATIENT_KEYS_CSV_FILE_PATH = Path("data/input/cohort.csv")
