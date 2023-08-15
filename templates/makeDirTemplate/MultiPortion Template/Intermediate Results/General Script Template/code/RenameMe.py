@@ -11,6 +11,9 @@ import pandas as pd
 from drapi.drapi import getTimestamp, successiveParents, make_dir_path
 
 # Arguments
+_ = None
+
+# Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
 IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
 IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
