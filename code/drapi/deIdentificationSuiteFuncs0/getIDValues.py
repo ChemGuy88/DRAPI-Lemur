@@ -7,6 +7,7 @@ Get the set of ID values for all variables to de-identify.
 
 # Third-party packages
 import pandas as pd
+import pprint  # noqa
 # Local packages
 from drapi.drapi import getTimestamp, make_dir_path
 
@@ -42,7 +43,7 @@ def getIDValues(SETS_PATH,
         mapNames = [columnName for columnName in COLUMNS_TO_DE_IDENTIFY if columnName not in VARIABLE_ALIASES.keys()]
         columnSetsVarsDi = {columnName: {"fpath": runOutputDir.joinpath(f"{columnName}.txt"),
                                          "fileMode": "w"} for columnName in mapNames}
-        for (portionName, directory), fileConditions in zip(listOfPortionDirs.items(), LIST_OF_PORTION_CONDITIONS):
+        for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
             # Act on directory
             logger.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
             for file in directory.iterdir():
