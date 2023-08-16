@@ -6,7 +6,6 @@ De-identify files
 # TODO Assign portion name to each path (per OS) so that portion files are stored in their respective folders, this prevents file from being overwritten in the unlikely, but possible, case files from different portions have the same name.
 """
 
-from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages

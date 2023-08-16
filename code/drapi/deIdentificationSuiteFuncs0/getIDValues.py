@@ -5,7 +5,6 @@ Get the set of ID values for all variables to de-identify.
 # NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 """
 
-from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
@@ -43,7 +42,7 @@ def getIDValues(SETS_PATH,
         mapNames = [columnName for columnName in COLUMNS_TO_DE_IDENTIFY if columnName not in VARIABLE_ALIASES.keys()]
         columnSetsVarsDi = {columnName: {"fpath": runOutputDir.joinpath(f"{columnName}.txt"),
                                          "fileMode": "w"} for columnName in mapNames}
-        for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
+        for (portionName, directory), fileConditions in zip(listOfPortionDirs.items(), LIST_OF_PORTION_CONDITIONS):
             # Act on directory
             logger.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
             for file in directory.iterdir():

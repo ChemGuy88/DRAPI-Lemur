@@ -9,7 +9,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def getProjectColumns(portionsOutputDirPath,
+def getProjectColumns(listOfPortionDirs: list,
                       ROOT_DIRECTORY,
                       rootDirectory,
                       logger):
@@ -26,7 +26,7 @@ def getProjectColumns(portionsOutputDirPath,
 
     # Get columns
     columns = {}
-    for portionName, portionPath in portionsOutputDirPath.items():
+    for portionPath in listOfPortionDirs:
         content_paths = [Path(dirObj) for dirObj in os.scandir(portionPath)]
         dirRelativePath = portionPath.absolute().relative_to(rootDirectory)
         logger.info(f"""Reading files from the directory "{dirRelativePath}". Below are its contents:""")

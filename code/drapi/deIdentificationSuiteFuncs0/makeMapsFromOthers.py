@@ -7,7 +7,6 @@ Makes de-identification maps, building on existing maps.
 """
 
 import json
-from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
@@ -21,13 +20,13 @@ def makeMapsFromOthers(SETS_PATH,
                        IRB_NUMBER,
                        ROOT_DIRECTORY,
                        rootDirectory,
-                       runIntermediateDataDir,
                        pipelineOutputDir,
                        logger):
     """
     """
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
+    runIntermediateDataDir = pipelineOutputDir.joinpath(functionName, getTimestamp(), "temp")
     make_dir_path(runOutputDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")

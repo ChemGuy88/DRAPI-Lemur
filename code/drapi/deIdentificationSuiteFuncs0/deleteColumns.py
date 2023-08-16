@@ -7,7 +7,6 @@ De-identify files
 # TODO Investigate if a symlink can be made for files that are copied without alteration, to save space and time on larger projects.
 """
 
-from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages

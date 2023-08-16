@@ -7,7 +7,6 @@ Iterates over the files that would be processed in the pipeline and runs quality
 """
 
 
-from pathlib import Path
 # Third-party packages
 import pandas as pd
 from pandas.errors import ParserError
