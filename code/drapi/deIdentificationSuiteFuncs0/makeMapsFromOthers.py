@@ -10,14 +10,14 @@ import json
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.constants.constants import DATA_TYPES
 from drapi.drapi import make_dir_path, getTimestamp, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
 
 
 def makeMapsFromOthers(SETS_PATH,
                        OLD_MAPS_DIR_PATH,
-                       VARIABLE_SUFFIXES,
                        IRB_NUMBER,
+                       VARIABLE_SUFFIXES,
+                       DATA_TYPES,
                        ROOT_DIRECTORY,
                        rootDirectory,
                        pipelineOutputDir,
@@ -41,10 +41,15 @@ def makeMapsFromOthers(SETS_PATH,
     getIDValuesOutput = SETS_PATH
     logger.info(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(rootDirectory)}".""")
 
+    # Assertions
+    collectedVariables = sorted([fname.stem for fname in getIDValuesOutput.iterdir()])
+    for variableName in collectedVariables:
+        assert variableName in DATA_TYPES.keys(), f"""The variable "{variableName}" was not in the `DATA_TYPES` dictionary."""
+        assert variableName in VARIABLE_SUFFIXES.keys(), f"""The variable "{variableName}" was not in the `VARIABLE_SUFFIXES` dictionary."""
+
     # Concatenate all old maps
     oldMaps = {}
     logger.info("""Concatenating all similar pre-existing maps.""")
-    collectedVariables = [fname.stem for fname in getIDValuesOutput.iterdir()]
     for variableName in collectedVariables:
         logger.info(f"""  Working on variable "{variableName}".""")
         if variableName in OLD_MAPS_DIR_PATH.keys():
@@ -164,7 +169,7 @@ def makeMapsFromOthers(SETS_PATH,
             raise Exception(msg)
         numbers = sorted(list(newNumbersDict[variableName]))
         deIdIDSuffix = VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]
-        map_ = makeMap(IDset=values, IDName=variableName, startFrom=numbers, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName, deIdentifiedIDColumnHeaderFormatStyle="lemur")
+        map_ = makeMap(IDset=values, IDName=variableName, startFrom=numbers, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName, deIdentificationMapStyle="lemur")
         # Save map
         mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
         map_.to_csv(mapPath, index=False)
