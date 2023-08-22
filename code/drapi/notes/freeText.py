@@ -1,5 +1,7 @@
 """
 This is the modular implementation of "freeText.py".
+
+TODO: Convert SCRIPT_ARGUMENTS to functionArguments in the functions below. Script arguments are then fed into `main` which are in turn passed to the functions.
 """
 
 import concurrent.futures
@@ -10,27 +12,10 @@ import random
 import re
 import shutil
 import sqlalchemy as sa
-from datetime import datetime as dt
 from datetime import timedelta
 from drapi.drapi import make_dir_path, replace_sql_query
 from pathlib import Path
 
-# Arguments: Script settings
-COHORT_NAME = ""                 # An arbitrary name used in file names
-COHORT_FILE = ""                 # A file name that is located directory specified by the variable `data_dir`
-IRB_NUMBER = ""                  # Used for creating the de-identification map IDs.
-ID_TYPE = ""                     # Pick from "EncounterCSN", "EncounterKey", or "PatientKey". Choose the ID type you used in `COHORT_FILE`
-NOTE_VERSION = ""                # Pick from "all", or "last"
-DE_IDENTIFICATION_MODE = ""      # Pick from "deid", "lds", or "phi"
-LOG_LEVEL = ""                   # See the "logging" module for valid values for the `loglevel` parameter.
-SQL_ENCOUNTER_EFFECTIVE_DATE_START = '2012-01-01'  # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
-SQL_ENCOUNTER_EFFECTIVE_DATE_END = '2023-12-31'  # The end of date range of encounters to collect. Format: YYYY-MM-DD
-
-# Arguments: SQL connection settings
-USERDOMAIN = "UFAD"
-USERNAME = os.environ["USER"]
-UID = fr"{USERDOMAIN}\{USERNAME}"
-PWD = os.environ["HFA_UFADPWD"]
 
 # Variables: Path construction
 base_dir = str(Path(__file__).parent.parent.absolute())
@@ -496,22 +481,9 @@ def copy_tsv(cohort, notes_dir, disclosure_dir):
     return
 
 
-# MAIN
-if __name__ == '__main__':
-
-    # Logging block
-    this_file_path = Path(__file__)
-    timestamp = dt.now().strftime("%Y-%m-%d %H-%M-%S")
-    logpath = os.path.join(base_dir, "logs", f"log {timestamp}.log")
-    make_dir_path(Path(logpath).parent)
-    fileHandler = logging.FileHandler(logpath)
-    streamHandler = logging.StreamHandler()
-    streamHandler.setLevel(LOG_LEVEL)
-    logging.basicConfig(format="[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s",
-                        handlers=[fileHandler,
-                                  streamHandler],
-                        level=LOG_LEVEL)
-
+def main():
+    """
+    """
     logging.info('START')
     logging.debug(f"""`base_dir` set to "{base_dir}".""")
     # pull metadata
