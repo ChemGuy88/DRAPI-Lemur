@@ -8,12 +8,25 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, successiveParents, make_dir_path
 
 # Arguments
-PATIENT_KEYS_CSV_FILE_PATH = Path("data/input/cohort.csv")
-PATIENT_KEYS_CSV_FILE_HEADER = None
-LOG_LEVEL = "DEBUG"
+PATIENT_KEYS_CSV_FILE_PATH = Path("data/input/cohort.csv")  # TODO
+PATIENT_KEYS_CSV_FILE_HEADER = None  # TODO
+
+# Arguments: Meta-variables
+PROJECT_DIR_DEPTH = 2
+DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 2
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 0
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+ROOT_DIRECTORY = "IRB_DIRECTORY"  # TODO One of the following:
+                                                 # ["IDR_DATA_REQUEST_DIRECTORY",    # noqa
+                                                 #  "IRB_DIRECTORY",                 # noqa
+                                                 #  "DATA_REQUEST_DIRECTORY",        # noqa
+                                                 #  "PROJECT_OR_PORTION_DIRECTORY"]  # noqa
+
+LOG_LEVEL = "INFO"
 
 # Arguments: SQL connection settings
 SERVER = "DWSRSRCH01.shands.ufl.edu"
@@ -27,14 +40,14 @@ PWD = os.environ["HFA_UFADPWD"]
 runTimestamp = getTimestamp()
 thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
-projectDir = thisFilePath.absolute().parent.parent
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
-    intermediateDataDir = dataDir.joinpath("intermediate")
     outputDataDir = dataDir.joinpath("output")
-    if intermediateDataDir:
-        runIntermediateDataDir = intermediateDataDir.joinpath(thisFileStem, runTimestamp)
     if outputDataDir:
         runOutputDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
 logsDir = projectDir.joinpath("logs")
@@ -42,8 +55,19 @@ if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 sqlDir = projectDir.joinpath("sql")
 
+if ROOT_DIRECTORY == "PROJECT_OR_PORTION_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
+else:
+    raise Exception("An unexpected error occurred.")
+
 # Variables: Path construction: Project-specific
-pass
+personID_SQLQueryFilePath = sqlDir.joinpath("grabPersonIDs.SQL")
 
 # Variables: SQL Parameters
 if UID:
@@ -53,31 +77,58 @@ else:
 conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
 
 # Variables: Other
-personID_SQLQueryFilePath = sqlDir.joinpath("grabPersonIDs.SQL")
+pass
 
 # Directory creation: General
-make_dir_path(runIntermediateDataDir)
 make_dir_path(runOutputDir)
 make_dir_path(runLogsDir)
 
 # Directory creation: Project-specific
 pass
 
+# Logging block
+logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s)%(message)s""")
+
+logger = logging.getLogger(__name__)
+
+fileHandler = logging.FileHandler(logpath)
+fileHandler.setLevel(9)
+fileHandler.setFormatter(logFormat)
+
+streamHandler = logging.StreamHandler()
+streamHandler.setLevel(LOG_LEVEL)
+streamHandler.setFormatter(logFormat)
+
+logger.addHandler(fileHandler)
+logger.addHandler(streamHandler)
+
+logger.setLevel(9)
 
 if __name__ == "__main__":
-    # Logging block
-    logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-    fileHandler = logging.FileHandler(logpath)
-    fileHandler.setLevel(LOG_LEVEL)
-    streamHandler = logging.StreamHandler()
-    streamHandler.setLevel(LOG_LEVEL)
+    logger.info(f"""Begin running "{thisFilePath}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Script arguments:
 
-    logging.basicConfig(format="[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s",
-                        handlers=[fileHandler, streamHandler],
-                        level=LOG_LEVEL)
+    # Arguments
+    `PATIENT_KEYS_CSV_FILE_PATH`: "{PATIENT_KEYS_CSV_FILE_PATH}"
+    `PATIENT_KEYS_CSV_FILE_HEADER`: "{PATIENT_KEYS_CSV_FILE_HEADER}"
 
-    logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `projectDir`: "{projectDir}".""")
+    # Arguments: Meta-arguments
+    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
+    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}" --------------> "{IRBDir}"
+    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}" -> "{IDRDataRequestDir}"
+
+    `LOG_LEVEL` = "{LOG_LEVEL}"
+
+    # Arguments: SQL connection settings
+    `SERVER` = "{SERVER}"
+    `DATABASE` = "{DATABASE}"
+    `USERDOMAIN` = "{USERDOMAIN}"
+    `USERNAME` = "{USERNAME}"
+    `UID` = "{UID}"
+    `PWD` = censored
+    """)
 
     # Script
     # Get patient keys
@@ -114,7 +165,9 @@ if __name__ == "__main__":
     # Summary statistics
     numFound = personIDsFound["Found"].sum()
     numPatientKeys = len(patientKeysInput)
-    logging.info(f"""A total of {numFound} patient keys of {numPatientKeys} were mapped to OMOP person IDs.""")
+    logging.info(f"""A total of {numFound:,} patient keys of {numPatientKeys:,} were mapped to OMOP person IDs.""")
+    logging.info("""If the number of person IDs is LESS THAN the number of patient keys, it's possible that some patients were merged BEFORE the OMOP database was updated.""")
+    logging.info("""If the number of person IDs is GREATER THAN the number of patient keys, it's possible that some patients were merged AFTER the OMOP database was updated.""")
 
     # If any column contains NaNs, convert the column to the "Object" data type, to preserve data quality
     personIDsFound2 = personIDsFound.copy()
