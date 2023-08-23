@@ -17,8 +17,8 @@ import sqlalchemy as sa
 import yaml
 # Super-local libraries
 from drapi.drapi import make_dir_path, getTimestamp
-from drapi.omopDataDumpScripts.omop import editConfig, interpretPath
-from drapi.omopDataDumpScripts import deidentify
+from drapi.omop.configProcessing import editConfig, interpretPath
+from drapi.omop import deidentify
 
 # Arguments
 LOG_LEVEL = "DEBUG"  # Lowest level available is "9"
