@@ -83,14 +83,13 @@ def read_sql_file(file):
 
 
 def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_dir, cohort):
-    message = f"""Working on `note_version`: {note_version}
+    logging.info(f"""Working on `note_version`: {note_version}
     `id_type`: {id_type}
     `note_type`: {note_type}
     `sql_dir`: {sql_dir}
     `cohort_dir`: {cohort_dir}
     `notes_dir`: {notes_dir}
-    `cohort`: {cohort}"""
-    logging.debug(message)
+    `cohort`: {cohort}""")
     m = 'w'  # mode of the output file
     h = True  # header of the output file
     counter = 1  # used only for tracking/time estimation purposes
@@ -101,24 +100,23 @@ def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_d
     for df in pd.read_csv(os.path.join(cohort_dir, in_file), chunksize=1000, engine='python'):
         df = df[[id_type]]
         id_str = df[id_type].unique().tolist()
-        message = f"This chunk of your input file containing patient or encounter ID's is of length {len(id_str)}."
-        logging.debug(message)
+        logging.info(f"  This chunk of your input file containing patient or encounter ID's is of length {len(id_str):,}.")
         id_str = "','".join(str(x) for x in id_str)
         id_str = "'" + id_str + "'"
         query_file = note_type + '_metadata.sql'
-        logging.debug(f"Reading query file: {query_file}")
+        logging.info(f"Reading query file: {query_file}")
         query = read_sql_file(os.path.join(sql_dir, query_file))
         query = replace_sql_query(query, "XXXXX", id_str)
         query = replace_sql_query(query, "{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_START}", SQL_ENCOUNTER_EFFECTIVE_DATE_START)
         query = replace_sql_query(query, "{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_END}", SQL_ENCOUNTER_EFFECTIVE_DATE_END)
-        message = f"Using the following query:\n>>> Begin query >>>\n{query}\n<<< End query <<<"
-        logging.log(9, message)
+
+        logging.log(9, f"Using the following query:\n>>> Begin query >>>\n{query}\n<<< End query <<<")
         result = db_execute_read_query(query, host, database_prod)
-        message = f"The chunk query has {len(result)} rows."
-        logging.debug(message)
+
+        logging.info(f"The chunk query has {len(result):,} rows.")
         result = result.drop_duplicates()
-        message = f"After dropping duplicates, the chunk query has {len(result)} rows."
-        logging.debug(message)
+
+        logging.info(f"After dropping duplicates, the chunk query has {len(result)} rows.")
         if (note_type == 'note' and note_version == 'last'):  # keep only the last version of the note
             result = result.sort_values(by=['NoteKey', 'ContactNumber'], ascending=[True, False])
             result = result.drop_duplicates(['NoteKey'])
@@ -126,6 +124,7 @@ def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_d
         result.to_csv(os.path.join(notes_dir, result_file), index=False, mode=m, header=h)
         m = 'a'
         h = False
+
         logging.info(f'Completed chunk {counter}')
         counter = counter + 1
     return
@@ -136,7 +135,8 @@ def split_metadata(note_type, notes_dir, cohort):
     file_count = 1
     for df in pd.read_csv(os.path.join(notes_dir, in_file), chunksize=1000000):
         out_file = cohort + '_' + note_type + '_metadata_' + str(file_count) + '.csv'
-        logging.debug(f"Working on file {file_count}.")
+
+        logging.info(f"Working on file {file_count}.")
         # ensure that all ID columns are integers
         columns = df.columns
         for c in ['NoteKey', 'NoteID', 'LinkageNoteID', 'OrderKey', 'OrderID', 'PatientKey', 'EncounterKey', 'EncounterCSN', 'AuthoringProviderKey', 'CosignProviderKey', 'OrderingProviderKey', 'AuthorizingProviderKey']:
@@ -151,7 +151,7 @@ def split_metadata(note_type, notes_dir, cohort):
 
 
 def pull_text(item, note_type, note_id, sql_dir, notes_dir, dir_final):
-    print('Processing {}'.format(item))
+    logging.info(f"""Processing item "{item}".""")
     # Pull text
     header = True  # header of the output file
     mode = 'w'  # mode of the output file
@@ -204,7 +204,7 @@ def pull_text_in_parallel(note_type, sql_dir, notes_dir, cohort):
     # identify all metadata files for specific note type
     pattern = cohort + '_' + note_type + '_metadata_.*.csv'  # hot fix 2022-05-10
     items = [f for f in os.listdir(notes_dir) if re.match(pattern, f)]
-    print(items)
+    logging.info(f"""This is the list of items that matched the criteria for processing: {items}.""")
     # start pullng text. By default, number of parallel threads is set to 4.
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
         result_futures = {executor.submit(pull_text, item, note_type, note_id, sql_dir, notes_dir, dir_final): item for item in items}
@@ -212,9 +212,9 @@ def pull_text_in_parallel(note_type, sql_dir, notes_dir, cohort):
             item = result_futures[future]
             try:
                 _ = future.result()
-                print('completed {}'.format(item))  # this is just to know that the item has been processed
+                logging.info(f"""Completed item "{item}".""")
             except Exception as e:
-                print('{} generated an exception: {}'.format(item, e))  # this is used to get notification when there is an error, so something was not processed properly
+                logging.info(f"""An exception was generated by item "{item}": "{e}".""")
     return
 
 
@@ -310,7 +310,7 @@ def generate_map(deid_mode, in_dir, map_dir, concept, cohort):  # concept can be
         file = os.path.join(in_dir, 'provider_metadata.csv')
         concept_column = 'ProviderKey'
     else:
-        print('Nonexisting concept in generate_map method')
+        logging.error(f"""Nonexisting concept in `generate_map` method: "{concept}".""")
 
     ids_final = pd.DataFrame()
     for ids in pd.read_csv(file, chunksize=10000):
@@ -426,7 +426,7 @@ def deid_tsv_note(map_dir, notes_dir):
         final_columns = ['deid_link_note_id', 'note_text']
         items = [f for f in os.listdir(in_dir) if re.match(pattern, f)]
         for file in items:
-            print('processing {}'.format(file))
+            logging.info(f"""Processing `file` "{file}".""")
             out_file = 'deid_{}'.format(file)
             m = 'w'
             h = True
@@ -451,7 +451,7 @@ def deid_tsv_order(map_dir, notes_dir):
             final_columns = ['deid_order_id', 'note_text']
         items = [f for f in os.listdir(in_dir) if re.match(pattern, f)]
         for file in items:
-            print('processing {}'.format(file))
+            logging.info(f"""Processing `file` "{file}".""")
             out_file = 'deid_{}'.format(file)
             m = 'w'
             h = True
@@ -508,8 +508,8 @@ if __name__ == '__main__':
                                   streamHandler],
                         level=LOG_LEVEL)
 
-    logging.info('START')
-    logging.debug(f"""`base_dir` set to "{base_dir}".""")
+    logging.info(f"""Finished running "{this_file_path.absolute().relative_to(os.getcwd())}".""")
+    logging.info(f"""`base_dir` set to "{base_dir}".""")
     # pull metadata
     pull_metadata(note_version, id_type, 'note', sql_dir, data_dir, notes_dir, cohort)
     pull_metadata(note_version, id_type, 'order_narrative', sql_dir, data_dir, notes_dir, cohort)
@@ -547,4 +547,4 @@ if __name__ == '__main__':
         # prepare for text deidentification, i.e., deidentify ID in .tsv file(s)
         deid_tsv_note(map_dir, notes_dir)
         deid_tsv_order(map_dir, notes_dir)
-    logging.info("END")
+    logging.info(f"""Finished running "{this_file_path.absolute().relative_to(os.getcwd())}".""")
