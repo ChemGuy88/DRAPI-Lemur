@@ -33,25 +33,16 @@ def editConfig(inputPath: Path, outputPath: Path, timestamp):
     identified_file_location_str = configFile["data_output"]["identified_file_location"]
     deidentified_file_location_str = configFile["data_output"]["deidentified_file_location"]
     mapping_location_str = configFile["data_output"]["mapping_location"]
-    print(identified_file_location_str)
-    print(deidentified_file_location_str)
-    print(mapping_location_str)
 
     # Make sure path separators are OS-appropriate
     identified_file_location_str2 = interpretPath(identified_file_location_str)
     deidentified_file_location_str2 = interpretPath(deidentified_file_location_str)
     mapping_location_str2 = interpretPath(mapping_location_str)
-    print(identified_file_location_str2)
-    print(deidentified_file_location_str2)
-    print(mapping_location_str2)
 
     # Add timestamp to path as subfolder
     identified_file_location = Path(identified_file_location_str2).joinpath(timestamp)
     deidentified_file_location = Path(deidentified_file_location_str2).joinpath(timestamp)
     mapping_location = Path(mapping_location_str2).joinpath(timestamp)
-    print(identified_file_location)
-    print(deidentified_file_location)
-    print(mapping_location)
 
     sep = os.sep
 
