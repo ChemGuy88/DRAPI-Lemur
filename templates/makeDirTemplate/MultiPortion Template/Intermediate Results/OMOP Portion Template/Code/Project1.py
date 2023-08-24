@@ -16,9 +16,9 @@ import pandas as pd
 import sqlalchemy as sa
 import yaml
 # Super-local libraries
+import drapi.omop.deidentify as deidentify
 from drapi.drapi import make_dir_path, getTimestamp
 from drapi.omop.configProcessing import editConfig, interpretPath
-from drapi.omop import deidentify
 
 # Arguments
 LOG_LEVEL = "DEBUG"  # Lowest level available is "9"
@@ -354,12 +354,9 @@ if __name__ == '__main__':
 
     logging.debug(f"""Reading cohort from `person_id_file_path`: "{person_id_file_path}".""")
 
-    for dataType, filePathString in search_config["data_output"].items():
-        filePathString = str(Path(interpretPath(filePathString)))
-        logging.debug(f"""Making sure that the "{dataType}" output directory exists: "{filePathString}".""")
-        directory = Path(filePathString)
-        make_dir_path(directory)
-        logging.debug(f"""  For "{dataType}", the directory exists or was created as such: "{directory}".""")
+    for dataType, path in search_config["data_output"].items():
+        path = Path(interpretPath(path))
+        make_dir_path(path)
 
     # mapping_file_location = cohort_mapping_file(search_config,person_id_list)
     if (list_of_tables):
