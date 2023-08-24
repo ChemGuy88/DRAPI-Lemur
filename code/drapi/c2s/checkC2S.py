@@ -38,7 +38,7 @@ def checkStatusWrapper(fpath: str, columnName: str, statusType: str, location: s
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--verbosity", help="""Increase output verbosity. See "logging" module's log level for valid values.""", type=int)
+    parser.add_argument("--verbosity", help="""Increase output verbosity. See "logging" module's log level for valid values.""", type=int, default=10)
 
     parser.add_argument("fpath", help="The path to the file that contains the MRNs.", type=str)
 
