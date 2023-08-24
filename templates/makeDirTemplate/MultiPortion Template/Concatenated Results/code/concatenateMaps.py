@@ -11,11 +11,12 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, getPercentDifference, successiveParents
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OLD_MAPS_DIR_PATH
+from drapi.drapi import getTimestamp, make_dir_path, getPercentDifference, successiveParents, makeMap
+from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES
 
 # Arguments
 NEW_MAPS_DIR_PATH = Path("data/output/makeMapsFromOthers/...")  # TODO
+DE_IDENTIFICATION_MAP_STYLE = "lemur"
 
 # Arguments: Meta-variables
 CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
@@ -112,13 +113,17 @@ if __name__ == "__main__":
     for variableName, li in matchedMaps.items():
         logging.info(f"""  Working on variable "{variableName}".""")
         concatenatedMap = pd.DataFrame()
+        emptyMap = makeMap(IDset=set(), IDName=variableName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"], columnSuffix=variableName, deIdentificationMapStyle=DE_IDENTIFICATION_MAP_STYLE)
+        newColumns = emptyMap.columns
         for fpath in li:
             fpath = Path(fpath)
             logging.info(f"""    Working on map located at "{fpath.absolute().relative_to(rootDirectory)}".""")
             df = pd.read_csv(fpath)
-            columns = df.columns[:-1].to_list()
-            columns = columns + [f"deid_{variableName}_id"]  # NOTE: Hack. Conform de-identified column name to this format.
-            df.columns = columns
+            oldColumns = df.columns
+            logging.info(f"""  ..  Over-writing map header format to "{DE_IDENTIFICATION_MAP_STYLE}".""")
+            logging.info(f"""  ..  Old map columns: {oldColumns.to_list()}.""")
+            logging.info(f"""  ..  New map columns: {newColumns.to_list()}.""")
+            df.columns = newColumns
             concatenatedMap = pd.concat([concatenatedMap, df])
         concatenatedMapsDict[variableName] = concatenatedMap
         fpath = runOutputDir.joinpath(f"{variableName} map.csv")
