@@ -12,15 +12,15 @@ from drapi.drapi import make_dir_path, replace_sql_query
 from pathlib import Path
 
 # Arguments: Script settings
-COHORT_NAME = ""                 # An arbitrary name used in file names
-COHORT_FILE = ""                 # A file name that is located directory specified by the variable `data_dir`
-IRB_NUMBER = ""                  # Used for creating the de-identification map IDs.
-ID_TYPE = ""                     # Pick from "EncounterCSN", "EncounterKey", or "PatientKey". Choose the ID type you used in `COHORT_FILE`
-NOTE_VERSION = ""                # Pick from "all", or "last"
-DE_IDENTIFICATION_MODE = ""      # Pick from "deid", "lds", or "phi"
-LOG_LEVEL = ""                   # See the "logging" module for valid values for the `loglevel` parameter.
-SQL_ENCOUNTER_EFFECTIVE_DATE_START = '2012-01-01'  # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
-SQL_ENCOUNTER_EFFECTIVE_DATE_END = '2023-12-31'  # The end of date range of encounters to collect. Format: YYYY-MM-DD
+COHORT_NAME = ""                                    # An arbitrary name used in file names
+COHORT_FILE = ""                                    # A file name that is located directory specified by the variable `data_dir`
+IRB_NUMBER = ""                                     # Used for creating the de-identification map IDs.
+ID_TYPE = ""                                        # Pick from "EncounterCSN", "EncounterKey", or "PatientKey". Choose the ID type you used in `COHORT_FILE`
+NOTE_VERSION = ""                                   # Pick from "all", or "last"
+DE_IDENTIFICATION_MODE = ""                         # Pick from "deid", "lds", or "phi"
+LOG_LEVEL = ""                                      # See the "logging" module for valid values for the `loglevel` parameter.
+SQL_ENCOUNTER_EFFECTIVE_DATE_START = 'YYYY-MM-DD'   # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
+SQL_ENCOUNTER_EFFECTIVE_DATE_END = 'YYYY-MM-DD'     # The end of date range of encounters to collect. Format: YYYY-MM-DD
 
 # Arguments: SQL connection settings
 USERDOMAIN = "UFAD"
@@ -32,9 +32,9 @@ PWD = os.environ["HFA_UFADPWD"]
 base_dir = str(Path(__file__).parent.parent.absolute())
 data_dir = os.path.join(base_dir, 'data')
 sql_dir = os.path.join(base_dir, 'sql')
-notes_dir = os.path.join(data_dir, "Output", 'free_text')  # all notes related files are saved in 'notes' subdirectory of 'data' directory
-map_dir = os.path.join(data_dir, "Output", 'mapping')  # mappings are saved in 'mapping' subdirectory of 'data' folder.
-disclosure_dir = os.path.join(data_dir, "Output", 'disclosure')
+notes_dir = os.path.join(data_dir, "output", 'free_text')  # all notes related files are saved in 'notes' subdirectory of 'data' directory
+map_dir = os.path.join(data_dir, "output", 'mapping')  # mappings are saved in 'mapping' subdirectory of 'data' folder.
+disclosure_dir = os.path.join(data_dir, "output", 'disclosure')
 for dir in [data_dir, sql_dir, notes_dir, map_dir, disclosure_dir]:
     make_dir_path(dir)
 
@@ -83,13 +83,14 @@ def read_sql_file(file):
 
 
 def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_dir, cohort):
-    logging.info(f"""Working on `note_version`: {note_version}
-    `id_type`: {id_type}
-    `note_type`: {note_type}
-    `sql_dir`: {sql_dir}
-    `cohort_dir`: {cohort_dir}
-    `notes_dir`: {notes_dir}
-    `cohort`: {cohort}""")
+    logging.info(f"""Function arguments:
+    `note_version`: {note_version}
+    `id_type`:      {id_type}
+    `note_type`:    {note_type}
+    `sql_dir`:      {sql_dir}
+    `cohort_dir`:   {cohort_dir}
+    `notes_dir`:    {notes_dir}
+    `cohort`:       {cohort}""")
     m = 'w'  # mode of the output file
     h = True  # header of the output file
     counter = 1  # used only for tracking/time estimation purposes
@@ -124,7 +125,6 @@ def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_d
         result.to_csv(os.path.join(notes_dir, result_file), index=False, mode=m, header=h)
         m = 'a'
         h = False
-
         logging.info(f'Completed chunk {counter}')
         counter = counter + 1
     return
@@ -274,12 +274,21 @@ def create_provider_metadata(notes_dir, cohort):
     return
 
 
-def generate_map(deid_mode, in_dir, map_dir, concept, cohort):  # concept can be patient, encounter, note, note_link, order, or provider
+def generate_map(deid_mode, in_dir, map_dir, concept, cohort):
+    """
+    `concept` can be any of the following values:
+        - patient
+        - encounter
+        - note
+        - note_link
+        - order
+        - provider
+    """
     # define variables
     if (concept == 'patient'):
         concept_cd = 'PAT'
         concept_id = 'deid_pat_id'
-        file = os.path.join(in_dir, 'cohort.csv')
+        file = os.path.join(in_dir, COHORT_FILE)  # NOTE
         concept_column = 'PatientKey'
     elif (concept == 'encounter'):
         concept_cd = 'ENC'
@@ -508,7 +517,7 @@ if __name__ == '__main__':
                                   streamHandler],
                         level=LOG_LEVEL)
 
-    logging.info(f"""Finished running "{this_file_path.absolute().relative_to(os.getcwd())}".""")
+    logging.info(f"""Begin running "{this_file_path.absolute().relative_to(os.getcwd())}".""")
     logging.info(f"""`base_dir` set to "{base_dir}".""")
     # pull metadata
     pull_metadata(note_version, id_type, 'note', sql_dir, data_dir, notes_dir, cohort)
