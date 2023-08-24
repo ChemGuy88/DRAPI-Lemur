@@ -228,14 +228,14 @@ def makeMap(IDset: set,
     """
     # Assign header formats: de-Identififed ID Column Header
     if deIdentificationMapStyle == "classic":
-        deIdentifiedIDColumnHeader = f"deid_{columnSuffix}_id"
-    elif deIdentificationMapStyle == "lemur":
-        deIdentifiedIDColumnHeader = f"De-identified {IDName}"
-    # Assign header formats: de-Identififed ID Column Header
-    if deIdentificationMapStyle == "classic":
         deIdentificationSerialNumberHeader = "deid_num"
     elif deIdentificationMapStyle == "lemur":
         deIdentificationSerialNumberHeader = "De-identification Serial Number"
+    # Assign header formats: de-Identififed ID Column Header
+    if deIdentificationMapStyle == "classic":
+        deIdentifiedIDColumnHeader = f"deid_{columnSuffix}_id"
+    elif deIdentificationMapStyle == "lemur":
+        deIdentifiedIDColumnHeader = f"De-identified {IDName}"
 
     if len(IDset) == 0:
         return pd.DataFrame(columns=[IDName,
