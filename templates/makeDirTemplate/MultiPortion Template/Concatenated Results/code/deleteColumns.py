@@ -36,12 +36,13 @@ elif True:
 # Arguments: Definition of criteria for file release
 # NOTE (Developer's Note) The files to release and the file criteiria both act as criteria to release. The argument structure here is not very clear and it will take some time to create a generalizeable template. However, it seems that `LIST_OF_PORTION_CONDITIONS` is the only output of this arguments section, i.e., the only require input for the script. Also note that each portion has its own criteria, but they are not used in the template.
 BO_FILES_TO_RELEASE = ["..."]  # TODO
+COHORT_NAME = ""  # TODO
 NOTES_METADATA_FILES_TO_RELEASE = ["provider_metadata.csv",
-                                   "subjects_note_metadata.csv",
-                                   "subjects_order_impression_metadata.csv",
-                                   "subjects_order_metadata.csv",
-                                   "subjects_order_narrative_metadata.csv",
-                                   "subjects_order_result_comment_metadata.csv"]
+                                   f"{COHORT_NAME}_note_metadata.csv",
+                                   f"{COHORT_NAME}_order_impression_metadata.csv",
+                                   f"{COHORT_NAME}_order_metadata.csv",
+                                   f"{COHORT_NAME}_order_narrative_metadata.csv",
+                                   f"{COHORT_NAME}_order_result_comment_metadata.csv"]
 OMOP_FILES_TO_RELEASE = ["condition_occurrence.csv",
                          "death.csv",
                          "device_exposure.csv",
@@ -63,7 +64,7 @@ _ = NOTES_PORTION_FILE_CRITERIA
 _ = OMOP_PORTION_FILE_CRITERIA
 _ = ZIP_CODE_PORTION_FILE_CRITERIA
 
-CONCATENATED_PORTIONS_FILE_CRITERIA = [lambda pathObj: pathObj.absolute() in FILES_TO_RELEASE,
+CONCATENATED_PORTIONS_FILE_CRITERIA = [lambda pathObj: pathObj.name in FILES_TO_RELEASE,
                                        lambda pathObj: pathObj.suffix.lower() == ".csv",
                                        lambda pathObj: pathObj.is_file()]
 
@@ -189,6 +190,7 @@ if __name__ == "__main__":
         for file in directory.iterdir():
             logging.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
             conditions = [condition(file) for condition in fileConditions]
+            logging.info(f"""  Conditions: "{conditions}".""")
             if all(conditions):
                 # Set file options
                 exportPath = runOutputDir.joinpath(file.name)
