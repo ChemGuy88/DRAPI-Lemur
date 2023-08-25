@@ -57,6 +57,29 @@ DATA_TYPES_BO = {"Accct Number - Enter DateTime Comb": "String",
                  "Patnt Key": "Numeric",
                  "To Station": "String"}
 
+# Note that notes data are from the same source as BO data. These variable names are actually aliases and are here for convenience.
+DATA_TYPES_NOTES = {"AuthoringProviderKey": "Numeric",
+                    "AuthorizingProviderKey": "Numeric",
+                    "ContactDate": "Datetime",
+                    "CosignProviderKey": "Numeric",
+                    "CreatedDatetime": "Datetime",
+                    "EncounterCSN": "Numeric",
+                    "EncounterDate": "Datetime",
+                    "EncounterKey": "Numeric",
+                    "LinkageNoteID": "Numeric",
+                    "MRN_GNV": "Numeric",
+                    "MRN_JAX": "Numeric",
+                    "NoteID": "Numeric",
+                    "NoteKey": "Numeric",
+                    "OrderID": "Numeric",
+                    "OrderKey": "Numeric",
+                    "OrderPlacedDatetime": "Datetime",
+                    "OrderResultDatetime": "Datetime",
+                    "OrderingProviderKey": "Numeric",
+                    "PatientKey": "Numeric",
+                    "ProviderKey": "Numeric",
+                    "ServiceDatetime": "Datetime"}
+
 DATA_TYPES_OMOP = {"location_id": "Numeric",
                    "preceding_visit_occurrence_id": "Numeric",
                    "provider_id": "Numeric",
@@ -64,3 +87,7 @@ DATA_TYPES_OMOP = {"location_id": "Numeric",
 
 DATA_TYPES = DATA_TYPES_BO.copy()
 DATA_TYPES.update(DATA_TYPES_OMOP)
+
+DATA_TYPES_DICT = {"BO": DATA_TYPES_BO,
+                   "Notes": DATA_TYPES_NOTES,
+                   "OMOP": DATA_TYPES_OMOP}
