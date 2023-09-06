@@ -17,7 +17,7 @@ import sqlalchemy as sa
 import yaml
 # Super-local libraries
 import drapi.omop.deidentify as deidentify
-from drapi.drapi import make_dir_path, getTimestamp
+from drapi.drapi import makeDirPath, getTimestamp
 from drapi.omop.configProcessing import editConfig, interpretPath
 
 # Arguments
@@ -337,7 +337,7 @@ if __name__ == '__main__':
     loglevel = "DEBUG"
     this_file_path = Path(__file__)
     logpath = os.path.join(base_dir, "logs", f"log {timestamp}.log")
-    make_dir_path(Path(logpath).parent)
+    makeDirPath(Path(logpath).parent)
     fileHandler = logging.FileHandler(logpath)
     streamHandler = logging.StreamHandler()
     streamHandler.setLevel(loglevel)
@@ -356,7 +356,7 @@ if __name__ == '__main__':
 
     for dataType, path in search_config["data_output"].items():
         path = Path(interpretPath(path))
-        make_dir_path(path)
+        makeDirPath(path)
 
     # mapping_file_location = cohort_mapping_file(search_config,person_id_list)
     if (list_of_tables):

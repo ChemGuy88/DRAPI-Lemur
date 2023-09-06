@@ -11,7 +11,7 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, getPercentDifference, successiveParents, makeMap
+from drapi.drapi import getTimestamp, makeDirPath, getPercentDifference, successiveParents, makeMap
 from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES
 
 # Arguments
@@ -64,9 +64,9 @@ elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
     rootDirectory = IDRDataRequestDir
 
 # Directory creation: General
-make_dir_path(runIntermediateDataDir)
-make_dir_path(runOutputDir)
-make_dir_path(runLogsDir)
+makeDirPath(runIntermediateDataDir)
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
 
 if __name__ == "__main__":
     # Logging block

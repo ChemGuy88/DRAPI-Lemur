@@ -13,7 +13,7 @@ import re
 import shutil
 import sqlalchemy as sa
 from datetime import timedelta
-from drapi.drapi import make_dir_path, replace_sql_query
+from drapi.drapi import makeDirPath, replace_sql_query
 from pathlib import Path
 
 
@@ -25,7 +25,7 @@ notes_dir = os.path.join(data_dir, "Output", 'free_text')  # all notes related f
 map_dir = os.path.join(data_dir, "Output", 'mapping')  # mappings are saved in 'mapping' subdirectory of 'data' folder.
 disclosure_dir = os.path.join(data_dir, "Output", 'disclosure')
 for dir in [data_dir, sql_dir, notes_dir, map_dir, disclosure_dir]:
-    make_dir_path(dir)
+    makeDirPath(dir)
 
 # Variables: SQL connection settings
 host = 'DWSRSRCH01.shands.ufl.edu'

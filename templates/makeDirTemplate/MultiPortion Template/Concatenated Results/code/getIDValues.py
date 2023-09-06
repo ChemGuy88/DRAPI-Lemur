@@ -13,7 +13,7 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, successiveParents
+from drapi.drapi import getTimestamp, makeDirPath, successiveParents
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
@@ -108,8 +108,8 @@ else:
     sys.exit()
 
 # Directory creation: General
-make_dir_path(runOutputDir)
-make_dir_path(runLogsDir)
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
 
 if __name__ == "__main__":
     # Logging block

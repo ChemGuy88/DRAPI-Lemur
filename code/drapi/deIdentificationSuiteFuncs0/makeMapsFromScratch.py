@@ -11,7 +11,7 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import makeMap, getTimestamp, make_dir_path
+from drapi.drapi import makeMap, getTimestamp, makeDirPath
 
 
 def makeMapsFromScratch(SETS_PATH,
@@ -25,7 +25,7 @@ def makeMapsFromScratch(SETS_PATH,
     """
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
-    make_dir_path(runOutputDir)
+    makeDirPath(runOutputDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Function arguments:

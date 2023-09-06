@@ -9,7 +9,7 @@ Get the set of ID values for all variables to de-identify.
 import pandas as pd
 import pprint  # noqa
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, makeDirPath
 
 
 def getIDValues(SETS_PATH,
@@ -26,7 +26,7 @@ def getIDValues(SETS_PATH,
     """
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
-    make_dir_path(runOutputDir)
+    makeDirPath(runOutputDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Function arguments:

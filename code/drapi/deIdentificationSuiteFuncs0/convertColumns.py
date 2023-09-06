@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from drapi.idealist.idealist import idealistMap2dict
-from drapi.drapi import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, makeDirPath
 
 
 def convertColumns(COLUMNS_TO_CONVERT_DI,
@@ -26,7 +26,7 @@ def convertColumns(COLUMNS_TO_CONVERT_DI,
     """
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
-    make_dir_path(runOutputDir)
+    makeDirPath(runOutputDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Function arguments:

@@ -9,7 +9,7 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, make_dir_path
+from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
 # Arguments: Script-specific
 # Enter full path to the file with MRNs
@@ -58,7 +58,7 @@ if logsDir:
     runLogsDir = logsDir.joinpath(thisFileStem)
 
 # Directory creation: General
-make_dir_path(runLogsDir)
+makeDirPath(runLogsDir)
 
 
 def left_padding(str1):

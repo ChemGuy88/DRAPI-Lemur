@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 # Local libraries
-from drapi.drapi import replace_sql_query, getTimestamp, make_dir_path, makeChunks
+from drapi.drapi import replace_sql_query, getTimestamp, makeDirPath, makeChunks
 from drapi.idealist.getMap import patientMapDf
 
 # Arguments
@@ -45,8 +45,8 @@ uid = fr"{USERDOMAIN}\{USERNAME}"
 conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
 
 # Directory creation
-make_dir_path(runLogsDir)
-make_dir_path(runOutputDir)
+makeDirPath(runLogsDir)
+makeDirPath(runOutputDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")

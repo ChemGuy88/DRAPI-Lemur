@@ -13,7 +13,7 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, makeMap, successiveParents
+from drapi.drapi import getTimestamp, makeDirPath, makeMap, successiveParents
 from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, VARIABLE_SUFFIXES
 
 # Arguments
@@ -93,9 +93,9 @@ else:
     sys.exit()
 
 # Directory creation: General
-make_dir_path(runIntermediateDataDir)
-make_dir_path(runOutputDir)
-make_dir_path(runLogsDir)
+makeDirPath(runIntermediateDataDir)
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
 
 if __name__ == "__main__":
     # Logging block

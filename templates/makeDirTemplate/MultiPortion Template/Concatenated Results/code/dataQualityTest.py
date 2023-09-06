@@ -15,7 +15,7 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import ParserError
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, successiveParents
+from drapi.drapi import getTimestamp, makeDirPath, successiveParents
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA
 
 # Arguments
@@ -92,8 +92,8 @@ else:
     sys.exit()
 
 # Directory creation: General
-make_dir_path(runOutputDir)
-make_dir_path(runLogsDir)
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
 
 if __name__ == "__main__":
     # Logging block

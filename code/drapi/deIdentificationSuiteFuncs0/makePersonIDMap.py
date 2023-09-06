@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, personIDs2patientKeys
+from drapi.drapi import getTimestamp, makeDirPath, personIDs2patientKeys
 
 
 def makePersonIDMap(COLUMNS_TO_CONVERT,
@@ -27,8 +27,8 @@ def makePersonIDMap(COLUMNS_TO_CONVERT,
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
     runIntermediateDataDir = pipelineOutputDir.joinpath(functionName, getTimestamp(), "temp")
-    make_dir_path(runOutputDir)
-    make_dir_path(runIntermediateDataDir)
+    makeDirPath(runOutputDir)
+    makeDirPath(runIntermediateDataDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Function arguments:

@@ -10,7 +10,7 @@ from pathlib import Path
 # Third-party packages
 from sqlalchemy import create_engine
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, successiveParents
+from drapi.drapi import getTimestamp, makeDirPath, successiveParents
 from drapi.notes.freeText import main
 
 # Arguments
@@ -83,8 +83,8 @@ connection = create_engine(conStr).connect().execution_options(stream_results=Tr
 pass
 
 # Directory creation: General
-make_dir_path(runOutputDir)
-make_dir_path(runLogsDir)
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")

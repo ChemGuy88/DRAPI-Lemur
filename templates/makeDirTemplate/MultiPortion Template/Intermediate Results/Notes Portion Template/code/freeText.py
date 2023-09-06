@@ -8,7 +8,7 @@ import shutil
 import sqlalchemy as sa
 from datetime import datetime as dt
 from datetime import timedelta
-from drapi.drapi import make_dir_path, replace_sql_query
+from drapi.drapi import makeDirPath, replace_sql_query
 from pathlib import Path
 
 # Arguments: Script settings
@@ -36,7 +36,7 @@ notes_dir = os.path.join(data_dir, "output", 'free_text')  # all notes related f
 map_dir = os.path.join(data_dir, "output", 'mapping')  # mappings are saved in 'mapping' subdirectory of 'data' folder.
 disclosure_dir = os.path.join(data_dir, "output", 'disclosure')
 for dir in [data_dir, sql_dir, notes_dir, map_dir, disclosure_dir]:
-    make_dir_path(dir)
+    makeDirPath(dir)
 
 # Variables: SQL connection settings
 host = 'DWSRSRCH01.shands.ufl.edu'
@@ -508,7 +508,7 @@ if __name__ == '__main__':
     this_file_path = Path(__file__)
     timestamp = dt.now().strftime("%Y-%m-%d %H-%M-%S")
     logpath = os.path.join(base_dir, "logs", f"log {timestamp}.log")
-    make_dir_path(Path(logpath).parent)
+    makeDirPath(Path(logpath).parent)
     fileHandler = logging.FileHandler(logpath)
     streamHandler = logging.StreamHandler()
     streamHandler.setLevel(LOG_LEVEL)

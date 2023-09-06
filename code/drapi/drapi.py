@@ -74,7 +74,7 @@ class LoggerWriter:
         self.level(sys.stderr)
 
 
-def make_dir_path(directory_path: str) -> None:
+def makeDirPath(directory_path: str) -> None:
     """
     Check if all directories exists in a path. If not, create them
     """

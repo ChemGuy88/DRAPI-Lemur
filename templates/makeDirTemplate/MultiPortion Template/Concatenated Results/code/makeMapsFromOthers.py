@@ -14,7 +14,7 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from drapi.constants.constants import DATA_TYPES
-from drapi.drapi import getTimestamp, successiveParents, make_dir_path, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
+from drapi.drapi import getTimestamp, successiveParents, makeDirPath, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
 from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OLD_MAPS_DIR_PATH, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
@@ -109,9 +109,9 @@ else:
     sys.exit()
 
 # Directory creation: General
-make_dir_path(runIntermediateDataDir)
-make_dir_path(runOutputDir)
-make_dir_path(runLogsDir)
+makeDirPath(runIntermediateDataDir)
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
 
 if __name__ == "__main__":
     # Logging block
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     # Get the set difference between all old maps and the set of un-mapped values
     valuesToMap = {}
     setsToMapDataDir = runIntermediateDataDir.joinpath("valuesToMap")
-    make_dir_path(setsToMapDataDir)
+    makeDirPath(setsToMapDataDir)
     logging.info("""Getting the set difference between all old maps and the set of un-mapped values.""")
     for variableName in collectedVariables:
         logging.info(f"""  Working on variable "{variableName}".""")

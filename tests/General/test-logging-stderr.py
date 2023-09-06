@@ -6,14 +6,14 @@ import logging
 import os
 import sys
 from datetime import datetime as dt
-from drapi.drapi import make_dir_path, StreamToLogger
+from drapi.drapi import makeDirPath, StreamToLogger
 from pathlib import Path
 
 # Set and make log path
 timestamp = dt.now().strftime("%Y-%m-%d %H-%M-%S")
 base_dir = Path(__file__).absolute().parent
 logpath = os.path.join(base_dir, "logs", f"log {timestamp}.log")
-make_dir_path(Path(logpath).parent)
+makeDirPath(Path(logpath).parent)
 
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s:%(levelname)s:%(name)s:%(message)s',

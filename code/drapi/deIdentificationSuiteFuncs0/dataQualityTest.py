@@ -11,7 +11,7 @@ Iterates over the files that would be processed in the pipeline and runs quality
 import pandas as pd
 from pandas.errors import ParserError
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, makeDirPath
 
 
 def dataQualityTest(listOfPortionDirs,
@@ -25,7 +25,7 @@ def dataQualityTest(listOfPortionDirs,
     """
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
-    make_dir_path(runOutputDir)
+    makeDirPath(runOutputDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Function arguments:

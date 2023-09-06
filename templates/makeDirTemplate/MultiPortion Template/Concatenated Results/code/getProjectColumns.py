@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path, successiveParents
+from drapi.drapi import getTimestamp, makeDirPath, successiveParents
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
 
 # Arguments
@@ -83,9 +83,9 @@ else:
     sys.exit()
 
 # Directory creation: General
-make_dir_path(runIntermediateDataDir)
-make_dir_path(runOutputDir)
-make_dir_path(runLogsDir)
+makeDirPath(runIntermediateDataDir)
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
 
 if __name__ == "__main__":
     # Logging block

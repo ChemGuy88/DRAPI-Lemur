@@ -7,7 +7,7 @@ So far I've discovered that having just one file and stream handler at the top l
 import logging
 import os
 from datetime import datetime as dt
-from drapi.drapi import replace_sql_query, make_dir_path
+from drapi.drapi import replace_sql_query, makeDirPath
 from pathlib import Path
 
 loglevel = "DEBUG"
@@ -16,7 +16,7 @@ this_file_path = Path(__file__)
 base_dir = this_file_path.absolute().parent
 timestamp = dt.now().strftime("%Y-%m-%d %H-%M-%S")
 logpath = os.path.join(base_dir, "logs", this_file_path.stem, f"log {timestamp}.log")
-make_dir_path(Path(logpath).parent)
+makeDirPath(Path(logpath).parent)
 
 # Define handlers
 fileHandler = logging.FileHandler(logpath)

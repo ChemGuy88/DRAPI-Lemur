@@ -10,7 +10,7 @@ De-identify files
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, make_dir_path
+from drapi.drapi import getTimestamp, makeDirPath
 
 
 def deleteColumns(COLUMNS_TO_DELETE,
@@ -27,7 +27,7 @@ def deleteColumns(COLUMNS_TO_DELETE,
     """
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
-    make_dir_path(runOutputDir)
+    makeDirPath(runOutputDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Function arguments:

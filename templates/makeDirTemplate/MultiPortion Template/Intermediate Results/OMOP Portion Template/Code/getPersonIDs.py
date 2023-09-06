@@ -8,7 +8,7 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, make_dir_path
+from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
 # Arguments
 PATIENT_KEYS_CSV_FILE_PATH = Path("data/input/cohort.csv")  # TODO
@@ -80,8 +80,8 @@ conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
 pass
 
 # Directory creation: General
-make_dir_path(runOutputDir)
-make_dir_path(runLogsDir)
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
 
 # Directory creation: Project-specific
 pass

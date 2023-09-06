@@ -7,7 +7,7 @@ This version works at printing logs to the console and a file. However, I also w
 import os
 import logging
 from datetime import datetime as dt
-from drapi.drapi import make_dir_path
+from drapi.drapi import makeDirPath
 from pathlib import Path
 
 
@@ -17,7 +17,7 @@ def main(loglevel):
 
     timestamp = dt.now().strftime("%Y-%m-%d %H-%M-%S")
     logpath = os.path.join(base_dir, "logs", f"log {timestamp}.log")
-    make_dir_path(Path(logpath).parent)
+    makeDirPath(Path(logpath).parent)
 
     # Define handlers
     fileHandler = logging.FileHandler(logpath)
