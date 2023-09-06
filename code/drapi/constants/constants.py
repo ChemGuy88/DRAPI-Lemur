@@ -85,9 +85,11 @@ DATA_TYPES_OMOP = {"location_id": "Numeric",
                    "provider_id": "Numeric",
                    "visit_occurrence_id": "Numeric"}
 
-DATA_TYPES = DATA_TYPES_BO.copy()
-DATA_TYPES.update(DATA_TYPES_OMOP)
+DATA_TYPES_DICT = DATA_TYPES_BO.copy()
+DATA_TYPES_DICT.update(DATA_TYPES_NOTES)
+DATA_TYPES_DICT.update(DATA_TYPES_OMOP)
 
-DATA_TYPES_DICT = {"BO": DATA_TYPES_BO,
-                   "Notes": DATA_TYPES_NOTES,
-                   "OMOP": DATA_TYPES_OMOP}
+DATA_TYPES_BY_PORTION = {"BO": DATA_TYPES_BO,
+                         "Notes": DATA_TYPES_NOTES,
+                         "OMOP": DATA_TYPES_OMOP}
+

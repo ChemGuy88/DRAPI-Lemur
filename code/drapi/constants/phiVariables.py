@@ -23,7 +23,7 @@ LIST_OF_PHI_VARIABLES_NOTES = ["AuthoringProviderKey",
                                "Patient Key",
                                "ProviderKey"]
 
-LIST_OF_PHI_VARIABLES_BO = ['Accct Number - Enter DateTime Comb',
+LIST_OF_PHI_VARIABLES_BO = ['Acct Number - Enter DateTime Comb',
                             'Acct Number - Exit DateTime Comb',
                             'At Station',
                             "Authoring Provider Key",
