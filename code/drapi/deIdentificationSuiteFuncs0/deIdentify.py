@@ -70,9 +70,9 @@ def deIdentify(MAPS_DIR_PATH,
                 # Read file
                 logger.info("""    File has met all conditions for processing.""")
                 logger.info("""  ..  Reading file to count the number of chunks.""")
-                numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE, nrows=CHUNK_SIZE * 2)])  # TODO Remove
+                numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
                 logger.info(f"""  ..  This file has {numChunks} chunks.""")
-                dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE, nrows=CHUNK_SIZE * 2)  # TODO Remove
+                dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
                 for it, dfChunk in enumerate(dfChunks, start=1):
                     dfChunk = pd.DataFrame(dfChunk)
                     # Work on chunk
