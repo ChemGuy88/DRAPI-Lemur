@@ -10,7 +10,7 @@ De-identify files
 import pandas as pd
 # Local packages
 from drapi.constants.constants import DATA_TYPES
-from drapi.drapi import getTimestamp, make_dir_path, fileName2variableName, map2di, makeMap
+from drapi.drapi import getTimestamp, makeDirPath, fileName2variableName, map2di, makeMap
 
 
 def deIdentify(MAPS_DIR_PATH,
@@ -24,13 +24,12 @@ def deIdentify(MAPS_DIR_PATH,
                pipelineOutputDir,
                logger,
                ROOT_DIRECTORY,
-               rootDirectory,
-               runOutputDir):
+               rootDirectory):
     """
     """
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
-    make_dir_path(runOutputDir)
+    makeDirPath(runOutputDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Function arguments:
@@ -71,9 +70,9 @@ def deIdentify(MAPS_DIR_PATH,
                 # Read file
                 logger.info("""    File has met all conditions for processing.""")
                 logger.info("""  ..  Reading file to count the number of chunks.""")
-                numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
+                numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE, nrows=CHUNK_SIZE * 2)])  # TODO Remove
                 logger.info(f"""  ..  This file has {numChunks} chunks.""")
-                dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
+                dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE, nrows=CHUNK_SIZE * 2)  # TODO Remove
                 for it, dfChunk in enumerate(dfChunks, start=1):
                     dfChunk = pd.DataFrame(dfChunk)
                     # Work on chunk

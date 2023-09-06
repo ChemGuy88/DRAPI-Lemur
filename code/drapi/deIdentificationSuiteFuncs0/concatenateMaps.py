@@ -10,7 +10,7 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getPercentDifference, getTimestamp, make_dir_path
+from drapi.drapi import getPercentDifference, getTimestamp, makeDirPath
 
 
 def concatenateMaps(NEW_MAPS_DIR_PATH,
@@ -23,7 +23,7 @@ def concatenateMaps(NEW_MAPS_DIR_PATH,
     """
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
-    make_dir_path(runOutputDir)
+    makeDirPath(runOutputDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Function arguments:
@@ -37,15 +37,18 @@ def concatenateMaps(NEW_MAPS_DIR_PATH,
     pattern = r"^([a-zA-Z_0-9\(\) ]+) map"
     newMapsFileDict = {}
     for fpath in NEW_MAPS_DIR_PATH.iterdir():
-        fname = fpath.stem
-        obj = re.match(pattern, fname)
-        if obj:
-            variableName = obj.groups()[0]
+        if fpath.is_file():
+            fname = fpath.stem
+            obj = re.match(pattern, fname)
+            if obj:
+                variableName = obj.groups()[0]
+            else:
+                raise
+            newMapsFileDict[variableName] = [fpath]
         else:
-            raise
-        newMapsFileDict[variableName] = [fpath]
+            pass
 
-    # Match old and new maps by variable name
+    # Match old and new maps by variable name, accounting for aliases.
     logger.info("""Matching old and new maps by variable name.""")
     variableNameSet = set()
     variableNameSet.update(OLD_MAPS_DIR_PATH.keys())
@@ -95,3 +98,5 @@ def concatenateMaps(NEW_MAPS_DIR_PATH,
 
     # End script
     logger.info(f"""Finished running "{functionName}".""")
+
+    return runOutputDir

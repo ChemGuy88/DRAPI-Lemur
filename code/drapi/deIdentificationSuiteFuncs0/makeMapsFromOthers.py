@@ -10,7 +10,7 @@ import json
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import make_dir_path, getTimestamp, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
+from drapi.drapi import makeDirPath, getTimestamp, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
 
 
 def makeMapsFromOthers(SETS_PATH,
@@ -27,7 +27,7 @@ def makeMapsFromOthers(SETS_PATH,
     functionName = __name__.split(".")[-1]
     runOutputDir = pipelineOutputDir.joinpath(functionName, getTimestamp())
     runIntermediateDataDir = pipelineOutputDir.joinpath(functionName, getTimestamp(), "temp")
-    make_dir_path(runOutputDir)
+    makeDirPath(runOutputDir)
     logger.info(f"""Begin running "{functionName}".""")
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Function arguments:
@@ -68,7 +68,7 @@ def makeMapsFromOthers(SETS_PATH,
     # Get the set difference between all old maps and the set of un-mapped values
     valuesToMap = {}
     setsToMapDataDir = runIntermediateDataDir.joinpath("valuesToMap")
-    make_dir_path(setsToMapDataDir)
+    makeDirPath(setsToMapDataDir)
     logger.info("""Getting the set difference between all old maps and the set of un-mapped values.""")
     for variableName in collectedVariables:
         logger.info(f"""  Working on variable "{variableName}".""")
@@ -184,3 +184,5 @@ def makeMapsFromOthers(SETS_PATH,
 
     # End script
     logger.info(f"""Finished running "{functionName}".""")
+
+    return runOutputDir
