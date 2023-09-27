@@ -1,5 +1,5 @@
 """
-This is a template Python script.
+Script template to pull BO data using a query filter.
 """
 
 import logging
@@ -7,11 +7,18 @@ import os
 from pathlib import Path
 # Third-party packages
 import pandas as pd
+from sqlalchemy import create_engine
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+# Super-local imports
+from functions import checkFileConditions, getData, getData2
 
 # Arguments
-_ = None
+LIST_OF_SQL_FILES = []  # TODO
+COHORT_FILE_PATH = ""  # TODO
+USE_QUERY_FILTER = False  # TODO
+
+QUERY_CHUNK_SIZE = 10000
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
@@ -74,9 +81,13 @@ if UID:
 else:
     uid = fr"{USERDOMAIN}\{USERNAME}"
 conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
+connection = create_engine(conStr).connect().execution_options(stream_results=True)
 
 # Variables: Other
-pass
+if not USE_QUERY_FILTER:
+    getDataFunction = getData
+else:
+    getDataFunction = getData2
 
 # Directory creation: General
 makeDirPath(runOutputDir)
@@ -106,9 +117,10 @@ if __name__ == "__main__":
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Script arguments:
 
-
     # Arguments
-    ``: "{"..."}"
+    `LIST_OF_SQL_FILES`: "{LIST_OF_SQL_FILES}"
+    `USE_QUERY_FILTER`: "{USE_QUERY_FILTER}"
+    `COHORT_FILE_PATH`: "{COHORT_FILE_PATH}"
 
     # Arguments: General
     `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}"
@@ -126,8 +138,26 @@ if __name__ == "__main__":
     `PWD` = censored
     """)
 
-    # Script
-    _ = pd
+    # Read cohort file
+    logger.info("""Reading cohort file.""")
+    cohortData = pd.read_csv(COHORT_FILE_PATH)
+    logger.info("""Reading cohort file - done.""")
+
+    # Iterate over SQL directory contents
+    logger.info("""Iterating over SQL directory contents.""")
+    sqlFiles = sorted(LIST_OF_SQL_FILES)
+    for sqlFilePath in sqlFiles:
+        checkFileConditions(sqlFilePath=sqlFilePath,
+                            cohortData=cohortData,
+                            stepNumberCondition="NA",
+                            logger=logger,
+                            conStr=conStr,
+                            runOutputDir=runOutputDir,
+                            getDataFunction=getDataFunction,
+                            queryChunkSize=QUERY_CHUNK_SIZE)
+
+    # Output location summary
+    logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")
+    logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
