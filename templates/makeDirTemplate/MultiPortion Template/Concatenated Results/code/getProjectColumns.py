@@ -12,14 +12,19 @@ import numpy as np
 import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
 LOG_LEVEL = "DEBUG"
-PORTIONS_OUTPUT_DIR_PATH_MAC = {"All": Path("data/output/deleteColumns/..."),  # TODO
-                                "BO": BO_PORTION_DIR_MAC}
-PORTIONS_OUTPUT_DIR_PATH_WIN = {"All": Path("data/output/deleteColumns/..."),  # TODO
-                                "BO": BO_PORTION_DIR_WIN}
+PORTIONS_OUTPUT_DIR_PATH_MAC = {"BO": BO_PORTION_DIR_MAC,  # TODO
+                                "Notes": NOTES_PORTION_DIR_MAC,
+                                "OMOP": OMOP_PORTION_DIR_MAC}
+PORTIONS_OUTPUT_DIR_PATH_WIN = {"BO": BO_PORTION_DIR_WIN,  # TODO
+                                "Notes": NOTES_PORTION_DIR_WIN,
+                                "OMOP": OMOP_PORTION_DIR_WIN}
+PORTION_FILE_CRITERIA_DICT = {"BO": BO_PORTION_FILE_CRITERIA,
+                              "Notes": NOTES_PORTION_FILE_CRITERIA,
+                              "OMOP": OMOP_PORTION_FILE_CRITERIA}
 
 # Arguments: Meta-variables
 CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
@@ -104,6 +109,7 @@ if __name__ == "__main__":
 
     # Get columns
     columns = {}
+    columnsByPortion = {portionName: {} for portionName in portionsOutputDirPath.keys()}
     for portionName, portionPath in portionsOutputDirPath.items():
         content_paths = [Path(dirObj) for dirObj in os.scandir(portionPath)]
         content_names = "\n  ".join(sorted([path.name for path in content_paths]))
@@ -112,36 +118,56 @@ if __name__ == "__main__":
         for fpath in sorted(content_paths):
             logging.info(f"""  {fpath.name}""")
         for file in content_paths:
-            conditions = [lambda x: x.is_file(), lambda x: x.suffix == ".csv", lambda x: x.name != ".DS_Store"]
+            conditions = PORTION_FILE_CRITERIA_DICT[portionName]
             conditionResults = [func(file) for func in conditions]
             if all(conditionResults):
                 logging.debug(f"""  Reading "{file.absolute().relative_to(rootDirectory)}".""")
                 df = pd.read_csv(file, dtype=str, nrows=10)
                 columns[file.name] = df.columns
+                columnsByPortion[portionName][file.name] = df.columns
 
     # Get all columns by file
     logging.info("""Printing columns by file.""")
     allColumns = set()
     it = 0
     columnsOrdered = OrderedDict(sorted(columns.items()))
-    for key, value in columnsOrdered.items():
+    for key, value1 in columnsOrdered.items():
         if it > -1:
             logging.info(key)
             logging.info("")
-            for el in sorted(value):
+            for el in sorted(value1):
                 logging.info(f"  {el}")
                 allColumns.add(el)
             logging.info("")
         it += 1
 
     # Get all columns by portion
-    # TODO
-    pass
+    logging.info("""Printing columns by portion and file.""")
+    allColumnsByPortion = OrderedDict({portionName: set() for portionName in sorted(columnsByPortion.keys())})
+    columnsByPortionOrdered = OrderedDict(sorted(columnsByPortion.items()))
+    for portionName, di in columnsByPortionOrdered.items():
+        logging.info(f"{portionName}")
+        for fileName, value2 in di.items():
+            logging.info(f"  {fileName}")
+            for el in sorted(value2):
+                logging.info(f"    {el}")
+                allColumnsByPortion[portionName].add(el)
+            logging.info("")
 
     # Print the set of all columns
     logging.info("""Printing the set of all columns.""")
     for el in sorted(list(allColumns)):
         logging.info(f"  {el}")
+    logging.info("")
+
+    # Print the set of all columns by portion
+    logging.info("""Print set of columns by portion.""")
+    # TODO
+    for portionName, columnsSet in allColumnsByPortion.items():
+        logging.info(f"""{portionName}""")
+        for columnName in sorted(list(columnsSet)):
+            logging.info(f"  {columnName}")
+        logging.info("")
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

@@ -13,9 +13,9 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.constants.constants import DATA_TYPES
+from drapi.constants.constants import DATA_TYPES_DICT
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
-from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OLD_MAPS_DIR_PATH, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
+from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OLD_MAPS_DIR_PATH, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
 SETS_PATH = Path("data/output/getIDValues/...")
@@ -133,22 +133,55 @@ if __name__ == "__main__":
     getIDValuesOutput = SETS_PATH
     logging.info(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(rootDirectory)}".""")
 
+    # Create reverse-look-up alias map
+    variableAliasesReverse = {}
+    for variableAlias, variableMainName in VARIABLE_ALIASES.items():
+        if variableMainName in variableAliasesReverse.keys():
+            variableAliasesReverse[variableMainName].append(variableAlias)
+        else:
+            variableAliasesReverse[variableMainName] = [variableAlias]
+
     # Concatenate all old maps
     oldMaps = {}
     logging.info("""Concatenating all similar pre-existing maps.""")
     collectedVariables = [fname.stem for fname in getIDValuesOutput.iterdir()]
     for variableName in collectedVariables:
         logging.info(f"""  Working on variable "{variableName}".""")
-        if variableName in OLD_MAPS_DIR_PATH.keys():
+        # Get maps explicitely or implicietly referring to this variable name.
+        condition1 = variableName in OLD_MAPS_DIR_PATH.keys()
+        if condition1:
+            variableLookupName = variableName
             logging.info("""    Variable has pre-existing map(s).""")
-            listOfMapPaths = OLD_MAPS_DIR_PATH[variableName]
+            listOfMapPaths = OLD_MAPS_DIR_PATH[variableLookupName]
             dfConcat = pd.DataFrame()
             for mapPath in listOfMapPaths:
-                logging.info(f"""  ..  Reading pre-existing map from "{mapPath}".""")
+                logging.info(f"""  ..  Reading pre-existing map from "{mapPath.absolute().relative_to(rootDirectory)}".""")
                 df = pd.DataFrame(pd.read_csv(mapPath))
                 dfConcat = pd.concat([dfConcat, df])
             oldMaps[variableName] = dfConcat
-        elif variableName not in OLD_MAPS_DIR_PATH.keys():
+        if variableName in variableAliasesReverse.keys():
+            for variableAlias in variableAliasesReverse[variableName]:
+                condition2 = variableAlias in OLD_MAPS_DIR_PATH.keys()
+                if condition2:
+                    variableLookupName = variableAlias
+                    logging.info("""    Variable has pre-existing aliased map(s).""")
+                    listOfMapPaths = OLD_MAPS_DIR_PATH[variableLookupName]
+                    dfConcat = pd.DataFrame()
+                    for mapPath in listOfMapPaths:
+                        logging.info(f"""  ..  Reading pre-existing map from "{mapPath}".""")
+                        df = pd.DataFrame(pd.read_csv(mapPath))
+                        dftemp = makeMap(IDset=set(), IDName=variableName, startFrom=0, irbNumber=IRB_NUMBER, suffix="", columnSuffix=variableName, deIdentificationMapStyle="lemur")
+                        df.columns = dftemp.columns
+                        dfConcat = pd.concat([dfConcat, df])
+                    if condition1:
+                        df = oldMaps[variableName]
+                        dfConcat = pd.concat([dfConcat, df])
+                        oldMaps[variableName] = dfConcat
+                    else:
+                        oldMaps[variableName] = dfConcat
+        else:
+            condition2 = False
+        if not (condition1 or condition2):
             logging.info("""    Variable has no pre-existing map.""")
             oldMaps[variableName] = pd.DataFrame()
 
@@ -159,14 +192,32 @@ if __name__ == "__main__":
     logging.info("""Getting the set difference between all old maps and the set of un-mapped values.""")
     for variableName in collectedVariables:
         logging.info(f"""  Working on variable "{variableName}".""")
-        variableDataType = DATA_TYPES[variableName]
+        variableDataType = DATA_TYPES_DICT[variableName]
 
         # Get old set of IDs
         logging.info("""    Getting the old set of IDs.""")
         oldMap = oldMaps[variableName]
+        oldMap = pd.DataFrame(oldMap)
         if len(oldMap) > 0:
-            oldIDSet = set(oldMap[variableName].values)
-            oldIDSet = set([ditchFloat(el) for el in oldIDSet])  # NOTE: Hack. Convert values to type int or string
+            if variableDataType.lower() == "numeric":
+                oldIDSet = oldMap[variableName]
+                oldIDSet = pd.Series(oldIDSet)
+                oldIDSet = oldIDSet.unique()
+                oldIDSet = set([ditchFloat(el) for el in oldIDSet])  # NOTE: Hack. Convert values to type int or string
+            elif variableDataType.lower() == "string":
+                oldIDSet = oldMap[variableName]
+                oldIDSet = pd.Series(oldIDSet)
+                oldIDSet = oldIDSet.astype(str)
+                oldIDSet = oldIDSet.unique()
+            elif variableDataType.lower() == "numeric_or_string":
+                oldIDSet = oldMap[variableName]
+                oldIDSet = pd.Series(oldIDSet)
+                oldIDSet = oldIDSet.astype(str)
+                oldIDSet = oldIDSet.unique()
+            else:
+                msg = "The table column is expected to have a data type associated with it."
+                logging.error(msg)
+                raise Exception(msg)
         elif len(oldMap) == 0:
             oldIDSet = set()
         logging.info(f"""    The size of this set is {len(oldIDSet):,}.""")
@@ -183,15 +234,18 @@ if __name__ == "__main__":
         if variableDataType.lower() == "numeric":
             newIDSet = set([ditchFloat(el) for el in newIDSet])  # NOTE: Hack. Convert values to type int or string
         elif variableDataType.lower() == "string":
-            pass
+            newIDSet = set([str(el) for el in newIDSet])
+        elif variableDataType.lower() == "numeric_or_string":
+            newIDSet = set([str(el) for el in newIDSet])
         else:
             msg = "The table column is expected to have a data type associated with it."
             logging.error(msg)
-            raise ValueError(msg)
-        logging.info(f"""    The size of this set is {len(newIDSet):,}.""")
+            raise Exception(msg)
+        logging.info(f"""    The size of this set is     {len(newIDSet):,}.""")
 
         # Set difference
         IDSetDiff = newIDSet.difference(oldIDSet)
+        logging.info(f"""    The set difference size is  {len(IDSetDiff):,}.""")
         valuesToMap[variableName] = IDSetDiff
 
         # Save new subset to `setsToMapDataDir`
@@ -200,6 +254,8 @@ if __name__ == "__main__":
             if variableDataType.lower() == "numeric":
                 li = [ditchFloat(IDNumber) for IDNumber in IDSetDiff]  # NOTE: Hack. Convert values to type int or string
             elif variableDataType.lower() == "string":
+                li = list(IDSetDiff)
+            elif variableDataType.lower() == "numeric_or_string":
                 li = list(IDSetDiff)
             else:
                 msg = "The table column is expected to have a data type associated with it."
@@ -213,6 +269,8 @@ if __name__ == "__main__":
                 series = pd.Series(sorted(list(IDSetDiff)))
             elif variableDataType.lower() == "string":
                 series = pd.Series(sorted([str(el) for el in IDSetDiff]))
+            elif variableDataType.lower() == "numeric_or_string":
+                series = pd.Series(sorted([str(el) for el in IDSetDiff]))
             else:
                 msg = "The table column is expected to have a data type associated with it."
                 logging.error(msg)
@@ -224,7 +282,7 @@ if __name__ == "__main__":
     for variableName in collectedVariables:
         oldMap = oldMaps[variableName]
         if len(oldMap) > 0:
-            oldNumbersSet = set(oldMap["deid_num"].values)
+            oldNumbersSet = set(oldMap.iloc[:, 1].values)
         elif len(oldMap) == 0:
             oldNumbersSet = set()
         # Get quantity of numbers needed for map
@@ -242,7 +300,7 @@ if __name__ == "__main__":
     logging.info("""Mapping un-mapped values.""")
     for file in setsToMapDataDir.iterdir():
         variableName = file.stem
-        variableDataType = DATA_TYPES[variableName]
+        variableDataType = DATA_TYPES_DICT[variableName]
         logging.info(f"""  Working on un-mapped values for variable "{variableName}" located at "{file.absolute().relative_to(rootDirectory)}".""")
         # Map contents
         values = valuesToMap[variableName]
@@ -250,13 +308,15 @@ if __name__ == "__main__":
             values = set(int(float(value)) for value in values)  # NOTE: Hack. Convert values to type int or string
         elif variableDataType.lower() == "string":
             pass
+        elif variableDataType.lower() == "numeric_or_string":
+            pass
         else:
             msg = "The table column is expected to have a data type associated with it."
             logging.error(msg)
             raise Exception(msg)
         numbers = sorted(list(newNumbersDict[variableName]))
         deIdIDSuffix = VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]
-        map_ = makeMap(IDset=values, IDName=variableName, startFrom=numbers, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName, deIdentifiedIDColumnHeaderFormatStyle="lemur")
+        map_ = makeMap(IDset=values, IDName=variableName, startFrom=numbers, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName, deIdentificationMapStyle="lemur")
         # Save map
         mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
         map_.to_csv(mapPath, index=False)

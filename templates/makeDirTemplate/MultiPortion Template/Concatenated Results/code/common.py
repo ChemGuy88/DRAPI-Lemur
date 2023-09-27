@@ -29,10 +29,23 @@ NOTES_ROOT_DIRECTORY = dataRequestRootDirectory.joinpath("Intermediate Results",
 COLUMNS_TO_DE_IDENTIFY = LIST_OF_PHI_VARIABLES_BO + LIST_OF_PHI_VARIABLES_NOTES + LIST_OF_PHI_VARIABLES_OMOP
 
 # `VARIABLE_ALIASES` NOTE: Some variable names are not standardized. This argument is used by the de-identification process when looking for the de-identification map. This way several variables can be de-identified with the same map.
-VARIABLE_ALIASES = {"csn": "EncounterCSN",  # TODO This is just an example. Add or remove from this dictionary as necessary.
-                    "PatientKey": "Patient Key",
-                    "patient_key": "Patient Key",
-                    "Patnt Key": "Patient Key"}
+# TODO Add or remove from this dictionary as necessary.
+# VAR_ALIASES_BO_ENCOUNTERS = {"Encounter # (CSN)": "Encounter #",         # True only for EPIC accounts, post-Siemens
+#                              "Encounter # (Primary CSN)": "Encounter #"}  # True only for EPIC accounts, post-Siemens
+VAR_ALIASES_NOTES_ENCOUNTERS = {"EncounterCSN": "Encounter #",
+                                "EncounterKey": "Patient Encounter Key"}
+VAR_ALIASES_NOTES_PATIENTS = {"MRN_GNV": "MRN (UF)",
+                              "PatientKey": "Patient Key"}
+VAR_ALIASES_NOTES_PROVIDERS = {"AuthoringProviderKey": "ProviderKey",
+                               "AuthorizingProviderKey": "ProviderKey",
+                               "CosignProviderKey": "ProviderKey",
+                               "OrderingProviderKey": "ProviderKey"}
+LIST_OF_ALIAS_DICTS = [VAR_ALIASES_NOTES_ENCOUNTERS,
+                       VAR_ALIASES_NOTES_PATIENTS,
+                       VAR_ALIASES_NOTES_PROVIDERS]
+VARIABLE_ALIASES = {}
+for di in LIST_OF_ALIAS_DICTS:
+    VARIABLE_ALIASES.update(di)
 
 VARIABLE_SUFFIXES_LIST = [VARIABLE_SUFFIXES_BO, VARIABLE_SUFFIXES_NOTES, VARIABLE_SUFFIXES_OMOP]
 VARIABLE_SUFFIXES = dict()
@@ -41,7 +54,7 @@ for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
 
 # Portion directories
 BO_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/BO Portion/data/output/getData/...")  # TODO
-BO_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath("Intermediate Results/BO Portion/data/output/getData/...")  # TODO
+BO_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\BO Portion\data\output\getData\...")  # TODO
 
 NOTES_PORTION_DIR_MAC = NOTES_ROOT_DIRECTORY.joinpath("free_text")
 NOTES_PORTION_DIR_WIN = NOTES_ROOT_DIRECTORY.joinpath(r"free_text")
@@ -50,10 +63,10 @@ OMOP_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/O
 OMOP_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\OMOP Portion\data\output\...")  # TODO
 
 MODIFIED_OMOP_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
-MODIFIED_OMOP_PORTION_DIR_WIN = Path("data/output/convertColumns/...")  # TODO
+MODIFIED_OMOP_PORTION_DIR_WIN = Path(r"data\output\convertColumns\...")  # TODO
 
 ZIP_CODE_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
-ZIP_CODE_PORTION_DIR_WIN = Path("data/output/convertColumns/...")  # TODO
+ZIP_CODE_PORTION_DIR_WIN = Path(r"data\output\convertColumns\...")  # TODO
 
 # File criteria
 NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]

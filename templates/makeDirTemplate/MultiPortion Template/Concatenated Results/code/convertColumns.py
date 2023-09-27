@@ -13,7 +13,7 @@ import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
 from drapi.idealist.idealist import idealistMap2dict
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
 COLUMNS_TO_CONVERT_DI = {"person_id": "PatientKey"}
@@ -21,9 +21,8 @@ COLUMNS_TO_CONVERT_DI = {"person_id": "PatientKey"}
 MAC_PATHS = [OMOP_PORTION_DIR_MAC]
 WIN_PATHS = [OMOP_PORTION_DIR_WIN]
 
-NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-LIST_OF_PORTION_CONDITIONS = [OMOP_PORTION_FILE_CRITERIA]
+
+LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA]
 
 PERSON_ID_MAP_PATH = Path("data/output/makePersonIDMap/.../person_id map.csv")  # TODO
 

@@ -252,7 +252,9 @@ def makeMap(IDset: set,
     numbers.extend([None])
     IDli = sortIntegersAndStrings(list(IDset))
     mapDi = {IDNum: {} for IDNum in IDli}
-    for IDNum in IDli:
+    lenIDli = len(IDli)
+    itChunk = lenIDli/10
+    for it, IDNum in enumerate(IDli, start=1):
         fromGroup = False
         for group, groupAttributes in groups.items():
             criteriaList = groupAttributes["criteria"]
@@ -269,6 +271,8 @@ def makeMap(IDset: set,
         mapDi[IDNum] = {IDName: IDNum,
                         deIdentificationSerialNumberHeader: deid_num,
                         deIdentifiedIDColumnHeader: deid_id}
+        if it % itChunk == 0:
+            print(f"  ..  Working on item {it:,} of {len(IDli):,} ({it/lenIDli:.2%} done).")
     newMap = pd.DataFrame.from_dict(mapDi, orient="index")
     newMap.index = range(1, len(newMap) + 1)
     return newMap

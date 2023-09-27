@@ -7,12 +7,14 @@ Makes de-identification maps, building on existing maps.
 
 import logging
 import re
+from collections import OrderedDict
 from pathlib import Path
 # Third-party packages
 import pandas as pd
+import pprint
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, getPercentDifference, successiveParents, makeMap
-from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OLD_MAPS_DIR_PATH, VARIABLE_SUFFIXES
+from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OLD_MAPS_DIR_PATH, VARIABLE_ALIASES, VARIABLE_SUFFIXES
 
 # Arguments
 NEW_MAPS_DIR_PATH = Path("data/output/makeMapsFromOthers/...")  # TODO
@@ -85,7 +87,7 @@ if __name__ == "__main__":
 
     # Map new maps to variable names
     logging.info("""Mapping new maps to variable names.""")
-    pattern = r"^([a-zA-Z_0-9\(\) ]+) map"
+    pattern = r"^([a-zA-Z_0-9\(\)# ]+) map"
     newMapsFileDict = {}
     for fpath in NEW_MAPS_DIR_PATH.iterdir():
         fname = fpath.stem
@@ -93,19 +95,35 @@ if __name__ == "__main__":
         if obj:
             variableName = obj.groups()[0]
         else:
-            raise
+            msg = "File name is of an unexpected format."
+            logging.info(msg)
+            raise Exception(msg)
         newMapsFileDict[variableName] = [fpath]
+    logging.info("The list of variables extracted from the new maps:")
+    for el in sorted(newMapsFileDict.keys()):
+        logging.info(f"  {el}")
 
     # Match old and new maps by variable name
     logging.info("""Matching old and new maps by variable name.""")
-    variableNameSet = set()
-    variableNameSet.update(OLD_MAPS_DIR_PATH.keys())
-    variableNameSet.update(newMapsFileDict.keys())
-    matchedMaps = {variableName: [] for variableName in sorted(list(variableNameSet))}
-    for variableName, li in OLD_MAPS_DIR_PATH.items():
-        matchedMaps[variableName].extend(li)
-    for variableName, li in newMapsFileDict.items():
-        matchedMaps[variableName].extend(li)
+    matchedMaps0 = {}
+    MAPS_COLLECTION_DICT = {"Old Maps": OLD_MAPS_DIR_PATH,
+                            "New Maps": newMapsFileDict}
+    for mapCollectionName, mapCollection in MAPS_COLLECTION_DICT.items():
+        logging.info(f"""  Working on map collection "{mapCollectionName}".""")
+        for variableName, li in mapCollection.items():
+            if variableName in VARIABLE_ALIASES.keys():
+                variableLookUpName = VARIABLE_ALIASES[variableName]
+            else:
+                variableLookUpName = variableName
+            if variableLookUpName in matchedMaps0.keys():
+                matchedMaps0[variableLookUpName].extend(li)
+            else:
+                matchedMaps0[variableLookUpName] = li
+    matchedMaps = OrderedDict()
+    for key in sorted(matchedMaps0.keys()):
+        matchedMaps[key] = matchedMaps0[key]
+    text = pprint.pformat(matchedMaps, indent=4)
+    logging.info(f"""  The old and new maps have been matched to the variable names. Aliases have been used:\n{text}""")
 
     # Load, concatenate, and save maps by variable names
     logging.info("""Loading, concatenating, and saving maps by variable names.""")
@@ -139,7 +157,7 @@ if __name__ == "__main__":
                                  "Total IDs": numIDs,
                                  "Percent Similarity": percentDifference}
     resultsdf = pd.DataFrame.from_dict(results, orient="index")
-    logging.debug(f"Concatenation summary:\n{resultsdf.to_string()}")
+    logging.info(f"Concatenation summary:\n{resultsdf.to_string()}")
 
     # Clean up
     # TODO If input directory is empty, delete

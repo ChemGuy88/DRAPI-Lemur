@@ -12,7 +12,7 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.constants.constants import DATA_TYPES
+from drapi.constants.constants import DATA_TYPES_DICT
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath, fileName2variableName, map2di, makeMap
 from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
@@ -136,15 +136,15 @@ if __name__ == "__main__":
     mapsColumnNames = {}
     variablesCollected = [fileName2variableName(fname) for fname in MAPS_DIR_PATH.iterdir()]
     for varName in variablesCollected:
-        if varName in VARIABLE_ALIASES.keys():
-            map_ = makeMap(IDset=set(), IDName=varName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[varName]["deIdIDSuffix"], columnSuffix=varName, deIdentifiedIDColumnHeaderFormatStyle="lemur")
-            mapsColumnNames[varName] = map_.columns[-1]
-        else:
-            varPath = MAPS_DIR_PATH.joinpath(f"{varName} map.csv")
-            map_ = pd.read_csv(varPath)
-            mapDi = map2di(map_)
-            mapsDi[varName] = mapDi
-            mapsColumnNames[varName] = map_.columns[-1]
+        varPath = MAPS_DIR_PATH.joinpath(f"{varName} map.csv")
+        map_ = pd.read_csv(varPath)
+        mapDi = map2di(map_)
+        mapsDi[varName] = mapDi
+        mapsColumnNames[varName] = map_.columns[-1]
+    # Add aliases to `mapsColumnNames`
+    for varName in VARIABLE_ALIASES.keys():
+        map_ = makeMap(IDset=set(), IDName=varName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[varName]["deIdIDSuffix"], columnSuffix=varName, deIdentificationMapStyle="lemur")
+        mapsColumnNames[varName] = map_.columns[-1]
 
     # De-identify columns
     logging.info("""De-identifying files.""")
@@ -173,7 +173,7 @@ if __name__ == "__main__":
                         # Work on column
                         logging.info(f"""  ..    Working on column "{columnName}".""")
                         if columnName in COLUMNS_TO_DE_IDENTIFY:  # Keep this reference to `COLUMNS_TO_DE_IDENTIFY` as a way to make sure that all variables were collected during `getIDValues` and the `makeMap` scripts.
-                            variableDataType = DATA_TYPES[columnName]
+                            variableDataType = DATA_TYPES_DICT[columnName]
                             logging.info(f"""  ..  ..  Column must be de-identified. De-identifying values. Values are being treated as the following data type: "{variableDataType}".""")
                             if columnName in VARIABLE_ALIASES.keys():
                                 mapsDiLookUpName = VARIABLE_ALIASES[columnName]
@@ -183,6 +183,8 @@ if __name__ == "__main__":
                             if variableDataType.lower() == "numeric":
                                 dfChunk[columnName] = dfChunk[columnName].apply(lambda IDNum: mapsDi[mapsDiLookUpName][IDNum] if not pd.isna(IDNum) else IDNum)
                             elif variableDataType.lower() == "string":
+                                dfChunk[columnName] = dfChunk[columnName].apply(lambda IDvalue: mapsDi[mapsDiLookUpName][str(IDvalue)] if not pd.isna(IDvalue) else IDvalue)
+                            elif variableDataType.lower() == "numeric_or_string":
                                 dfChunk[columnName] = dfChunk[columnName].apply(lambda IDvalue: mapsDi[mapsDiLookUpName][str(IDvalue)] if not pd.isna(IDvalue) else IDvalue)
                             else:
                                 msg = "The table column is expected to have a data type associated with it."
