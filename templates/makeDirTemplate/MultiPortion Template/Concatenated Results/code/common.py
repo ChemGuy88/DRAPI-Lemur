@@ -13,7 +13,9 @@ __all__ = ["COLUMNS_TO_DE_IDENTIFY",
 
 from pathlib import Path
 # Local packages
-from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_BO, LIST_OF_PHI_VARIABLES_NOTES, LIST_OF_PHI_VARIABLES_OMOP, VARIABLE_SUFFIXES_BO, VARIABLE_SUFFIXES_NOTES, VARIABLE_SUFFIXES_OMOP
+from drapi.constants.constants import DATA_TYPES_DICT
+from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_BO, LIST_OF_PHI_VARIABLES_I2B2, LIST_OF_PHI_VARIABLES_NOTES, LIST_OF_PHI_VARIABLES_OMOP
+from drapi.constants.phiVariables import VARIABLE_SUFFIXES_BO, VARIABLE_SUFFIXES_NOTES, VARIABLE_SUFFIXES_OMOP
 from drapi.drapi import successiveParents
 
 # Argument meta variables
@@ -26,14 +28,22 @@ NOTES_ROOT_DIRECTORY = dataRequestRootDirectory.joinpath("Intermediate Results",
                                                          "data",
                                                          "output")
 # Project arguments
-COLUMNS_TO_DE_IDENTIFY = LIST_OF_PHI_VARIABLES_BO + LIST_OF_PHI_VARIABLES_NOTES + LIST_OF_PHI_VARIABLES_OMOP
+# TODO: Update or remove `ALIAS_DATA_TYPES` as necessary. Also add the keys from `ALIAS_DATA_TYPES` to `COLUMNS_TO_DE_IDENTIFY`
+ALIAS_DATA_TYPES = {"Case Patient (EPIC Patient ID)": "String",
+                    "Control Patient (EPIC Patient ID)": "String"}
+DATA_TYPES_DICT.update(ALIAS_DATA_TYPES)
+LIST_OF_PHI_VARIABLES_FROM_ALIASES = [variableName for variableName in ALIAS_DATA_TYPES.keys()]
+COLUMNS_TO_DE_IDENTIFY = LIST_OF_PHI_VARIABLES_BO + LIST_OF_PHI_VARIABLES_I2B2 + LIST_OF_PHI_VARIABLES_NOTES + LIST_OF_PHI_VARIABLES_OMOP + LIST_OF_PHI_VARIABLES_FROM_ALIASES
 
 # `VARIABLE_ALIASES` NOTE: Some variable names are not standardized. This argument is used by the de-identification process when looking for the de-identification map. This way several variables can be de-identified with the same map.
-# TODO Add or remove from this dictionary as necessary.
-# VAR_ALIASES_BO_ENCOUNTERS = {"Encounter # (CSN)": "Encounter #",         # True only for EPIC accounts, post-Siemens
-#                              "Encounter # (Primary CSN)": "Encounter #"}  # True only for EPIC accounts, post-Siemens
-VAR_ALIASES_NOTES_ENCOUNTERS = {"EncounterCSN": "Encounter #",
-                                "EncounterKey": "Patient Encounter Key"}
+# TODO Add or remove from these dictionaries as necessary.
+# NOTE That if you have variables with a custom, non-BO name, you should alias them, if necessary using the following format:
+# VAR_ALIASES_CUSTOM_VARS = {"Custom Variable 1": "BO Equivalent 1",
+#                            "Custom Variable 2": "BO Equivalent 2"}
+if False:
+    VAR_ALIASES_BO_ENCOUNTERS = {"Encounter # (CSN)": "Encounter #",         # True only for EPIC accounts, post-Siemens
+                                "Encounter # (Primary CSN)": "Encounter #"}  # True only for EPIC accounts, post-Siemens
+VAR_ALIASES_NOTES_ENCOUNTERS = {"EncounterCSN": "Encounter # (CSN)"}
 VAR_ALIASES_NOTES_PATIENTS = {"MRN_GNV": "MRN (UF)",
                               "PatientKey": "Patient Key"}
 VAR_ALIASES_NOTES_PROVIDERS = {"AuthoringProviderKey": "ProviderKey",
@@ -56,23 +66,26 @@ for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
 BO_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/BO Portion/data/output/getData/...")  # TODO
 BO_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\BO Portion\data\output\getData\...")  # TODO
 
-NOTES_PORTION_DIR_MAC = NOTES_ROOT_DIRECTORY.joinpath("free_text")
-NOTES_PORTION_DIR_WIN = NOTES_ROOT_DIRECTORY.joinpath(r"free_text")
-
+I2B2_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Concatenated Results\data\output\i2b2ConvertIDs\2023-10-25 14-39-15")  # TODO
+I2B2_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Concatenated Results\data\output\i2b2ConvertIDs\2023-10-25 14-39-15")  # TODO
 OMOP_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/OMOP Portion/data/output/...")  # TODO
 OMOP_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\OMOP Portion\data\output\...")  # TODO
 
 MODIFIED_OMOP_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
 MODIFIED_OMOP_PORTION_DIR_WIN = Path(r"data\output\convertColumns\...")  # TODO
 
+NOTES_PORTION_DIR_MAC = NOTES_ROOT_DIRECTORY.joinpath("free_text")
+NOTES_PORTION_DIR_WIN = NOTES_ROOT_DIRECTORY.joinpath(r"free_text")
+
 ZIP_CODE_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
 ZIP_CODE_PORTION_DIR_WIN = Path(r"data\output\convertColumns\...")  # TODO
-
 # File criteria
+BO_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
+I2B2_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-BO_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-ZIP_CODE_PORTION_FILE_CRITERIA = [None]  # TODO
+ZIP_CODE_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
+
 
 # Maps
 OLD_MAPS_DIR_PATH = {"EncounterCSN": [NOTES_ROOT_DIRECTORY.joinpath("mapping/map_encounter.csv")],
@@ -85,13 +98,15 @@ OLD_MAPS_DIR_PATH = {"EncounterCSN": [NOTES_ROOT_DIRECTORY.joinpath("mapping/map
 # Quality assurance
 if __name__ == "__main__":
     ALL_VARS = [dataRequestRootDirectory,
+                I2B2_PORTION_DIR_MAC,
+                I2B2_PORTION_DIR_WIN,
+                MODIFIED_OMOP_PORTION_DIR_MAC,
+                MODIFIED_OMOP_PORTION_DIR_WIN,
                 NOTES_ROOT_DIRECTORY,
                 NOTES_PORTION_DIR_MAC,
                 NOTES_PORTION_DIR_WIN,
                 OMOP_PORTION_DIR_MAC,
-                OMOP_PORTION_DIR_WIN,
-                MODIFIED_OMOP_PORTION_DIR_MAC,
-                MODIFIED_OMOP_PORTION_DIR_WIN]
+                OMOP_PORTION_DIR_WIN]
 
     for li in OLD_MAPS_DIR_PATH.values():
         ALL_VARS.extend(li)

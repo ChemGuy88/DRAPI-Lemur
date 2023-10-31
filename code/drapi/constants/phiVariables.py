@@ -53,6 +53,8 @@ LIST_OF_PHI_VARIABLES_BO = ['Acct Number - Enter DateTime Comb',
                             'Patnt Key',
                             'To Station']
 
+LIST_OF_PHI_VARIABLES_I2B2 = ["LOCATION_CD"]
+
 LIST_OF_PHI_VARIABLES_OMOP = ['csn',
                               'location_id',
                               'patient_key',

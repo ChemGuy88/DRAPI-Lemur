@@ -14,7 +14,12 @@ import pandas as pd
 import pprint
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, getPercentDifference, successiveParents, makeMap
-from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OLD_MAPS_DIR_PATH, VARIABLE_ALIASES, VARIABLE_SUFFIXES
+# Project parameters: General
+from common import IRB_NUMBER
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
+from common import OLD_MAPS_DIR_PATH
+from common import VARIABLE_ALIASES
+from common import VARIABLE_SUFFIXES
 
 # Arguments
 NEW_MAPS_DIR_PATH = Path("data/output/makeMapsFromOthers/...")  # TODO
@@ -131,7 +136,7 @@ if __name__ == "__main__":
     for variableName, li in matchedMaps.items():
         logging.info(f"""  Working on variable "{variableName}".""")
         concatenatedMap = pd.DataFrame()
-        emptyMap = makeMap(IDset=set(), IDName=variableName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"], columnSuffix=variableName, deIdentificationMapStyle=DE_IDENTIFICATION_MAP_STYLE)
+        emptyMap = makeMap(IDset=set(), IDName=variableName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"], columnSuffix=variableName, deIdentificationMapStyle=DE_IDENTIFICATION_MAP_STYLE, logger=logging.getLogger())
         newColumns = emptyMap.columns
         for fpath in li:
             fpath = Path(fpath)

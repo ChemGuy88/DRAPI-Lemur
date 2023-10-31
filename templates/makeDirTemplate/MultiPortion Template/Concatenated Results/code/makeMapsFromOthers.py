@@ -13,12 +13,24 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.constants.constants import DATA_TYPES_DICT
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
-from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OLD_MAPS_DIR_PATH, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
+# Project parameters: General
+from common import IRB_NUMBER
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
+from common import DATA_TYPES_DICT
+from common import OLD_MAPS_DIR_PATH
+from common import VARIABLE_ALIASES
+from common import VARIABLE_SUFFIXES
+# Project parameters: Portion paths
+from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
+from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
+from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
+from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
+from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
+from common import ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
-SETS_PATH = Path("data/output/getIDValues/...")
+SETS_PATH = Path(r"data\output\aliasVariables\...")
 
 CHUNK_SIZE = 50000
 
@@ -34,10 +46,12 @@ else:
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
 MAC_PATHS = [BO_PORTION_DIR_MAC,
+             I2B2_PORTION_DIR_MAC,
              NOTES_PORTION_DIR_MAC,
              OMOPPortionDirMac,
              ZIP_CODE_PORTION_DIR_MAC]
 WIN_PATHS = [BO_PORTION_DIR_WIN,
+             I2B2_PORTION_DIR_WIN,
              NOTES_PORTION_DIR_WIN,
              OMOPPortionDirWin,
              ZIP_CODE_PORTION_DIR_WIN]
@@ -170,7 +184,7 @@ if __name__ == "__main__":
                     for mapPath in listOfMapPaths:
                         logging.info(f"""  ..  Reading pre-existing map from "{mapPath}".""")
                         df = pd.DataFrame(pd.read_csv(mapPath))
-                        dftemp = makeMap(IDset=set(), IDName=variableName, startFrom=0, irbNumber=IRB_NUMBER, suffix="", columnSuffix=variableName, deIdentificationMapStyle="lemur")
+                        dftemp = makeMap(IDset=set(), IDName=variableName, startFrom=0, irbNumber=IRB_NUMBER, suffix="", columnSuffix=variableName, deIdentificationMapStyle="lemur", logger=logging.getLogger())
                         df.columns = dftemp.columns
                         dfConcat = pd.concat([dfConcat, df])
                     if condition1:
@@ -316,7 +330,7 @@ if __name__ == "__main__":
             raise Exception(msg)
         numbers = sorted(list(newNumbersDict[variableName]))
         deIdIDSuffix = VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]
-        map_ = makeMap(IDset=values, IDName=variableName, startFrom=numbers, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName, deIdentificationMapStyle="lemur")
+        map_ = makeMap(IDset=values, IDName=variableName, startFrom=numbers, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName, deIdentificationMapStyle="lemur", logger=logging.getLogger())
         # Save map
         mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
         map_.to_csv(mapPath, index=False)

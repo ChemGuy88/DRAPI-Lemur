@@ -12,9 +12,22 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.constants.constants import DATA_TYPES_DICT
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath, fileName2variableName, map2di, makeMap
-from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, VARIABLE_ALIASES, VARIABLE_SUFFIXES, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
+# Project parameters: General
+from common import ALIAS_DATA_TYPES
+from common import IRB_NUMBER
+from common import COLUMNS_TO_DE_IDENTIFY
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
+from common import DATA_TYPES_DICT
+from common import VARIABLE_ALIASES
+from common import VARIABLE_SUFFIXES
+# Project parameters: Portion paths
+from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
+from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
+from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
+from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
+from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
+from common import ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
 CONCATENATED_MAPS_DIR_PATH = Path("data/output/concatenateMaps/...")  # TODO
@@ -33,15 +46,18 @@ else:
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
 MAC_PATHS = [BO_PORTION_DIR_MAC,
+             I2B2_PORTION_DIR_MAC,
              NOTES_PORTION_DIR_MAC,
              OMOPPortionDirMac,
              ZIP_CODE_PORTION_DIR_MAC]
 WIN_PATHS = [BO_PORTION_DIR_WIN,
+             I2B2_PORTION_DIR_WIN,
              NOTES_PORTION_DIR_WIN,
              OMOPPortionDirWin,
              ZIP_CODE_PORTION_DIR_WIN]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
+                              I2B2_PORTION_FILE_CRITERIA,
                               NOTES_PORTION_FILE_CRITERIA,
                               OMOP_PORTION_FILE_CRITERIA,
                               ZIP_CODE_PORTION_FILE_CRITERIA]
@@ -136,6 +152,7 @@ if __name__ == "__main__":
     mapsColumnNames = {}
     variablesCollected = [fileName2variableName(fname) for fname in MAPS_DIR_PATH.iterdir()]
     for varName in variablesCollected:
+        logging.info(f"""  Loading map for "{varName}".""")
         varPath = MAPS_DIR_PATH.joinpath(f"{varName} map.csv")
         map_ = pd.read_csv(varPath)
         mapDi = map2di(map_)
@@ -143,8 +160,11 @@ if __name__ == "__main__":
         mapsColumnNames[varName] = map_.columns[-1]
     # Add aliases to `mapsColumnNames`
     for varName in VARIABLE_ALIASES.keys():
-        map_ = makeMap(IDset=set(), IDName=varName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[varName]["deIdIDSuffix"], columnSuffix=varName, deIdentificationMapStyle="lemur")
+        varAlias = VARIABLE_ALIASES[varName]
+        map_ = makeMap(IDset=set(), IDName=varName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[varAlias]["deIdIDSuffix"], columnSuffix=varName, deIdentificationMapStyle="lemur", logger=logging.getLogger())
         mapsColumnNames[varName] = map_.columns[-1]
+    # Add aliases to `DATA_TYPES_DICT`
+    DATA_TYPES_DICT.update(ALIAS_DATA_TYPES)
 
     # De-identify columns
     logging.info("""De-identifying files.""")

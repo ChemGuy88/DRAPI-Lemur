@@ -14,35 +14,69 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_FILE_CRITERIA, ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN
+# Project parameters: General
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
+# Project parameters: Portion paths
+from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
+from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
+from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
+from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
+from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
+from common import ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
-# Arguments: File location definition: By portions
-# These are imported from the `common` module.
-pass
+# Arguments: Use concatenated files
+USE_CONCATENATED_FILES = True  # TODO
+
+# Arguments: OMOP data set selection
+USE_MODIFIED_OMOP_DATA_SET = True
 
 # Arguments: File location definition: By concatenation
-CONCATENATED_PORTIONS_DIR_MAC = Path("data/output/deIdentify/...")
-CONCATENATED_PORTIONS_DIR_WIN = Path("data/output/deIdentify/...")
+CONCATENATED_PORTIONS_DIR_MAC = Path("data/output/deIdentify/...")  # TODO
+CONCATENATED_PORTIONS_DIR_WIN = Path("data/output/deIdentify/...")  # TODO
+
+# Arguments: Portion Paths and conditions
+if USE_MODIFIED_OMOP_DATA_SET:
+    OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
+    OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
+else:
+    OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
+    OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
 # Arguments: File location definition: OS-specific
 # There are two typical workflows. Deleting columns in the beginning of the workflow, or towards the end, after it's been de-identified (i.e., "concatenated")
-if True:
-    MAC_PATHS = [BO_PORTION_DIR_MAC, NOTES_PORTION_DIR_MAC, OMOP_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_MAC]
-    WIN_PATHS = [BO_PORTION_DIR_WIN, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_WIN, ZIP_CODE_PORTION_DIR_WIN]
-elif True:
+
+if USE_CONCATENATED_FILES:
     MAC_PATHS = [CONCATENATED_PORTIONS_DIR_MAC]
     WIN_PATHS = [CONCATENATED_PORTIONS_DIR_WIN]
+else:
+    MAC_PATHS = [BO_PORTION_DIR_MAC,
+                 I2B2_PORTION_DIR_MAC,
+                 NOTES_PORTION_DIR_MAC,
+                 OMOPPortionDirMac,
+                 ZIP_CODE_PORTION_DIR_MAC]
+    WIN_PATHS = [BO_PORTION_DIR_WIN,
+                 I2B2_PORTION_DIR_WIN,
+                 OMOPPortionDirWin,
+                 NOTES_PORTION_DIR_WIN]
 
 # Arguments: Definition of criteria for file release
 # NOTE (Developer's Note) The files to release and the file criteiria both act as criteria to release. The argument structure here is not very clear and it will take some time to create a generalizeable template. However, it seems that `LIST_OF_PORTION_CONDITIONS` is the only output of this arguments section, i.e., the only require input for the script. Also note that each portion has its own criteria, but they are not used in the template.
-BO_FILES_TO_RELEASE = ["..."]  # TODO
-COHORT_NAME = ""  # TODO
+BO_FILES_TO_RELEASE = [""]  # TODO
+NOTES_COHORT_NAME = ""  # TODO
 NOTES_METADATA_FILES_TO_RELEASE = ["provider_metadata.csv",
-                                   f"{COHORT_NAME}_note_metadata.csv",
-                                   f"{COHORT_NAME}_order_impression_metadata.csv",
-                                   f"{COHORT_NAME}_order_metadata.csv",
-                                   f"{COHORT_NAME}_order_narrative_metadata.csv",
-                                   f"{COHORT_NAME}_order_result_comment_metadata.csv"]
+                                   f"{NOTES_COHORT_NAME}_note_metadata.csv",
+                                   f"{NOTES_COHORT_NAME}_order_impression_metadata.csv",
+                                   f"{NOTES_COHORT_NAME}_order_metadata.csv",
+                                   f"{NOTES_COHORT_NAME}_order_narrative_metadata.csv",
+                                   f"{NOTES_COHORT_NAME}_order_result_comment_metadata.csv"]
+I2B2_COHORT_NAME = ""
+I2B2_FILES_TO_RELEASE = [f"{I2B2_COHORT_NAME}_observation_fact_GNV.csv",
+                         f"{I2B2_COHORT_NAME}_observation_fact_JAX.csv",
+                         f"{I2B2_COHORT_NAME}_patient_dimension_GNV.csv",
+                         f"{I2B2_COHORT_NAME}_patient_dimension_JAX.csv",
+                         f"{I2B2_COHORT_NAME}_visit_dimension_GNV.csv",
+                         f"{I2B2_COHORT_NAME}_visit_dimension_JAX.csv"]
+
 OMOP_FILES_TO_RELEASE = ["condition_occurrence.csv",
                          "death.csv",
                          "device_exposure.csv",
@@ -57,9 +91,11 @@ OMOP_FILES_TO_RELEASE = ["condition_occurrence.csv",
                          "visit_occurrence.csv"]
 ZIP_CODE_FILES_TO_RELEASE = ["zipcodes.csv"]
 
-FILES_TO_RELEASE = BO_FILES_TO_RELEASE + NOTES_METADATA_FILES_TO_RELEASE + OMOP_FILES_TO_RELEASE + ZIP_CODE_FILES_TO_RELEASE
+FILES_TO_RELEASE = BO_FILES_TO_RELEASE + I2B2_FILES_TO_RELEASE + NOTES_METADATA_FILES_TO_RELEASE + ZIP_CODE_FILES_TO_RELEASE
+FILES_TO_RELEASE = I2B2_FILES_TO_RELEASE
 
 _ = BO_PORTION_FILE_CRITERIA
+_ = I2B2_PORTION_FILE_CRITERIA
 _ = NOTES_PORTION_FILE_CRITERIA
 _ = OMOP_PORTION_FILE_CRITERIA
 _ = ZIP_CODE_PORTION_FILE_CRITERIA
@@ -72,7 +108,7 @@ LIST_OF_PORTION_CONDITIONS = [CONCATENATED_PORTIONS_FILE_CRITERIA]
 
 # Arguments: Columns to delete
 # TODO Columns to delete. The list variable deletes column matches in any file. The dictionary variable delete the columns that are in the file named in the dictionary key. Below are typical values for a limited data release.
-COLUMNS_TO_DELETE = ["person_source_value",
+COLUMNS_TO_DELETE_OMOP = ["person_source_value",
                      # The columns below are non-informative because they only uniquely identify the row in the table
                      "condition_occurrence_id",
                      "device_exposure_id",
@@ -82,6 +118,8 @@ COLUMNS_TO_DELETE = ["person_source_value",
                      "observation_id",
                      "procedure_occurrence_id",
                      "visit_detail_id"]
+COLUMNS_TO_DELETE_I2B2 = ["LOCATION_CD"]
+COLUMNS_TO_DELETE = COLUMNS_TO_DELETE_I2B2 + COLUMNS_TO_DELETE_OMOP
 COLUMNS_TO_DELETE_DICT = {"condition_occurrence": [],
                           "death": [],
                           "device_exposure": [],

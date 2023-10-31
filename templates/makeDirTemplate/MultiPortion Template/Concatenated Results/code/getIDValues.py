@@ -15,9 +15,19 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.constants.constants import DATA_TYPES_DICT
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, COLUMNS_TO_DE_IDENTIFY, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
+# Project parameters: General
+from common import COLUMNS_TO_DE_IDENTIFY
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
+from common import DATA_TYPES_DICT
+# Project parameters: Portion paths
+from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
+from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
+from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
+from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
+from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
+from common import ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
+
 
 # Arguments
 SETS_INTERMEDIATE_PATH = None
@@ -36,13 +46,16 @@ else:
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
 PORTION_PATHS_MAC = {"BO": BO_PORTION_DIR_MAC,
+                     "i2b2": I2B2_PORTION_DIR_MAC,
                      "Notes": NOTES_PORTION_DIR_MAC,
                      "OMOP": OMOPPortionDirMac}
 PORTION_PATHS_WIN = {"BO": BO_PORTION_DIR_WIN,
+                     "i2b2": I2B2_PORTION_DIR_WIN,
                      "Notes": NOTES_PORTION_DIR_WIN,
                      "OMOP": OMOPPortionDirWin}
 
 DICT_OF_PORTION_CONDITIONS = {"BO": BO_PORTION_FILE_CRITERIA,
+                              "i2b2": I2B2_PORTION_FILE_CRITERIA,
                               "Notes": NOTES_PORTION_FILE_CRITERIA,
                               "OMOP": OMOP_PORTION_FILE_CRITERIA}
 

@@ -24,7 +24,7 @@ from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 from common import VARIABLE_ALIASES
 
 # Arguments
-SET_FILES_DIR = Path(r"data\output\getIDValues\2023-08-29 16-35-42\Set Files")
+SET_FILES_DIR = Path(r"data\output\getIDValues\...\Set Files")
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
