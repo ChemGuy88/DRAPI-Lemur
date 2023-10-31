@@ -12,6 +12,7 @@ from datetime import date
 from datetime import time
 from dateutil.parser import parse
 from itertools import islice
+from logging import Logger
 from pathlib import Path
 from typing import Callable, List, Tuple, Union
 from typing_extensions import Literal
@@ -202,6 +203,7 @@ def makeMap(IDset: set,
             irbNumber: str,
             suffix: str,
             columnSuffix: str,
+            logger: Logger,
             groups: dict = {0: {"criteria": [mapGroupCriteria4unknownValue],
                                 "deidNum": 0}},
             deIdentificationMapStyle: Literal["classic", "lemur"] = "lemur") -> pd.DataFrame:
@@ -250,10 +252,17 @@ def makeMap(IDset: set,
         numbers = startFrom[:]
         startFrom = numbers[0]
     numbers.extend([None])
+    logger.info("    Sorting `IDset`.")
     IDli = sortIntegersAndStrings(list(IDset))
+    logger.info("    Sorting `IDset` - done.")
+    logger.info("    Creating `mapDi`.")
     mapDi = {IDNum: {} for IDNum in IDli}
+    logger.info("    Creating `mapDi` - done.")
     lenIDli = len(IDli)
-    itChunk = lenIDli/10
+    if lenIDli > 100000:
+        itChunk = 1000
+    else:
+        itChunk = round(lenIDli/50)
     for it, IDNum in enumerate(IDli, start=1):
         fromGroup = False
         for group, groupAttributes in groups.items():
@@ -272,7 +281,7 @@ def makeMap(IDset: set,
                         deIdentificationSerialNumberHeader: deid_num,
                         deIdentifiedIDColumnHeader: deid_id}
         if it % itChunk == 0:
-            print(f"  ..  Working on item {it:,} of {len(IDli):,} ({it/lenIDli:.2%} done).")
+            logger.info(f"  ..  Working on item {it:,} of {len(IDli):,} ({it/lenIDli:.2%} done).")
     newMap = pd.DataFrame.from_dict(mapDi, orient="index")
     newMap.index = range(1, len(newMap) + 1)
     return newMap
