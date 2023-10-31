@@ -14,7 +14,8 @@ from drapi.drapi import makeChunks, replace_sql_query
 def getData(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: pd.DataFrame, conStr: str, runOutputDir, queryChunkSize: int, logger: Logger) -> pd.DataFrame:
     """
     """
-    connection = create_engine(conStr).connect().execution_options(stream_results=True)
+    connection1 = create_engine(conStr).connect().execution_options(stream_results=True)
+    connection2 = create_engine(conStr).connect().execution_options(stream_results=True)
 
     # Read query file
     with open(sqlFilePath, "r") as file:
@@ -32,13 +33,13 @@ def getData(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: pd
     logger.info("""  ..  Executing query.""")
 
     logger.info(f"""  ..  Counting the number of query result chunks that are expected with `queryChunkSize` "{queryChunkSize:,}".""")
-    queryGenerator0 = pd.read_sql(sql=query, con=connection, chunksize=queryChunkSize)
+    queryGenerator0 = pd.read_sql(sql=query, con=connection1, chunksize=queryChunkSize)
     chunks2 = [1 for _ in queryGenerator0]
     numChunks2 = sum(chunks2)
     logger.info(f"""  ..  Counting the number of query result chunks that are expected with `queryChunkSize` "{queryChunkSize:,}" - Done.""")
 
     logger.info("""  ..  Creating query generator.""")
-    queryGenerator1 = pd.read_sql(sql=query, con=connection, chunksize=queryChunkSize)
+    queryGenerator1 = pd.read_sql(sql=query, con=connection2, chunksize=queryChunkSize)
     logger.info("""  ..  Creating query generator - Done.""")
 
     padlen2 = len(str(numChunks2))
@@ -58,12 +59,16 @@ def getData(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: pd
         result.to_csv(fpath, index=False)
         logger.info("  ..  ..  Saving chunk - done.")
 
+    connection1.close()
+    connection2.close()
+
 
 def getData2(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: pd.DataFrame, conStr: str, runOutputDir, queryChunkSize: int, logger: Logger) -> pd.DataFrame:
     """
     """
     filterChunkSize = 20000
-    connection = create_engine(conStr).connect().execution_options(stream_results=True)
+    connection1 = create_engine(conStr).connect().execution_options(stream_results=True)
+    connection2 = create_engine(conStr).connect().execution_options(stream_results=True)
 
     # Read query file
     with open(sqlFilePath, "r") as file:
@@ -72,9 +77,13 @@ def getData2(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: p
     # Fill out query template
     logger.info("""  Filling out query template.""")
 
-    IDSeries1 = cohortData["Patient Key"]
-    templatePlaceholder1 = "{PYTHON_VARIABLE: PATIENT_KEY}"
-    IDValues1 = IDSeries1.drop_duplicates().dropna().sort_values().astype("Int64").values
+    IDSeries1 = cohortData["Patient Key"]  # TODO
+    templatePlaceholder1 = "{PYTHON_VARIABLE: PATIENT_KEY}"  # TODO
+    variableDataType1 = "int"  # TODO
+    if variableDataType1 == "int":
+        IDValues1 = IDSeries1.drop_duplicates().dropna().astype("int64").sort_values().values
+    elif variableDataType1 == "varchar":
+        IDValues1 = IDSeries1.drop_duplicates().dropna().sort_values().values
 
     IDsChunk0 = makeChunks(IDValues1, filterChunkSize)
     IDsChunk1 = makeChunks(IDValues1, filterChunkSize)
@@ -85,7 +94,11 @@ def getData2(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: p
         logger.info(f"""    Working on filter chunk {itstring1} of {numChunks1} with `filterChunkSize` "{filterChunkSize:,}".""")
 
         # Fill query template: lists to strings
-        IDListAsString1 = ",".join([f"{el}" for el in IDsChunk])
+        if variableDataType1 == "int":
+            IDListAsString1 = ",".join([f"{el}" for el in IDsChunk])
+        elif variableDataType1 == "varchar":
+            IDListAsString1 = ",".join([f"'{el}'" for el in IDsChunk])
+
 
         query = replace_sql_query(query=query0,
                                   old="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)) as "Admit BMI",""",
@@ -105,13 +118,13 @@ def getData2(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: p
         logger.info("""  ..  Executing query.""")
 
         logger.info(f"""  ..  Counting the number of query result chunks that are expected with `queryChunkSize` "{queryChunkSize:,}".""")
-        queryGenerator0 = pd.read_sql(sql=query, con=connection, chunksize=queryChunkSize)
+        queryGenerator0 = pd.read_sql(sql=query, con=connection1, chunksize=queryChunkSize)
         chunks2 = [1 for _ in queryGenerator0]
         numChunks2 = sum(chunks2)
         logger.info(f"""  ..  Counting the number of query result chunks that are expected with `queryChunkSize` "{queryChunkSize:,}" - Done.""")
 
         logger.info("""  ..  Creating query generator.""")
-        queryGenerator1 = pd.read_sql(sql=query, con=connection, chunksize=queryChunkSize)
+        queryGenerator1 = pd.read_sql(sql=query, con=connection2, chunksize=queryChunkSize)
         logger.info("""  ..  Creating query generator - Done.""")
 
         padlen2 = len(str(numChunks2))
@@ -131,12 +144,15 @@ def getData2(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: p
             result.to_csv(fpath, index=False)
             logger.info("  ..  ..  Saving chunk - done.")
 
+    connection1.close()
+    connection2.close()
+
 
 def checkFileConditions(sqlFilePath: Path, cohortData: pd.DataFrame, stepNumberCondition: str, logger: Logger, conStr: str, runOutputDir: Path, getDataFunction: object, queryChunkSize: int):
     """
     """
     logger.info(f"""  Working on file "{sqlFilePath}".""")
-    pattern = r"^(?P<universe>\w+) - (?P<queryName>.+)( - )?(?P<querySubName>.*).SQL$"
+    pattern = r"^(?P<universe>.+?) - (?P<queryName>[^-]+)( - )?(?P<querySubName>[^-]*).SQL$"
     matchObj = re.match(pattern, sqlFilePath.name)
     if matchObj:
         groupdict = matchObj.groupdict()
