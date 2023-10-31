@@ -111,9 +111,9 @@ if __name__ == "__main__":
     ``: "{"..."}"
 
     # Arguments: General
-    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}"
-    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}"
-    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}"
+    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
+    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}" --------------> "{IRBDir}"
+    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}" -> "{IDRDataRequestDir}"
 
     `LOG_LEVEL` = "{LOG_LEVEL}"
 
