@@ -411,6 +411,26 @@ def personIDs2patientKeys(personIDList: List[int]) -> pd.DataFrame:
     results = pd.read_sql(query, con=conStr)
     return results
 
+def epicID2patientKey(epicIDlist: List[str]) -> pd.DataFrame:
+    """
+    Executes a SQL query to map EPIC Patient IDs to Patient Keys.
+    """
+    IDsAsString = ",".join([f"'{el}'" for el in epicIDlist])
+    query = f"""USE DWS_PROD
+    SELECT
+        dbo.ALL_PATIENTS.PATNT_KEY AS 'Patient Key',
+        dbo.ALL_PATIENTS.PATNT_ID AS 'EPIC Patient ID'
+    FROM
+        dbo.ALL_PATIENTS
+    WHERE
+        (
+        dbo.ALL_PATIENTS.PATNT_ID  IN  ( {IDsAsString}  )
+        AND
+        ( dbo.ALL_PATIENTS.TEST_IND='N'  )
+        )"""
+    results = pd.read_sql(query, con=conStr)
+    return results
+
 
 def map2di(map_: pd.DataFrame):
     """
