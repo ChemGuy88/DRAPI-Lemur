@@ -26,12 +26,16 @@ dataRequestRootDirectory, _ = successiveParents(Path(__file__).absolute(), DATA_
 NOTES_ROOT_DIRECTORY = dataRequestRootDirectory.joinpath("Intermediate Results",
                                                          "Notes Portion",
                                                          "data",
-                                                         "output")
+                                                         "output",
+                                                         "freeText",
+                                                         "...")
+
 # Project arguments
-# TODO: Update or remove `ALIAS_DATA_TYPES` as necessary. Also add the keys from `ALIAS_DATA_TYPES` to `COLUMNS_TO_DE_IDENTIFY`
+# TODO: Update or remove `ALIAS_DATA_TYPES` as necessary.
 ALIAS_DATA_TYPES = {"Case Patient (EPIC Patient ID)": "String",
                     "Control Patient (EPIC Patient ID)": "String"}
 DATA_TYPES_DICT.update(ALIAS_DATA_TYPES)
+# Add the keys from `ALIAS_DATA_TYPES` to `COLUMNS_TO_DE_IDENTIFY`
 LIST_OF_PHI_VARIABLES_FROM_ALIASES = [variableName for variableName in ALIAS_DATA_TYPES.keys()]
 COLUMNS_TO_DE_IDENTIFY = LIST_OF_PHI_VARIABLES_BO + LIST_OF_PHI_VARIABLES_I2B2 + LIST_OF_PHI_VARIABLES_NOTES + LIST_OF_PHI_VARIABLES_OMOP + LIST_OF_PHI_VARIABLES_FROM_ALIASES
 
@@ -45,6 +49,7 @@ if False:
                                 "Encounter # (Primary CSN)": "Encounter #"}  # True only for EPIC accounts, post-Siemens
 VAR_ALIASES_NOTES_ENCOUNTERS = {"EncounterCSN": "Encounter # (CSN)"}
 VAR_ALIASES_NOTES_PATIENTS = {"MRN_GNV": "MRN (UF)",
+                              "MRN_JAX": "MRN (Jax)",
                               "PatientKey": "Patient Key"}
 VAR_ALIASES_NOTES_PROVIDERS = {"AuthoringProviderKey": "ProviderKey",
                                "AuthorizingProviderKey": "ProviderKey",
@@ -98,6 +103,8 @@ OLD_MAPS_DIR_PATH = {"EncounterCSN": [NOTES_ROOT_DIRECTORY.joinpath("mapping/map
 # Quality assurance
 if __name__ == "__main__":
     ALL_VARS = [dataRequestRootDirectory,
+                BO_PORTION_DIR_MAC,
+                BO_PORTION_DIR_WIN,
                 I2B2_PORTION_DIR_MAC,
                 I2B2_PORTION_DIR_WIN,
                 MODIFIED_OMOP_PORTION_DIR_MAC,
