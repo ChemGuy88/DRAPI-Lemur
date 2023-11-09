@@ -50,28 +50,36 @@ def OFID2MRN(OFIDseries: pd.Series) -> pd.DataFrame:
     return MRNseries
 
 
-def mapOneFloridaIDs(mrnSeries: pd.Series, IDType: Literal["OF", "Patient Key", "UF", "JAX", "path"]) -> pd.Series:
+def mapOneFloridaIDs(IDTypeValues: pd.Series, IDType: Literal["PATID", "Patient Key", "UF (MRN)", "Jax (MRN)", "path (mrn)"]) -> pd.Series:
     """
+    Queries the ID map containing all of the following variables, any of which can be used as a query filter using the `IDType` parameter. The values to query by are used in the `IDTypeValues` parameter.
+        | Variable Definition           | Standard or Common Column Name    |
+        |-------------------------------|-----------------------------------|
+        | OneFlorida patient ID         | PATID                             |
+        | IDR patient key               | Patient Key                       |
+        | UF Health Gainesvile MRN      | UF (MRN)                          |
+        | UF Health Jacksonville MRN    | Jax (MRN)                         |
+        | UF Health Pathology MRN       | path (MRN)                        |
     """
 
-    listAsString = ",".join([f"'{el}'" for el in sorted(mrnSeries.values)])
+    listAsString = ",".join([f"'{el}'" for el in IDTypeValues.iloc[:].sort_values()])
 
     with open(sqlFilePath2, "r") as file:
         query0 = file.read()
 
     query = replace_sql_query(query=query0,
-                              old="{PYTHON_VARIABLE: ONE_FLORIDA_PATIENT_IDS}",
+                              old="{PYTHON_VARIABLE: IDTypeValues}",
                               new=listAsString)
     IDTypeInput = IDType.lower()
-    IDTypeDict = {"of": "a.PATID",
+    IDTypeDict = {"patid": "a.PATID",
                   "patient key": "a.PATNT_KEY",
-                  "uf": "b.IDENT_ID",
-                  "jax": "c.IDENT_ID",
-                  "path": "d.IDENT_ID"}
-    IDTypeValue = IDTypeDict[IDTypeInput]
+                  "uf (mrn)": "b.IDENT_ID",
+                  "jax (mrn)": "c.IDENT_ID",
+                  "path (mrn)": "d.IDENT_ID"}
+    IDTypeSQL = IDTypeDict[IDTypeInput]
     query = replace_sql_query(query=query,
-                              old="{PYTHON_VARIABLE: ID_TYPE}",
-                              new=IDTypeValue)
+                              old="{PYTHON_VARIABLE: IDTypeSQL}",
+                              new=IDTypeSQL)
 
     MRNseries = pd.read_sql(query, con=conStr)
 

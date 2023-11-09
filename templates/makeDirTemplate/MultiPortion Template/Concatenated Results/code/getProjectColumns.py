@@ -12,17 +12,24 @@ import numpy as np
 import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
+from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
+from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
+from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
+from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
 LOG_LEVEL = "DEBUG"
 PORTIONS_OUTPUT_DIR_PATH_MAC = {"BO": BO_PORTION_DIR_MAC,  # TODO
+                                "i2b2": I2B2_PORTION_DIR_MAC,
                                 "Notes": NOTES_PORTION_DIR_MAC,
                                 "OMOP": OMOP_PORTION_DIR_MAC}
 PORTIONS_OUTPUT_DIR_PATH_WIN = {"BO": BO_PORTION_DIR_WIN,  # TODO
+                                "i2b2": I2B2_PORTION_DIR_WIN,
                                 "Notes": NOTES_PORTION_DIR_WIN,
                                 "OMOP": OMOP_PORTION_DIR_WIN}
 PORTION_FILE_CRITERIA_DICT = {"BO": BO_PORTION_FILE_CRITERIA,
+                              "i2b2": I2B2_PORTION_FILE_CRITERIA,
                               "Notes": NOTES_PORTION_FILE_CRITERIA,
                               "OMOP": OMOP_PORTION_FILE_CRITERIA}
 

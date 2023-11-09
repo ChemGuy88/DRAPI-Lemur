@@ -57,6 +57,7 @@ WIN_PATHS = [BO_PORTION_DIR_WIN,
              ZIP_CODE_PORTION_DIR_WIN]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
+                              I2B2_PORTION_FILE_CRITERIA,
                               NOTES_PORTION_FILE_CRITERIA,
                               OMOP_PORTION_FILE_CRITERIA,
                               ZIP_CODE_PORTION_FILE_CRITERIA]

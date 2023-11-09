@@ -1,15 +1,18 @@
 import concurrent.futures
 import logging
 import os
-import pandas as pd
 import random
 import re
 import shutil
-import sqlalchemy as sa
 from datetime import datetime as dt
 from datetime import timedelta
-from drapi.drapi import makeDirPath, replace_sql_query
+from logging import Logger
 from pathlib import Path
+# Third-party packages
+import pandas as pd
+import sqlalchemy as sa
+# Local packages
+from drapi.drapi import makeDirPath, replace_sql_query, getTimestamp, successiveParents
 
 # Arguments: Script settings
 COHORT_NAME = ""                                    # An arbitrary name used in file names
@@ -23,25 +26,70 @@ SQL_ENCOUNTER_EFFECTIVE_DATE_START = 'YYYY-MM-DD'   # The beginning of date rang
 SQL_ENCOUNTER_EFFECTIVE_DATE_END = 'YYYY-MM-DD'     # The end of date range of encounters to collect. Format: YYYY-MM-DD
 
 # Arguments: SQL connection settings
+SERVER = "DWSRSRCH01.shands.ufl.edu"
+DATABASE_PROD = "DWS_PROD"
+DATABASE_NOTES = "DWS_NOTES"
 USERDOMAIN = "UFAD"
 USERNAME = os.environ["USER"]
 UID = fr"{USERDOMAIN}\{USERNAME}"
 PWD = os.environ["HFA_UFADPWD"]
 
-# Variables: Path construction
-base_dir = str(Path(__file__).parent.parent.absolute())
-data_dir = os.path.join(base_dir, 'data')
-sql_dir = os.path.join(base_dir, 'sql')
-notes_dir = os.path.join(data_dir, "output", 'free_text')  # all notes related files are saved in 'notes' subdirectory of 'data' directory
-map_dir = os.path.join(data_dir, "output", 'mapping')  # mappings are saved in 'mapping' subdirectory of 'data' folder.
-disclosure_dir = os.path.join(data_dir, "output", 'disclosure')
+# Arguments: Meta-variables
+PROJECT_DIR_DEPTH = 2
+DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 2
+IRB_DIR_DEPTH = DATA_REQUEST_DIR_DEPTH + 0
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+
+ROOT_DIRECTORY = "PROJECT_OR_PORTION_DIRECTORY"  # TODO One of the following:
+                                                 # ["IDR_DATA_REQUEST_DIRECTORY",    # noqa
+                                                 #  "IRB_DIRECTORY",                 # noqa
+                                                 #  "DATA_REQUEST_DIRECTORY",        # noqa
+                                                 #  "PROJECT_OR_PORTION_DIRECTORY"]  # noqa
+
+# Variables: Path construction: General
+runTimestamp = getTimestamp()
+thisFilePath = Path(__file__)
+thisFileStem = thisFilePath.stem
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
+dataDir = projectDir.joinpath("data")
+if dataDir:
+    inputDataDir = dataDir.joinpath("input")
+    outputDataDir = dataDir.joinpath("output")
+    if outputDataDir:
+        runOutputDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
+logsDir = projectDir.joinpath("logs")
+if logsDir:
+    runLogsDir = logsDir.joinpath(thisFileStem)
+sqlDir = projectDir.joinpath("sql")
+
+if ROOT_DIRECTORY == "PROJECT_OR_PORTION_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
+else:
+    raise Exception("An unexpected error occurred.")
+
+# Variables: Path Construction: Variable mapping from DRAPI-LEMUR standard variable names to original variable names.
+base_dir = str(projectDir)
+data_dir = dataDir
+sql_dir = sqlDir
+notes_dir = runOutputDir.joinpath('free_text')  # all notes related files are saved in 'notes' subdirectory of 'data' directory
+map_dir = runOutputDir.joinpath('mapping')  # mappings are saved in 'mapping' subdirectory of 'data' folder.
+disclosure_dir = runOutputDir.joinpath( 'disclosure')
 for dir in [data_dir, sql_dir, notes_dir, map_dir, disclosure_dir]:
     makeDirPath(dir)
 
 # Variables: SQL connection settings
-host = 'DWSRSRCH01.shands.ufl.edu'
-database_prod = 'DWS_PROD'
-database_notes = 'DWS_NOTES'
+host = SERVER
+database_prod = DATABASE_PROD
+database_notes = DATABASE_NOTES
 
 # Variables: Script settings
 cohort = COHORT_NAME
@@ -49,6 +97,10 @@ id_type = ID_TYPE
 note_version = NOTE_VERSION
 irb = IRB_NUMBER
 deid_mode = DE_IDENTIFICATION_MODE
+
+# Directory creation: General
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
 
 
 def db_connect(host, database):
@@ -82,15 +134,16 @@ def read_sql_file(file):
 # notes methods
 
 
-def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_dir, cohort):
-    logging.info(f"""Function arguments:
+def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_dir, cohort, logger: Logger):
+    logger.info(f"""Function arguments:
     `note_version`: {note_version}
     `id_type`:      {id_type}
     `note_type`:    {note_type}
     `sql_dir`:      {sql_dir}
     `cohort_dir`:   {cohort_dir}
     `notes_dir`:    {notes_dir}
-    `cohort`:       {cohort}""")
+    `cohort`:       {cohort}
+    `logger`:       {logger}""")
     m = 'w'  # mode of the output file
     h = True  # header of the output file
     counter = 1  # used only for tracking/time estimation purposes
@@ -101,23 +154,23 @@ def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_d
     for df in pd.read_csv(os.path.join(cohort_dir, in_file), chunksize=1000, engine='python'):
         df = df[[id_type]]
         id_str = df[id_type].unique().tolist()
-        logging.info(f"  This chunk of your input file containing patient or encounter ID's is of length {len(id_str):,}.")
+        logger.info(f"  This chunk of your input file containing patient or encounter ID's is of length {len(id_str):,}.")
         id_str = "','".join(str(x) for x in id_str)
         id_str = "'" + id_str + "'"
         query_file = note_type + '_metadata.sql'
-        logging.info(f"Reading query file: {query_file}")
+        logger.info(f"Reading query file: {query_file}")
         query = read_sql_file(os.path.join(sql_dir, query_file))
         query = replace_sql_query(query, "XXXXX", id_str)
         query = replace_sql_query(query, "{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_START}", SQL_ENCOUNTER_EFFECTIVE_DATE_START)
         query = replace_sql_query(query, "{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_END}", SQL_ENCOUNTER_EFFECTIVE_DATE_END)
 
-        logging.log(9, f"Using the following query:\n>>> Begin query >>>\n{query}\n<<< End query <<<")
+        logger.log(9, f"Using the following query:\n>>> Begin query >>>\n{query}\n<<< End query <<<")
         result = db_execute_read_query(query, host, database_prod)
 
-        logging.info(f"The chunk query has {len(result):,} rows.")
+        logger.info(f"The chunk query has {len(result):,} rows.")
         result = result.drop_duplicates()
 
-        logging.info(f"After dropping duplicates, the chunk query has {len(result)} rows.")
+        logger.info(f"After dropping duplicates, the chunk query has {len(result):,} rows.")
         if (note_type == 'note' and note_version == 'last'):  # keep only the last version of the note
             result = result.sort_values(by=['NoteKey', 'ContactNumber'], ascending=[True, False])
             result = result.drop_duplicates(['NoteKey'])
@@ -125,18 +178,18 @@ def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_d
         result.to_csv(os.path.join(notes_dir, result_file), index=False, mode=m, header=h)
         m = 'a'
         h = False
-        logging.info(f'Completed chunk {counter}')
+        logger.info(f'Completed chunk {counter}')
         counter = counter + 1
     return
 
 
-def split_metadata(note_type, notes_dir, cohort):
+def split_metadata(note_type, notes_dir, cohort, logger: Logger):
     in_file = cohort + '_' + note_type + '_metadata.csv'
     file_count = 1
     for df in pd.read_csv(os.path.join(notes_dir, in_file), chunksize=1000000):
         out_file = cohort + '_' + note_type + '_metadata_' + str(file_count) + '.csv'
 
-        logging.info(f"Working on file {file_count}.")
+        logger.info(f"Working on file {file_count}.")
         # ensure that all ID columns are integers
         columns = df.columns
         for c in ['NoteKey', 'NoteID', 'LinkageNoteID', 'OrderKey', 'OrderID', 'PatientKey', 'EncounterKey', 'EncounterCSN', 'AuthoringProviderKey', 'CosignProviderKey', 'OrderingProviderKey', 'AuthorizingProviderKey']:
@@ -150,8 +203,8 @@ def split_metadata(note_type, notes_dir, cohort):
     return
 
 
-def pull_text(item, note_type, note_id, sql_dir, notes_dir, dir_final):
-    logging.info(f"""Processing item "{item}".""")
+def pull_text(item, note_type, note_id, sql_dir, notes_dir, dir_final, logger: Logger):
+    logger.info(f"""Processing item "{item}".""")
     # Pull text
     header = True  # header of the output file
     mode = 'w'  # mode of the output file
@@ -179,7 +232,7 @@ def pull_text(item, note_type, note_id, sql_dir, notes_dir, dir_final):
     return
 
 
-def pull_text_in_parallel(note_type, sql_dir, notes_dir, cohort):
+def pull_text_in_parallel(note_type, sql_dir, notes_dir, cohort, logger: Logger):
     # Prepare for text pull
     if (note_type == 'note'):
         dir_final = os.path.join(notes_dir, cohort + '_note')
@@ -204,17 +257,17 @@ def pull_text_in_parallel(note_type, sql_dir, notes_dir, cohort):
     # identify all metadata files for specific note type
     pattern = cohort + '_' + note_type + '_metadata_.*.csv'  # hot fix 2022-05-10
     items = [f for f in os.listdir(notes_dir) if re.match(pattern, f)]
-    logging.info(f"""This is the list of items that matched the criteria for processing: {items}.""")
+    logger.info(f"""This is the list of items that matched the criteria for processing: {items}.""")
     # start pullng text. By default, number of parallel threads is set to 4.
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        result_futures = {executor.submit(pull_text, item, note_type, note_id, sql_dir, notes_dir, dir_final): item for item in items}
+        result_futures = {executor.submit(pull_text, item, note_type, note_id, sql_dir, notes_dir, dir_final, logger): item for item in items}
         for future in concurrent.futures.as_completed(result_futures):
             item = result_futures[future]
             try:
                 _ = future.result()
-                logging.info(f"""Completed item "{item}".""")
+                logger.info(f"""Completed item "{item}".""")
             except Exception as e:
-                logging.info(f"""An exception was generated by item "{item}": "{e}".""")
+                logger.info(f"""An exception was generated by item "{item}": "{e}".""")
     return
 
 
@@ -426,7 +479,7 @@ def deid_metadata(deid_mode, note_type, map_dir, notes_dir, disclosure_dir):
     return
 
 
-def deid_tsv_note(map_dir, notes_dir):
+def deid_tsv_note(map_dir, notes_dir, logger: Logger):
     map_note_link = pd.read_csv(os.path.join(map_dir, 'map_note_link.csv'))
     for file_prefix in ['note']:
         # find all files with specified prefix in the name
@@ -435,7 +488,7 @@ def deid_tsv_note(map_dir, notes_dir):
         final_columns = ['deid_link_note_id', 'note_text']
         items = [f for f in os.listdir(in_dir) if re.match(pattern, f)]
         for file in items:
-            logging.info(f"""Processing `file` "{file}".""")
+            logger.info(f"""Processing `file` "{file}".""")
             out_file = 'deid_{}'.format(file)
             m = 'w'
             h = True
@@ -448,7 +501,7 @@ def deid_tsv_note(map_dir, notes_dir):
     return
 
 
-def deid_tsv_order(map_dir, notes_dir):
+def deid_tsv_order(map_dir, notes_dir, logger: Logger):
     map_order = pd.read_csv(os.path.join(map_dir, 'map_order.csv'))
     for file_prefix in ['order_narrative', 'order_impression', 'order_result_comment']:
         # find all files with specified prefix in the name
@@ -460,7 +513,7 @@ def deid_tsv_order(map_dir, notes_dir):
             final_columns = ['deid_order_id', 'note_text']
         items = [f for f in os.listdir(in_dir) if re.match(pattern, f)]
         for file in items:
-            logging.info(f"""Processing `file` "{file}".""")
+            logger.info(f"""    Processing `file` "{file}".""")
             out_file = 'deid_{}'.format(file)
             m = 'w'
             h = True
@@ -501,45 +554,85 @@ def copy_tsv(cohort, notes_dir, disclosure_dir):
     return
 
 
-# MAIN
-if __name__ == '__main__':
+# Logging block
+logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
+logFormat = logging.Formatter(f"""[%(asctime)s]\n[%(levelname)s](%(funcName)s)\n{"-"*24}> %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s) %(message)s""")
 
-    # Logging block
-    this_file_path = Path(__file__)
-    timestamp = dt.now().strftime("%Y-%m-%d %H-%M-%S")
-    logpath = os.path.join(base_dir, "logs", f"log {timestamp}.log")
-    makeDirPath(Path(logpath).parent)
-    fileHandler = logging.FileHandler(logpath)
-    streamHandler = logging.StreamHandler()
-    streamHandler.setLevel(LOG_LEVEL)
-    logging.basicConfig(format="[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s",
-                        handlers=[fileHandler,
-                                  streamHandler],
-                        level=LOG_LEVEL)
+logger = logging.getLogger(__name__)
 
-    logging.info(f"""Begin running "{this_file_path.absolute().relative_to(os.getcwd())}".""")
-    logging.info(f"""`base_dir` set to "{base_dir}".""")
+fileHandler = logging.FileHandler(logpath)
+fileHandler.setLevel(9)
+fileHandler.setFormatter(logFormat)
+
+streamHandler = logging.StreamHandler()
+streamHandler.setLevel(LOG_LEVEL)
+streamHandler.setFormatter(logFormat)
+
+logger.addHandler(fileHandler)
+logger.addHandler(streamHandler)
+
+logger.setLevel(9)
+
+if __name__ == "__main__":
+    logger.info(f"""Begin running "{thisFilePath}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Script arguments:
+
+    # Arguments
+    `COHORT_NAME`: "{COHORT_NAME}"
+    `COHORT_FILE`: "{COHORT_FILE}"
+    `IRB_NUMBER`: "{IRB_NUMBER}"
+    `ID_TYPE`: "{ID_TYPE}"
+    `NOTE_VERSION`: "{NOTE_VERSION}"
+    `DE_IDENTIFICATION_MODE`: "{DE_IDENTIFICATION_MODE}"
+    `SQL_ENCOUNTER_EFFECTIVE_DATE_START`: "{SQL_ENCOUNTER_EFFECTIVE_DATE_START}"
+    `SQL_ENCOUNTER_EFFECTIVE_DATE_END`: "{SQL_ENCOUNTER_EFFECTIVE_DATE_END}"
+
+    # Arguments: General
+    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
+    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}" --------------> "{IRBDir}"
+    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}" -> "{IDRDataRequestDir}"
+
+    `LOG_LEVEL` = "{LOG_LEVEL}"
+
+    # Arguments: SQL connection settings
+    `SERVER` = "{SERVER}"
+    `DATABASE` = "{DATABASE_PROD}"
+    `DATABASE` = "{DATABASE_NOTES}"
+    `USERDOMAIN` = "{USERDOMAIN}"
+    `USERNAME` = "{USERNAME}"
+    `UID` = "{UID}"
+    `PWD` = censored
+    """)
+    logger.info(f"""`base_dir` set to "{base_dir}".""")
+
     # pull metadata
-    pull_metadata(note_version, id_type, 'note', sql_dir, data_dir, notes_dir, cohort)
-    pull_metadata(note_version, id_type, 'order_narrative', sql_dir, data_dir, notes_dir, cohort)
-    pull_metadata(note_version, id_type, 'order_impression', sql_dir, data_dir, notes_dir, cohort)
-    pull_metadata(note_version, id_type, 'order_result_comment', sql_dir, data_dir, notes_dir, cohort)
+    pull_metadata(note_version, id_type, 'note', sql_dir, data_dir, notes_dir, cohort, logger)
+    pull_metadata(note_version, id_type, 'order_narrative', sql_dir, data_dir, notes_dir, cohort, logger)
+    pull_metadata(note_version, id_type, 'order_impression', sql_dir, data_dir, notes_dir, cohort, logger)
+    pull_metadata(note_version, id_type, 'order_result_comment', sql_dir, data_dir, notes_dir, cohort, logger)
+
     # split metadata into chunks, so that we can process data in chunks
-    split_metadata('note', notes_dir, cohort)
-    split_metadata('order_narrative', notes_dir, cohort)
-    split_metadata('order_impression', notes_dir, cohort)
-    split_metadata('order_result_comment', notes_dir, cohort)
+    split_metadata('note', notes_dir, cohort, logger)
+    split_metadata('order_narrative', notes_dir, cohort, logger)
+    split_metadata('order_impression', notes_dir, cohort, logger)
+    split_metadata('order_result_comment', notes_dir, cohort, logger)
+
     # pull text in parallel
-    pull_text_in_parallel('note', sql_dir, notes_dir, cohort)
-    pull_text_in_parallel('order_narrative', sql_dir, notes_dir, cohort)
-    pull_text_in_parallel('order_impression', sql_dir, notes_dir, cohort)
-    pull_text_in_parallel('order_result_comment', sql_dir, notes_dir, cohort)
+    pull_text_in_parallel('note', sql_dir, notes_dir, cohort, logger)
+    pull_text_in_parallel('order_narrative', sql_dir, notes_dir, cohort, logger)
+    pull_text_in_parallel('order_impression', sql_dir, notes_dir, cohort, logger)
+    pull_text_in_parallel('order_result_comment', sql_dir, notes_dir, cohort, logger)
     if (deid_mode == 'phi'):
+
         # copy note_metadata file to disclosure folder
         format_metadata_files('note', notes_dir, disclosure_dir)
+
         # combine all order metadata files and copy to discosure folder
         combine_order_metadata(notes_dir, cohort)
         format_metadata_files('order', notes_dir, disclosure_dir)
+
         # copy .tsv files with free text
         copy_tsv(cohort, notes_dir, disclosure_dir)
     else:
@@ -550,10 +643,17 @@ if __name__ == '__main__':
         generate_map(deid_mode, notes_dir, map_dir, 'note_link', cohort)
         generate_map(deid_mode, notes_dir, map_dir, 'order', cohort)
         generate_map(deid_mode, notes_dir, map_dir, 'provider', cohort)
+
         # deidentify metadata. We can create deidentified dataset or limited dataset.
         deid_metadata(deid_mode, 'note', map_dir, notes_dir, disclosure_dir)
         deid_metadata(deid_mode, 'order', map_dir, notes_dir, disclosure_dir)
+
         # prepare for text deidentification, i.e., deidentify ID in .tsv file(s)
-        deid_tsv_note(map_dir, notes_dir)
-        deid_tsv_order(map_dir, notes_dir)
-    logging.info(f"""Finished running "{this_file_path.absolute().relative_to(os.getcwd())}".""")
+        deid_tsv_note(map_dir, notes_dir, logger)
+        deid_tsv_order(map_dir, notes_dir, logger)
+
+    # Output location summary
+    logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
+
+    # End script
+    logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
