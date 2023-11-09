@@ -5,14 +5,14 @@ db_connections:
   data_pull:
     server: DWSRSRCH01.shands.ufl.edu
     database: DWS_OMOP_PROD
-    schema: hipaa
+    schema: dbo
 data_output:  # Assumes Windows path separator (i.e., "\"), and must end with path separator
   identified_file_location: 'data\output\'
   deidentified_file_location: 'data\output\'
   mapping_location: 'data\output\'
 
 # Path of the list of OMOP person IDs to use to pull the day, i.e. the cohort. The path
-# is expected to be relative to the project directory
+# is expected to be relative to the project directory, i.e. the command line working directory.
 person_id: 'data/output/getPersonIDs/2023-03-08 16-09-44/personIDs.csv'
 
 #####   DATA RELEASE SELECTION   #####
@@ -35,6 +35,7 @@ clinical_data_tables:
   device_exposure: device_exposure_start_date
   drug_exposure: drug_exposure_start_date
   measurement: measurement_date
+  note_nlp: nlp_date
   observation_period: observation_period_start_date
   observation: observation_date
   procedure_occurrence: procedure_date
@@ -53,6 +54,7 @@ condition_occurrence:
   - condition_end_date
   - condition_end_datetime
   - condition_type_concept_id
+  - condition_status_concept_id
   - stop_reason
   - provider_id
   - visit_occurrence_id
@@ -60,7 +62,6 @@ condition_occurrence:
   - condition_source_value
   - condition_source_concept_id
   - condition_status_source_value
-  - condition_status_concept_id
 location: 
 #####   LOCATION   #####
   - location_id
@@ -71,6 +72,10 @@ location:
   - zip
   - county
   - location_source_value
+  - country_concept_id
+  - country_source_value
+  - latitude
+  - longitude
 death:
 #####   DEATH   #####
   - person_id
@@ -91,12 +96,16 @@ device_exposure:
   - device_exposure_end_datetime
   - device_type_concept_id
   - unique_device_id
+  - production_id
   - quantity
   - provider_id
   - visit_occurrence_id
   - visit_detail_id
   - device_source_value
   - device_source_concept_id
+  - unit_concept_id
+  - unit_source_value
+  - unit_source_concept_id
 drug_exposure:
 #####   DRUG EXPOSURE #####
   - drug_exposure_id
@@ -144,6 +153,24 @@ measurement:
   - measurement_source_concept_id
   - unit_source_value
   - value_source_value
+note_nlp:
+#####   NOTE NLP #####
+  - person_id
+  - note_nlp_id
+  - note_id
+  - section_concept_id
+  - snippet
+  - offset
+  - lexical_variant
+  - note_nlp_concept_id
+  - note_nlp_source_concept_id
+  - nlp_system
+  - nlp_date
+  - nlp_datetime
+  - term_exists
+  - term_temporal
+  - term_modifiers
+
 observation_period:
 #####   OBSERVATION PERIOD #####
   - observation_period_id
