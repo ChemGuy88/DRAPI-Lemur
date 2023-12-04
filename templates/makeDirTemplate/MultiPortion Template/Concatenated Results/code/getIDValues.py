@@ -20,7 +20,7 @@ from drapi.drapi import getTimestamp, makeDirPath, successiveParents
 from common import COLUMNS_TO_DE_IDENTIFY
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
 from common import DATA_TYPES_DICT
-# Project parameters: Portion paths
+# Project parameters: Portion paths and file criteria
 from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
 from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
 from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
@@ -48,16 +48,19 @@ else:
 PORTION_PATHS_MAC = {"BO": BO_PORTION_DIR_MAC,
                      "i2b2": I2B2_PORTION_DIR_MAC,
                      "Notes": NOTES_PORTION_DIR_MAC,
-                     "OMOP": OMOPPortionDirMac}
+                     "OMOP": OMOPPortionDirMac,
+                     "Zip Code": ZIP_CODE_PORTION_DIR_MAC}
 PORTION_PATHS_WIN = {"BO": BO_PORTION_DIR_WIN,
                      "i2b2": I2B2_PORTION_DIR_WIN,
                      "Notes": NOTES_PORTION_DIR_WIN,
-                     "OMOP": OMOPPortionDirWin}
+                     "OMOP": OMOPPortionDirWin,
+                     "Zip Code": ZIP_CODE_PORTION_DIR_WIN}
 
 DICT_OF_PORTION_CONDITIONS = {"BO": BO_PORTION_FILE_CRITERIA,
                               "i2b2": I2B2_PORTION_FILE_CRITERIA,
                               "Notes": NOTES_PORTION_FILE_CRITERIA,
-                              "OMOP": OMOP_PORTION_FILE_CRITERIA}
+                              "OMOP": OMOP_PORTION_FILE_CRITERIA,
+                              "Zip Code": ZIP_CODE_PORTION_FILE_CRITERIA}
 
 # Arguments: Meta-variables
 CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1

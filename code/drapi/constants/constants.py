@@ -58,6 +58,7 @@ DATA_TYPES_BO = {"Accct Number - Enter DateTime Comb": "String",
                  "To Station": "String"}
 
 # Note that notes data are from the same source as BO data. These variable names are actually aliases and are here for convenience.
+DATA_TYPES_I2B2 = {"LOCATION_CD": "Numeric"}
 DATA_TYPES_NOTES = {"AuthoringProviderKey": "Numeric",
                     "AuthorizingProviderKey": "Numeric",
                     "ContactDate": "Datetime",
@@ -86,6 +87,7 @@ DATA_TYPES_OMOP = {"location_id": "Numeric",
                    "visit_occurrence_id": "Numeric"}
 
 DATA_TYPES_DICT = DATA_TYPES_BO.copy()
+DATA_TYPES_DICT.update(DATA_TYPES_I2B2)
 DATA_TYPES_DICT.update(DATA_TYPES_NOTES)
 DATA_TYPES_DICT.update(DATA_TYPES_OMOP)
 

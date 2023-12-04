@@ -16,7 +16,7 @@ import pandas as pd
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
 # Project parameters: General
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
-# Project parameters: Portion paths
+# Project parameters: Portion paths and criteria
 from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
 from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
 from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
@@ -57,7 +57,8 @@ else:
     WIN_PATHS = [BO_PORTION_DIR_WIN,
                  I2B2_PORTION_DIR_WIN,
                  OMOPPortionDirWin,
-                 NOTES_PORTION_DIR_WIN]
+                 NOTES_PORTION_DIR_WIN,
+                 ZIP_CODE_PORTION_DIR_WIN]
 
 # Arguments: Definition of criteria for file release
 # NOTE (Developer's Note) The files to release and the file criteiria both act as criteria to release. The argument structure here is not very clear and it will take some time to create a generalizeable template. However, it seems that `LIST_OF_PORTION_CONDITIONS` is the only output of this arguments section, i.e., the only require input for the script. Also note that each portion has its own criteria, but they are not used in the template.

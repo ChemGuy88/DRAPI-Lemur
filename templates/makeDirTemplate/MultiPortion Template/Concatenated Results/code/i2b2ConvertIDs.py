@@ -1,5 +1,5 @@
 """
-Collects i2b2 `PATIENT_NUM` and `ENCOUNTER_NUM` values.
+Converts i2b2 `PATIENT_NUM` and `ENCOUNTER_NUM` IDs to "Patient Key" and "Encounter # (CSN)", respectively.
 """
 
 import logging
@@ -12,11 +12,11 @@ from sqlalchemy import create_engine
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
 # Arguments
-I2B2_PORTION_OUTPUT_DIR_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\i2b2")
-I2B2_COHORT_IDS_FILE_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\Cohort_IDs.csv")
-ENCOUNTER_MAP_PATH = Path(r"data\output\i2b2MakeMap\2023-10-24 14-47-45\i2b2 Encounter Map.CSV")
-PATIENT_MAP_PATH1 = Path(r"data\output\i2b2MakeMap\2023-10-24 14-47-45\i2b2 Patient Map.CSV")  # i2b2 to EPIC Patient ID
-PATIENT_MAP_PATH2 = Path(r"data\output\i2b2MakeMap\2023-10-24 16-30-07\i2b2 Patient Map.CSV")  # EPIC Patient ID to Patient Key
+I2B2_PORTION_OUTPUT_DIR_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\output\i2b2_dump\2023-11-20 20-35-58\i2b2")
+I2B2_COHORT_IDS_FILE_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\Cohort IDs.CSV")
+ENCOUNTER_MAP_PATH = Path(r"..\Concatenated Results\data\output\i2b2MakeMap\2023-11-27 16-43-10\i2b2 Encounter Map.CSV")
+PATIENT_MAP_PATH1 = Path(r"..\Concatenated Results\data\output\i2b2MakeMap\2023-11-27 16-43-10\i2b2 Patient Map.CSV")  # i2b2 to EPIC Patient ID
+PATIENT_MAP_PATH2 = Path(r"..\Concatenated Results\data\output\i2b2MakeMap\2023-11-27 16-54-05\i2b2 Patient Map.CSV")  # EPIC Patient ID to Patient Key
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
@@ -136,23 +136,22 @@ if __name__ == "__main__":
     # Load maps
     logger.info(f"""Loading maps.""")
     encounterMap = pd.read_csv(ENCOUNTER_MAP_PATH)
-    patientMap1 = pd.read_csv(PATIENT_MAP_PATH1)
-    patientMap2 = pd.read_csv(PATIENT_MAP_PATH2)
+
+    # Get un-linked patients and drop them.
+    cohortIDs = pd.read_csv(I2B2_COHORT_IDS_FILE_PATH)
+    unlinkedPatientsMask = cohortIDs["Patient Key"].isna()
+    unlinkedPatients = cohortIDs["I2B2_PATIENT_NUM"][unlinkedPatientsMask]
+
+    TARGET_ID_NAME = "Patient Key"
+
+    colnamedict = {"ENCOUNTER_NUM": encounterMap.columns[1],
+                   "PATIENT_NUM": TARGET_ID_NAME}
 
     # Convert maps to dictionaries
     logger.info(f"""Converting maps to dictionaries.""")
     encounterDict = {k: v for k, v in zip(encounterMap.iloc[:,0], encounterMap.iloc[:,1])}
     encounterDict[""] = ""
-    patientDict1 = {k: v for k, v in zip(patientMap1.iloc[:,0], patientMap1.iloc[:,1])}
-    patientDict2 = {k: v for k, v in zip(patientMap2.iloc[:,0], patientMap2.iloc[:,1])}
-
-    # Get un-linked patients and drop them.
-    cohortIDs = pd.read_csv(I2B2_COHORT_IDS_FILE_PATH)
-    unlinkedPatientsMask = cohortIDs["PatientKey"].isna()
-    unlinkedPatients = cohortIDs["I2B2_PATIENT_NUM"][unlinkedPatientsMask]
-
-    colnamedict = {"ENCOUNTER_NUM": encounterMap.columns[1],
-                   "PATIENT_NUM": patientMap2.columns[1]}
+    patientDict3 = {k: v for k, v in zip(cohortIDs["I2B2_PATIENT_NUM"], cohortIDs[TARGET_ID_NAME])}
 
     # Convert i2b2 IDs
     logger.info(f"""Converting i2b2 IDs.""")
@@ -186,7 +185,7 @@ if __name__ == "__main__":
 
                 # Convert patient IDs
                 if "PATIENT_NUM" in chunk.columns:
-                    newChunk["PATIENT_NUM"] = newChunk["PATIENT_NUM"].apply(lambda i2b2ID: patientDict2[patientDict1[i2b2ID]])
+                    newChunk["PATIENT_NUM"] = newChunk["PATIENT_NUM"].apply(lambda i2b2ID: patientDict3[i2b2ID])
                     newChunk = newChunk.rename(columns={"PATIENT_NUM": colnamedict["PATIENT_NUM"]})
 
                 # Convert encounter IDs

@@ -14,8 +14,14 @@ __all__ = ["COLUMNS_TO_DE_IDENTIFY",
 from pathlib import Path
 # Local packages
 from drapi.constants.constants import DATA_TYPES_DICT
-from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_BO, LIST_OF_PHI_VARIABLES_I2B2, LIST_OF_PHI_VARIABLES_NOTES, LIST_OF_PHI_VARIABLES_OMOP
-from drapi.constants.phiVariables import VARIABLE_SUFFIXES_BO, VARIABLE_SUFFIXES_NOTES, VARIABLE_SUFFIXES_OMOP
+from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_BO
+from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_I2B2
+from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_NOTES
+from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_OMOP
+from drapi.constants.phiVariables import VARIABLE_SUFFIXES_BO
+from drapi.constants.phiVariables import VARIABLE_SUFFIXES_I2B2
+from drapi.constants.phiVariables import VARIABLE_SUFFIXES_NOTES
+from drapi.constants.phiVariables import VARIABLE_SUFFIXES_OMOP
 from drapi.drapi import successiveParents
 
 # Argument meta variables
@@ -37,7 +43,11 @@ ALIAS_DATA_TYPES = {"Case Patient (EPIC Patient ID)": "String",
 DATA_TYPES_DICT.update(ALIAS_DATA_TYPES)
 # Add the keys from `ALIAS_DATA_TYPES` to `COLUMNS_TO_DE_IDENTIFY`
 LIST_OF_PHI_VARIABLES_FROM_ALIASES = [variableName for variableName in ALIAS_DATA_TYPES.keys()]
-COLUMNS_TO_DE_IDENTIFY = LIST_OF_PHI_VARIABLES_BO + LIST_OF_PHI_VARIABLES_I2B2 + LIST_OF_PHI_VARIABLES_NOTES + LIST_OF_PHI_VARIABLES_OMOP + LIST_OF_PHI_VARIABLES_FROM_ALIASES
+COLUMNS_TO_DE_IDENTIFY = LIST_OF_PHI_VARIABLES_BO + \
+                         LIST_OF_PHI_VARIABLES_I2B2 + \
+                         LIST_OF_PHI_VARIABLES_NOTES + \
+                         LIST_OF_PHI_VARIABLES_OMOP + \
+                         LIST_OF_PHI_VARIABLES_FROM_ALIASES
 
 # `VARIABLE_ALIASES` NOTE: Some variable names are not standardized. This argument is used by the de-identification process when looking for the de-identification map. This way several variables can be de-identified with the same map.
 # TODO Add or remove from these dictionaries as necessary.
@@ -62,7 +72,10 @@ VARIABLE_ALIASES = {}
 for di in LIST_OF_ALIAS_DICTS:
     VARIABLE_ALIASES.update(di)
 
-VARIABLE_SUFFIXES_LIST = [VARIABLE_SUFFIXES_BO, VARIABLE_SUFFIXES_NOTES, VARIABLE_SUFFIXES_OMOP]
+VARIABLE_SUFFIXES_LIST = [VARIABLE_SUFFIXES_BO,
+                          VARIABLE_SUFFIXES_I2B2,
+                          VARIABLE_SUFFIXES_NOTES,
+                          VARIABLE_SUFFIXES_OMOP]
 VARIABLE_SUFFIXES = dict()
 for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
     VARIABLE_SUFFIXES.update(variableSuffixDict)

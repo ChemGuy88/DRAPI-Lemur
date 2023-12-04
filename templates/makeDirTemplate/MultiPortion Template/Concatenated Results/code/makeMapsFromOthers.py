@@ -14,14 +14,14 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
-# Project parameters: General
+# Local packages: Script parameters: General
 from common import IRB_NUMBER
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
 from common import DATA_TYPES_DICT
 from common import OLD_MAPS_DIR_PATH
 from common import VARIABLE_ALIASES
 from common import VARIABLE_SUFFIXES
-# Project parameters: Portion paths
+# Local packages: Script parameters: Portion paths
 from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
 from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
 from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
@@ -30,7 +30,7 @@ from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE
 from common import ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
-SETS_PATH = Path(r"data\output\aliasVariables\...")
+SETS_PATH = Path(r"..\Concatenated Results\data\output\aliasVariables\...")
 
 CHUNK_SIZE = 50000
 
@@ -108,14 +108,14 @@ elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
     rootDirectory = IDRDataRequestDir
 
 # Variables: Path construction: OS-specific
-isAccessible = all([path.exists() for path in MAC_PATHS]) or all([path.exists() for path in WIN_PATHS])
+isAccessible = all([path.exists() for path in SETS_PATH.iterdir()])
 if isAccessible:
     # If you have access to either of the below directories, use this block.
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
-        listOfPortionDirs = MAC_PATHS[:]
+        getIDValuesOutput = SETS_PATH
     elif operatingSystem == "win32":
-        listOfPortionDirs = WIN_PATHS[:]
+        getIDValuesOutput = SETS_PATH
     else:
         raise Exception("Unsupported operating system")
 else:
@@ -145,8 +145,13 @@ if __name__ == "__main__":
 
     # Get set of values
     # NOTE The code that used to be in this section was moved to "getIDValues.py"
-    getIDValuesOutput = SETS_PATH
     logging.info(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(rootDirectory)}".""")
+
+    # QA: Make sure all data variables are present in the script parameters.
+    collectedVariables = [fname.stem for fname in getIDValuesOutput.iterdir()]
+    for variableName in collectedVariables:
+        assert variableName in DATA_TYPES_DICT.keys()
+        assert variableName in VARIABLE_SUFFIXES.keys()
 
     # Create reverse-look-up alias map
     variableAliasesReverse = {}
@@ -159,7 +164,6 @@ if __name__ == "__main__":
     # Concatenate all old maps
     oldMaps = {}
     logging.info("""Concatenating all similar pre-existing maps.""")
-    collectedVariables = [fname.stem for fname in getIDValuesOutput.iterdir()]
     for variableName in collectedVariables:
         logging.info(f"""  Working on variable "{variableName}".""")
         # Get maps explicitely or implicietly referring to this variable name.

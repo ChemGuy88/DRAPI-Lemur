@@ -123,6 +123,9 @@ VARIABLE_SUFFIXES_BO = {"Authoring Provider Key": {"columnSuffix": "provider",
                         "To Station": {"columnSuffix": "station",
                                        "deIdIDSuffix": "STN"}}
 
+VARIABLE_SUFFIXES_I2B2 = {"LOCATION_CD": {"columnSuffix": "location",
+                                          "deIdIDSuffix": "LOC"}}
+
 VARIABLE_SUFFIXES_NOTES = {"AuthoringProviderKey": {"columnSuffix": "provider",
                                                     "deIdIDSuffix": "PROV"},
                            "AuthorizingProviderKey": {"columnSuffix": "provider",

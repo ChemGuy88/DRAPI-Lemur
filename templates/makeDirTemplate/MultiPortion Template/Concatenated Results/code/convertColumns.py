@@ -13,7 +13,14 @@ import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
 from drapi.idealist.idealist import idealistMap2dict
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA
+# Local packages: Script parameters: General
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
+# Local packages: Script parameters: Paths
+from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+# Local packages: Script parameters: File criteria
+from common import BO_PORTION_FILE_CRITERIA
+from common import NOTES_PORTION_FILE_CRITERIA
+from common import OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
 COLUMNS_TO_CONVERT_DI = {"person_id": "PatientKey"}
