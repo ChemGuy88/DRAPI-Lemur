@@ -136,11 +136,6 @@ def cohort_mapping_file(search_config, person_id_list):
         patient_keys_list_string = ', '.join(map(str, patient_keys))
         mrn_mapping.to_csv(mapping_file_location, index=False)
 
-        # query = "SELECT PATNT_ENCNTR_KEY_XREF1.PATNT_ENCNTR_KEY as PatientEncounterKey, PATNT_ENCNTR_KEY_XREF1.ENCNTR_CSN_ID as csn FROM DWS_PROD.dbo.PATNT_ENCNTR_KEY_XREF  PATNT_ENCNTR_KEY_XREF1 WHERE PATNT_ENCNTR_KEY_XREF1.PATNT_ENCNTR_KEY  IN  (" + patient_keys_list_string + ")"
-        # data = db_execute_read_query(host,database,query)
-        # mapping_file_location = search_config['data_output']['mapping_location']+ 'MRN1_mapping.csv'
-        # data.to_csv(mapping_file_location,index = False)
-
         # patient key to MRN
         query = f'''(SELECT person_id, patient_key
         FROM xref.person_mapping)
@@ -171,12 +166,6 @@ def cohort_mapping_file(search_config, person_id_list):
         data = db_execute_read_query(host, database, query)
         mapping_file_location = search_config['data_output']['mapping_location'] + 'MRN1_mapping.csv'
         data.to_csv(mapping_file_location, index=False)
-        # paient key to MRN
-        # SELECT
-        # PATNT_ENCNTR_KEY_XREF1.PATNT_ENCNTR_KEY as PatientEncounterKey,
-        # PATNT_ENCNTR_KEY_XREF1.ENCNTR_CSN_ID as csn
-        # FROM DWS_PROD.dbo.PATNT_ENCNTR_KEY_XREF  PATNT_ENCNTR_KEY_XREF1
-        # WHERE PATNT_ENCNTR_KEY_XREF1.PATNT_ENCNTR_KEY  IN  ( XXXXX ) -- Replace 'XXXXX' with the list of patient encounter keys
     return mapping_file_location
 
 
