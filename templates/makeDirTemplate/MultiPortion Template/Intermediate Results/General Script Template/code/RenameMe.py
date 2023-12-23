@@ -15,9 +15,9 @@ _ = None
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
-DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 2
-IRB_DIR_DEPTH = DATA_REQUEST_DIR_DEPTH + 0
-IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 3
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+IDR_DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 4
 
 ROOT_DIRECTORY = "IRB_DIRECTORY"  # TODO One of the following:
                                                  # ["IDR_DATA_REQUEST_DIRECTORY",    # noqa
@@ -41,7 +41,7 @@ thisFilePath = Path(__file__)
 thisFileStem = thisFilePath.stem
 projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
 dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_DIR_DEPTH)
-IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
 IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
 dataDir = projectDir.joinpath("data")
 if dataDir:
@@ -130,4 +130,4 @@ if __name__ == "__main__":
     _ = pd
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")
+    logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
