@@ -1,10 +1,8 @@
--- Copied from "/Volumes/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Guo/IRB202201080/sql/grab_person_ids.sql"
-use DWS_OMOP_PROD
-
-SELECT 
-	xref.PERSON_MAPPING.person_id as person_id,
-	xref.PERSON_MAPPING.patient_key as patient_key
+USE DWS_OMOP_PROD
+SELECT
+	[person_id] AS 'person_id'
+	,[person_source_value] AS 'Patient Key'
 FROM
-	xref.PERSON_MAPPING
+	[DWS_OMOP_PROD].[dbo].[PERSON]
 WHERE
-    xref.PERSON_MAPPING.patient_key IN (XXXXX)
+	person_source_value IN (XXXXX)

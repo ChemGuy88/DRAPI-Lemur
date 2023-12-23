@@ -11,13 +11,13 @@ import pandas as pd
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
 # Arguments
-PATIENT_KEYS_CSV_FILE_PATH = Path("data/input/cohort.csv")  # TODO
-PATIENT_KEYS_CSV_FILE_HEADER = None  # TODO
+PATIENT_KEYS_CSV_FILE_PATH = Path("data/input/Cohort - Patient Key.CSV")  # TODO
+PATIENT_KEYS_CSV_FILE_HEADER = "Patient Key"  # TODO
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
 DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 2
-IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 0
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 2
 IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
 
 ROOT_DIRECTORY = "IRB_DIRECTORY"  # TODO One of the following:
@@ -30,7 +30,7 @@ LOG_LEVEL = "INFO"
 
 # Arguments: SQL connection settings
 SERVER = "DWSRSRCH01.shands.ufl.edu"
-DATABASE = "DWS_PROD"
+DATABASE = "DWS_OMOP_PROD"
 USERDOMAIN = "UFAD"
 USERNAME = os.environ["USER"]
 UID = None
@@ -88,7 +88,7 @@ pass
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s)%(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     # Script
     # Get patient keys
-    patientKeysInput = pd.read_csv(PATIENT_KEYS_CSV_FILE_PATH).drop_duplicates()
+    patientKeysInput = pd.read_csv(PATIENT_KEYS_CSV_FILE_PATH, dtype={0: int}).drop_duplicates()
     listAsString = ",".join([str(x) for x in patientKeysInput.values.flatten()])
 
     # Get input file header
@@ -143,31 +143,27 @@ if __name__ == "__main__":
         inputFileHeader = patientKeysInput.columns[0]
 
     # Query person IDs
-    logging.info("""Querying database for person IDs.""")
+    logger.info("""Querying database for person IDs.""")
     with open(personID_SQLQueryFilePath, "r") as file:
         text = file.read()
     query = text.replace("XXXXX", listAsString)
     queryResults = pd.read_sql(query, con=conStr)
-    logging.info("""Finished query.""")
+    logger.info("""Querying database for person IDs - done.""")
 
     # Compare number of Person IDs returned with Patient Keys queried
-    li = []
-    for value in patientKeysInput.values:
-        if value in queryResults.iloc[:, 1].values:
-            li.append(True)
-        else:
-            li.append(False)
-    patientKeysInput["Found"] = li
-    patientKeysInput = patientKeysInput.rename(columns={inputFileHeader: "patient_key"})
-    personIDsFound = patientKeysInput.set_index("patient_key").join(queryResults.set_index("patient_key"), "patient_key", "left")
+    patientKeysInput = patientKeysInput.rename(columns={inputFileHeader: "Patient Key"})
+    patientKeysInput["Patient Key"] = patientKeysInput["Patient Key"].astype(int)
+    queryResults["Patient Key"] = queryResults["Patient Key"].astype(int)
+    patientKeysInput["Found"] = patientKeysInput["Patient Key"].isin(queryResults["Patient Key"])
+    personIDsFound = patientKeysInput.set_index("Patient Key").join(queryResults.set_index("Patient Key"), "Patient Key", "left")
     personIDsFound = personIDsFound.sort_values("person_id")
 
     # Summary statistics
     numFound = personIDsFound["Found"].sum()
     numPatientKeys = len(patientKeysInput)
-    logging.info(f"""A total of {numFound:,} patient keys of {numPatientKeys:,} were mapped to OMOP person IDs.""")
-    logging.info("""If the number of person IDs is LESS THAN the number of patient keys, it's possible that some patients were merged BEFORE the OMOP database was updated.""")
-    logging.info("""If the number of person IDs is GREATER THAN the number of patient keys, it's possible that some patients were merged AFTER the OMOP database was updated.""")
+    logger.info(f"""A total of {numFound:,} patient keys of {numPatientKeys:,} were mapped to OMOP person IDs.""")
+    logger.info("""If the number of person IDs is LESS THAN the number of patient keys, it's possible that some patients were merged BEFORE the OMOP database was updated.""")
+    logger.info("""If the number of person IDs is GREATER THAN the number of patient keys, it's possible that some patients were merged AFTER the OMOP database was updated.""")
 
     # If any column contains NaNs, convert the column to the "Object" data type, to preserve data quality
     personIDsFound2 = personIDsFound.copy()
@@ -184,13 +180,13 @@ if __name__ == "__main__":
     # Save results: Person IDs found
     personIDsFoundExportPath = runOutputDir.joinpath("personIDsFound.csv")
     personIDsFound2.to_csv(personIDsFoundExportPath)
-    logging.info(f"""The map of patient keys to person IDs, and those missing or found, was saved to "{personIDsFoundExportPath}".""")
+    logger.info(f"""The map of patient keys to person IDs, and those missing or found, was saved to "{personIDsFoundExportPath}".""")
 
     # Save results: person IDs
     personIDs = personIDsFound["person_id"].drop_duplicates().dropna().sort_values().astype(int)
     personIDsExportPath = runOutputDir.joinpath("personIDs.csv")
     personIDs.to_csv(personIDsExportPath, index=False)
-    logging.info(f"""Person IDs were saved to "{personIDsExportPath.relative_to(projectDir)}".""")
+    logger.info(f"""Person IDs were saved to "{personIDsExportPath.relative_to(projectDir)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")
+    logger.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")
