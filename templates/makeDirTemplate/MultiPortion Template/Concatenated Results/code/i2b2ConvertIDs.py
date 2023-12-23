@@ -12,11 +12,11 @@ from sqlalchemy import create_engine
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
 # Arguments
-I2B2_PORTION_OUTPUT_DIR_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\output\i2b2_dump\2023-11-20 20-35-58\i2b2")
+I2B2_PORTION_OUTPUT_DIR_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\output\i2b2_dump\...\i2b2")
 I2B2_COHORT_IDS_FILE_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\Cohort IDs.CSV")
-ENCOUNTER_MAP_PATH = Path(r"..\Concatenated Results\data\output\i2b2MakeMap\2023-11-27 16-43-10\i2b2 Encounter Map.CSV")
-PATIENT_MAP_PATH1 = Path(r"..\Concatenated Results\data\output\i2b2MakeMap\2023-11-27 16-43-10\i2b2 Patient Map.CSV")  # i2b2 to EPIC Patient ID
-PATIENT_MAP_PATH2 = Path(r"..\Concatenated Results\data\output\i2b2MakeMap\2023-11-27 16-54-05\i2b2 Patient Map.CSV")  # EPIC Patient ID to Patient Key
+ENCOUNTER_MAP_PATH = Path(r"..\Concatenated Results\data\output\i2b2MakeMap\...\i2b2 Encounter Map.CSV")
+PATIENT_MAP_PATH1 = Path(r"..\Concatenated Results\data\output\i2b2MakeMap\...\i2b2 Patient Map.CSV")  # i2b2 to EPIC Patient ID
+PATIENT_MAP_PATH2 = Path(r"..\Concatenated Results\data\output\i2b2MakeMap\...\i2b2 Patient Map.CSV")  # EPIC Patient ID to Patient Key
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2

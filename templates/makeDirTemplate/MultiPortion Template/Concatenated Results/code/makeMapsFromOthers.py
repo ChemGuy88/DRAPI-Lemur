@@ -12,8 +12,10 @@ import sys
 from pathlib import Path
 # Third-party packages
 import pandas as pd
+from pandas.errors import EmptyDataError
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath, makeMap, makeSetComplement, ditchFloat, handleDatetimeForJson
+from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT, FILE_NAME_TO_VARIABLE_NAME_DICT
 # Local packages: Script parameters: General
 from common import IRB_NUMBER
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
@@ -23,14 +25,12 @@ from common import VARIABLE_ALIASES
 from common import VARIABLE_SUFFIXES
 # Local packages: Script parameters: Portion paths
 from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
-from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
 from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
 from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
 from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
-from common import ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
-SETS_PATH = Path(r"..\Concatenated Results\data\output\aliasVariables\...")
+SETS_PATH = Path(r"..\Concatenated Results\data\output\aliasVariables\2023-12-13 11-28-28")
 
 CHUNK_SIZE = 50000
 
@@ -46,21 +46,15 @@ else:
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
 MAC_PATHS = [BO_PORTION_DIR_MAC,
-             I2B2_PORTION_DIR_MAC,
              NOTES_PORTION_DIR_MAC,
-             OMOPPortionDirMac,
-             ZIP_CODE_PORTION_DIR_MAC]
+             OMOPPortionDirMac]
 WIN_PATHS = [BO_PORTION_DIR_WIN,
-             I2B2_PORTION_DIR_WIN,
              NOTES_PORTION_DIR_WIN,
-             OMOPPortionDirWin,
-             ZIP_CODE_PORTION_DIR_WIN]
+             OMOPPortionDirWin]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
-                              I2B2_PORTION_FILE_CRITERIA,
                               NOTES_PORTION_FILE_CRITERIA,
-                              OMOP_PORTION_FILE_CRITERIA,
-                              ZIP_CODE_PORTION_FILE_CRITERIA]
+                              OMOP_PORTION_FILE_CRITERIA]
 
 # Arguments: Meta-variables
 CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
@@ -148,10 +142,21 @@ if __name__ == "__main__":
     logging.info(f"""Using the set of new values in the directory "{getIDValuesOutput.absolute().relative_to(rootDirectory)}".""")
 
     # QA: Make sure all data variables are present in the script parameters.
-    collectedVariables = [fname.stem for fname in getIDValuesOutput.iterdir()]
+    collectedVariables = [FILE_NAME_TO_VARIABLE_NAME_DICT[fname.stem] for fname in getIDValuesOutput.iterdir()]
+    missingDataTypes = []
+    missingVariableSuffixes = []
     for variableName in collectedVariables:
-        assert variableName in DATA_TYPES_DICT.keys()
-        assert variableName in VARIABLE_SUFFIXES.keys()
+        if variableName not in DATA_TYPES_DICT.keys():
+            missingDataTypes.append(variableName)
+        if variableName not in VARIABLE_SUFFIXES.keys():
+            missingVariableSuffixes.append(variableName)
+    if len(missingDataTypes) > 0:
+        text = "\n".join(missingDataTypes)
+        raise Exception(f"""Not all variables have a data type assigned to them:\n{text}""")
+    if len(missingVariableSuffixes) > 0:
+        text = "\n".join(missingVariableSuffixes)
+        raise Exception(f"Not all variables have a de-identification suffix assigned to them:\n{text}")
+
 
     # Create reverse-look-up alias map
     variableAliasesReverse = {}
@@ -242,14 +247,14 @@ if __name__ == "__main__":
         logging.info(f"""    The size of this set is {len(oldIDSet):,}.""")
 
         # Get new set of IDs
-        newSetPath = getIDValuesOutput.joinpath(f"{variableName}.txt")
+        newSetPath = getIDValuesOutput.joinpath(f"{VARIABLE_NAME_TO_FILE_NAME_DICT[variableName]}.txt")
         logging.info(f"""    Getting the new set of IDs from "{newSetPath.absolute().relative_to(rootDirectory)}".""")
-        newIDSet = set()
-        with open(newSetPath, "r") as file:
-            text = file.read()
-            lines = text.split("\n")[:-1]
-        for line in lines:
-            newIDSet.add(line)
+        try:
+            setSeries = pd.read_table(newSetPath, header=None)[0]
+            newIDSet = set(setSeries.to_list())
+        except EmptyDataError as err:
+            _ = err
+            newIDSet = set()
         if variableDataType.lower() == "numeric":
             newIDSet = set([ditchFloat(el) for el in newIDSet])  # NOTE: Hack. Convert values to type int or string
         elif variableDataType.lower() == "string":
@@ -268,7 +273,7 @@ if __name__ == "__main__":
         valuesToMap[variableName] = IDSetDiff
 
         # Save new subset to `setsToMapDataDir`
-        fpath = setsToMapDataDir.joinpath(f"{variableName}.JSON")
+        fpath = setsToMapDataDir.joinpath(f"{VARIABLE_NAME_TO_FILE_NAME_DICT[variableName]}.JSON")
         with open(fpath, "w") as file:
             if variableDataType.lower() == "numeric":
                 li = [ditchFloat(IDNumber) for IDNumber in IDSetDiff]  # NOTE: Hack. Convert values to type int or string
@@ -318,7 +323,7 @@ if __name__ == "__main__":
     # Map un-mapped values
     logging.info("""Mapping un-mapped values.""")
     for file in setsToMapDataDir.iterdir():
-        variableName = file.stem
+        variableName = FILE_NAME_TO_VARIABLE_NAME_DICT[file.stem]
         variableDataType = DATA_TYPES_DICT[variableName]
         logging.info(f"""  Working on un-mapped values for variable "{variableName}" located at "{file.absolute().relative_to(rootDirectory)}".""")
         # Map contents
@@ -335,9 +340,16 @@ if __name__ == "__main__":
             raise Exception(msg)
         numbers = sorted(list(newNumbersDict[variableName]))
         deIdIDSuffix = VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]
-        map_ = makeMap(IDset=values, IDName=variableName, startFrom=numbers, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName, deIdentificationMapStyle="lemur", logger=logging.getLogger())
+        map_ = makeMap(IDset=values,
+                       IDName=variableName, 
+                       startFrom=numbers, 
+                       irbNumber=IRB_NUMBER, 
+                       suffix=deIdIDSuffix, 
+                       columnSuffix=variableName, 
+                       deIdentificationMapStyle="lemur", 
+                       logger=logging.getLogger())
         # Save map
-        mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
+        mapPath = runOutputDir.joinpath(f"{VARIABLE_NAME_TO_FILE_NAME_DICT[variableName]} map.csv")
         map_.to_csv(mapPath, index=False)
         logging.info(f"""    De-identification map saved to "{mapPath.absolute().relative_to(rootDirectory)}".""")
 

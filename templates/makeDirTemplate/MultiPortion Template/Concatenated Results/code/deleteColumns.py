@@ -14,7 +14,10 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
+from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE
+from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL
 # Project parameters: General
+from common import STUDY_TYPE
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
 # Project parameters: Portion paths and criteria
 from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
@@ -31,8 +34,8 @@ USE_CONCATENATED_FILES = True  # TODO
 USE_MODIFIED_OMOP_DATA_SET = True
 
 # Arguments: File location definition: By concatenation
-CONCATENATED_PORTIONS_DIR_MAC = Path("data/output/deIdentify/...")  # TODO
-CONCATENATED_PORTIONS_DIR_WIN = Path("data/output/deIdentify/...")  # TODO
+CONCATENATED_PORTIONS_DIR_MAC = Path(r"..\Concatenated Results\data\output\deleteByColumnValues\...")  # TODO
+CONCATENATED_PORTIONS_DIR_WIN = Path(r"..\Concatenated Results\data\output\deleteByColumnValues\...")  # TODO
 
 # Arguments: Portion Paths and conditions
 if USE_MODIFIED_OMOP_DATA_SET:
@@ -62,9 +65,10 @@ else:
 
 # Arguments: Definition of criteria for file release
 # NOTE (Developer's Note) The files to release and the file criteiria both act as criteria to release. The argument structure here is not very clear and it will take some time to create a generalizeable template. However, it seems that `LIST_OF_PORTION_CONDITIONS` is the only output of this arguments section, i.e., the only require input for the script. Also note that each portion has its own criteria, but they are not used in the template.
-BO_FILES_TO_RELEASE = [""]  # TODO
+BO_FILES_TO_RELEASE = []  # TODO
 NOTES_COHORT_NAME = ""  # TODO
-NOTES_METADATA_FILES_TO_RELEASE = ["provider_metadata.csv",
+NOTES_METADATA_FILES_TO_RELEASE = ["encounters.csv",
+                                   "provider_metadata.csv",
                                    f"{NOTES_COHORT_NAME}_note_metadata.csv",
                                    f"{NOTES_COHORT_NAME}_order_impression_metadata.csv",
                                    f"{NOTES_COHORT_NAME}_order_metadata.csv",
@@ -92,8 +96,11 @@ OMOP_FILES_TO_RELEASE = ["condition_occurrence.csv",
                          "visit_occurrence.csv"]
 ZIP_CODE_FILES_TO_RELEASE = ["zipcodes.csv"]
 
-FILES_TO_RELEASE = BO_FILES_TO_RELEASE + I2B2_FILES_TO_RELEASE + NOTES_METADATA_FILES_TO_RELEASE + ZIP_CODE_FILES_TO_RELEASE
-FILES_TO_RELEASE = I2B2_FILES_TO_RELEASE
+FILES_TO_RELEASE = BO_FILES_TO_RELEASE + \
+                   I2B2_FILES_TO_RELEASE + \
+                   NOTES_METADATA_FILES_TO_RELEASE + \
+                   OMOP_FILES_TO_RELEASE + \
+                   ZIP_CODE_FILES_TO_RELEASE
 
 _ = BO_PORTION_FILE_CRITERIA
 _ = I2B2_PORTION_FILE_CRITERIA
@@ -109,30 +116,40 @@ LIST_OF_PORTION_CONDITIONS = [CONCATENATED_PORTIONS_FILE_CRITERIA]
 
 # Arguments: Columns to delete
 # TODO Columns to delete. The list variable deletes column matches in any file. The dictionary variable delete the columns that are in the file named in the dictionary key. Below are typical values for a limited data release.
-COLUMNS_TO_DELETE_OMOP = ["person_source_value",
-                     # The columns below are non-informative because they only uniquely identify the row in the table
-                     "condition_occurrence_id",
-                     "device_exposure_id",
-                     "drug_exposure_id",
-                     "location_source_value",
-                     "measurement_id",
-                     "observation_id",
-                     "procedure_occurrence_id",
-                     "visit_detail_id"]
+if STUDY_TYPE == "Non-Human":
+    COLUMNS_TO_DELETE_BO = ["HIV Status"]
+else:
+    COLUMNS_TO_DELETE_BO = []
 COLUMNS_TO_DELETE_I2B2 = ["LOCATION_CD"]
-COLUMNS_TO_DELETE = COLUMNS_TO_DELETE_I2B2 + COLUMNS_TO_DELETE_OMOP
+COLUMNS_TO_DELETE_OMOP = ["person_source_value"] + LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE
+if STUDY_TYPE == "Non-Human":
+    COLUMNS_TO_DELETE_OMOP_TABLE_PERSON = LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL
+else:
+    COLUMNS_TO_DELETE_OMOP_TABLE_PERSON = []
+if STUDY_TYPE == "Non-Human":
+    COLUMNS_TO_DELETE_OMOP_TABLE_LOCATION = ["address_1",
+                                            "address_2",
+                                            "latitude",
+                                            "longitude",
+                                            "zip"]
+elif STUDY_TYPE == "Limited Data Set (LDS)":
+    COLUMNS_TO_DELETE_OMOP_TABLE_LOCATION = ["zip"]
+else:
+    COLUMNS_TO_DELETE_OMOP_TABLE_LOCATION = []
+COLUMNS_TO_DELETE = COLUMNS_TO_DELETE_BO +\
+                    COLUMNS_TO_DELETE_I2B2 +\
+                    COLUMNS_TO_DELETE_OMOP
 COLUMNS_TO_DELETE_DICT = {"condition_occurrence": [],
                           "death": [],
                           "device_exposure": [],
                           "drug_exposure": ["sig"],
                           "encounters": [],
-                          "location": ["address_1",
-                                       "address_2"],
+                          "location": COLUMNS_TO_DELETE_OMOP_TABLE_LOCATION,
                           "measurement": [],
                           "measurement_laboratories": [],
                           "observation": [],
                           "observation_period": [],
-                          "person": [],
+                          "person": COLUMNS_TO_DELETE_OMOP_TABLE_PERSON,
                           "procedure_occurrence": [],
                           "visit_occurrence": []}
 

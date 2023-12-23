@@ -11,6 +11,7 @@ OUTPUT:
 A new set file. This file would be the input to "makeMapsFromOthers.py"
 """
 
+import csv
 import logging
 import os
 from pathlib import Path
@@ -20,11 +21,12 @@ from pandas.errors import EmptyDataError
 from sqlalchemy import create_engine
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT, FILE_NAME_TO_VARIABLE_NAME_DICT
 # Super-local
-from common import VARIABLE_ALIASES
+from common import VARIABLE_ALIASES, DATA_TYPES_DICT
 
 # Arguments
-SET_FILES_DIR = Path(r"data\output\getIDValues\...\Set Files")
+SET_FILES_DIR = Path(r"..\Concatenated Results\data\output\getIDValues\...\Set Files")
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
@@ -147,9 +149,21 @@ if __name__ == "__main__":
         except EmptyDataError as err:
             _ = err
             df = pd.DataFrame(dtype=str)
-        variableName = setFilePath.stem
+        variableName = FILE_NAME_TO_VARIABLE_NAME_DICT[setFilePath.stem]
         condition1 = variableName in VARIABLE_ALIASES.keys()
         condition2 = variableName in VARIABLE_ALIASES.values()
+        dataType = DATA_TYPES_DICT[variableName]
+        if dataType == "Datetime":
+            quoting = csv.QUOTE_MINIMAL
+        elif dataType == "Numeric":
+            df = df.astype(float).astype("Int64")
+            quoting = csv.QUOTE_MINIMAL
+        elif dataType == "String":
+            quoting = csv.QUOTE_ALL
+        elif dataType == "Numeric_Or_String":
+            quoting = csv.QUOTE_ALL
+        else:
+            raise Exception(f"""Unexpected `dataType` value: "{dataType}".""")
         if condition1 or condition2:
             if condition1:
                 aliasName = variableName
@@ -166,26 +180,40 @@ if __name__ == "__main__":
             else:
                 logger.info("""  ..  Variable set does not exists. Creating file.""")
                 fileMode = "w"
-            df.to_csv(newSetFilePath, mode=fileMode, index=False, header=False)
+            df.to_csv(newSetFilePath, quoting=quoting, mode=fileMode, index=False, header=False)
         else:
             logger.info("""    Variable set file is not aliased.""")
-            setFileName = f"{variableName}.txt"
+            setFileName = f"{VARIABLE_NAME_TO_FILE_NAME_DICT[variableName]}.txt"
             newSetFilePath = runOutputDir.joinpath(setFileName)
-            df.to_csv(newSetFilePath, index=False, header=False)
+            df.to_csv(newSetFilePath, quoting=quoting, index=False, header=False)
 
     # Sort and remove duplicates from merged results.
-    logger.info("Sorting datat and removing duplicates.")
-    for setFilePath in runOutputDir.iterdir():
+    logger.info("Sorting data and removing duplicates.")
+    listOfFiles = sorted(runOutputDir.iterdir())
+    for setFilePath in listOfFiles:
         logger.info(f"""  Working on variable `setFilePath`: "{setFilePath.absolute().relative_to(rootDirectory)}".""")
         try:
             series = pd.read_table(setFilePath, header=None).iloc[:, 0]
         except EmptyDataError as err:
             _ = err
             series = pd.Series(dtype=str)
-        logger.info(f"""    Staring size of variable set:                "{len(series):,}".""")
+        logger.info(f"""    Starting size of variable set:               "{len(series):,}".""")
+        variableName = FILE_NAME_TO_VARIABLE_NAME_DICT[setFilePath.stem]
+        dataType = DATA_TYPES_DICT[variableName]
+        if dataType == "Datetime":
+            quoting = csv.QUOTE_MINIMAL
+        elif dataType == "Numeric":
+            series = series.astype(float).astype("Int64")
+            quoting = csv.QUOTE_MINIMAL
+        elif dataType == "String":
+            quoting = csv.QUOTE_ALL
+        elif dataType == "Numeric_Or_String":
+            quoting = csv.QUOTE_ALL
+        else:
+            raise Exception(f"""Unexpected `dataType` value: "{dataType}".""")
         series = series.drop_duplicates().sort_values()
         logger.info(f"""    Variable set size after removing duplicates: "{len(series):,}".""")
-        series.to_csv(setFilePath, index=False, header=False)
+        series.to_csv(setFilePath, quoting=quoting, index=False, header=False)
 
     # Output location summary
     logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")

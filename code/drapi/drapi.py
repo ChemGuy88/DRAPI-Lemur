@@ -110,6 +110,22 @@ def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
     return pathObj, numLevels
 
 
+def fileContainsColumn(pathObj: Path, listOfColumns: list) -> bool:
+    """
+    Determines if the file defined by `pathObj` has any of the columns contained in `listOfColumns`.
+    """
+    condition = False
+    df = pd.read_csv(pathObj, nrows=10)
+    columns = df.columns
+    for columnName in listOfColumns:
+        if columnName in columns:
+            condition = True
+            break
+        else:
+            continue
+    return condition
+
+
 def getCommonDirectoryParent(primaryPath: Path, secondaryPath: Path) -> Path:
     """
     """
@@ -262,7 +278,7 @@ def makeMap(IDset: set,
     if lenIDli > 100000:
         itChunk = 1000
     else:
-        itChunk = round(lenIDli/50)
+        itChunk = max(round(lenIDli/50), 1)
     for it, IDNum in enumerate(IDli, start=1):
         fromGroup = False
         for group, groupAttributes in groups.items():
@@ -432,20 +448,24 @@ def epicID2patientKey(epicIDlist: List[str]) -> pd.DataFrame:
     return results
 
 
-def map2di(map_: pd.DataFrame):
+def map2di(map_: pd.DataFrame, fromColumnIndex: int = 0, toColumnIndex: int = 2) -> dict:
     """
+    `fromColumnIndex` is the variable to assign as the key to the dictionary.
+    `toColumnIndex` is the variable to assign as the value pair in the dictionary.
     Assumes the following structure to "map_":
-    column 1 | column 2 | column 3
-        a1   |     1    |    b1
-        .    |     .    |     .
-        .    |     .    |     .
-        .    |     .    |     .
-        an   |     n    |    bn
+    column 1      | column 2       | column 3      | ... | column k
+        x_(1,1)   |     x_(1,2)    |    x_(1,3)    | ... |   x_(1,k)
+        .         |     .          |     .         | ... |   .
+        .         |     .          |     .         | ... |   .
+        .         |     .          |     .         | ... |   .
+        x_(n,1)   |     x_(n,2)    |    x_(n,3)    | ... |   x_(n,k)
+    Where the columns are from 1, 2, 3, ..., i, ..., k-1, k, and the rows are from 1, 2, 3, ..., j, ..., n-1, n.
     """
     di = {}
     errors = []
     for _, row in map_.iterrows():
-        oldValue, _, newValue, *_ = row.values
+        oldValue = row.values[fromColumnIndex]
+        newValue = row.values[toColumnIndex]
         if oldValue in di.keys() and di[oldValue] != newValue:
             errors.append({oldValue: newValue})
         di[oldValue] = newValue
@@ -455,7 +475,7 @@ def map2di(map_: pd.DataFrame):
         return di
 
 
-def float2str(value, navalue=""):
+def float2str(value: float, navalue="") -> str:
     """
     Converts values to string-type. If a value is NaN it is replaced with a value that can be converted to a string, default empty string, "".
     """

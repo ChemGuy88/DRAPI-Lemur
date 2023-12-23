@@ -25,6 +25,7 @@ from drapi.constants.phiVariables import VARIABLE_SUFFIXES_OMOP
 from drapi.drapi import successiveParents
 
 # Argument meta variables
+STUDY_TYPE = "Limited Data Set (LDS)"  # Pick from "Non-Human", "Limited Data Set (LDS)", "Identified"
 IRB_NUMBER = None  # TODO
 DATA_REQUEST_ROOT_DIRECTORY_DEPTH = 3  # TODO  # NOTE To prevent unexpected results, like moving, writing, or deleting the wrong files, set this to folder that is the immediate parent of concatenated result and the intermediate results folder.
 
@@ -38,16 +39,22 @@ NOTES_ROOT_DIRECTORY = dataRequestRootDirectory.joinpath("Intermediate Results",
 
 # Project arguments
 # TODO: Update or remove `ALIAS_DATA_TYPES` as necessary.
-ALIAS_DATA_TYPES = {"Case Patient (EPIC Patient ID)": "String",
-                    "Control Patient (EPIC Patient ID)": "String"}
+ALIAS_DATA_TYPES = {}
 DATA_TYPES_DICT.update(ALIAS_DATA_TYPES)
 # Add the keys from `ALIAS_DATA_TYPES` to `COLUMNS_TO_DE_IDENTIFY`
 LIST_OF_PHI_VARIABLES_FROM_ALIASES = [variableName for variableName in ALIAS_DATA_TYPES.keys()]
+if STUDY_TYPE.lower() == "Non-Human":
+    LIST_OF_PHI_VARIABLES_TO_KEEP = []
+else:
+    LIST_OF_PHI_VARIABLES_TO_KEEP = ["city",
+                                    "county",
+                                    "observation_period_id"]
 COLUMNS_TO_DE_IDENTIFY = LIST_OF_PHI_VARIABLES_BO + \
                          LIST_OF_PHI_VARIABLES_I2B2 + \
                          LIST_OF_PHI_VARIABLES_NOTES + \
                          LIST_OF_PHI_VARIABLES_OMOP + \
                          LIST_OF_PHI_VARIABLES_FROM_ALIASES
+COLUMNS_TO_DE_IDENTIFY = [variableName for variableName in COLUMNS_TO_DE_IDENTIFY if variableName not in LIST_OF_PHI_VARIABLES_TO_KEEP]
 
 # `VARIABLE_ALIASES` NOTE: Some variable names are not standardized. This argument is used by the de-identification process when looking for the de-identification map. This way several variables can be de-identified with the same map.
 # TODO Add or remove from these dictionaries as necessary.
@@ -83,26 +90,23 @@ for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
 # Portion directories
 BO_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/BO Portion/data/output/getData/...")  # TODO
 BO_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\BO Portion\data\output\getData\...")  # TODO
-
-I2B2_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Concatenated Results\data\output\i2b2ConvertIDs\2023-10-25 14-39-15")  # TODO
-I2B2_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Concatenated Results\data\output\i2b2ConvertIDs\2023-10-25 14-39-15")  # TODO
-OMOP_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/OMOP Portion/data/output/...")  # TODO
-OMOP_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\OMOP Portion\data\output\...")  # TODO
+I2B2_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Concatenated Results\data\output\i2b2ConvertIDs\...")  # TODO
+I2B2_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Concatenated Results\data\output\i2b2ConvertIDs\...")  # TODO
 
 MODIFIED_OMOP_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
 MODIFIED_OMOP_PORTION_DIR_WIN = Path(r"data\output\convertColumns\...")  # TODO
 
+OMOP_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/OMOP Portion/data/output/...")  # TODO
+OMOP_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\OMOP Portion\data\output\...")  # TODO
+
 NOTES_PORTION_DIR_MAC = NOTES_ROOT_DIRECTORY.joinpath("free_text")
 NOTES_PORTION_DIR_WIN = NOTES_ROOT_DIRECTORY.joinpath(r"free_text")
 
-ZIP_CODE_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
-ZIP_CODE_PORTION_DIR_WIN = Path(r"data\output\convertColumns\...")  # TODO
 # File criteria
 BO_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 I2B2_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-ZIP_CODE_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
 
 
 # Maps

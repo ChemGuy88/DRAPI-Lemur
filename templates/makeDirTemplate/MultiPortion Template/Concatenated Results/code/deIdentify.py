@@ -13,6 +13,9 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath, fileName2variableName, map2di, makeMap
+from drapi.drapi import numericOrString2integerOrString
+from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT
+from drapi.constants.phiVariables import FILE_NAME_TO_VARIABLE_NAME_DICT
 # Local packages: Script parameters: General
 from common import ALIAS_DATA_TYPES
 from common import IRB_NUMBER
@@ -36,7 +39,7 @@ from common import OMOP_PORTION_FILE_CRITERIA
 from common import ZIP_CODE_PORTION_FILE_CRITERIA
 
 # Arguments
-CONCATENATED_MAPS_DIR_PATH = Path("data/output/concatenateMaps/...")  # TODO
+CONCATENATED_MAPS_DIR_PATH = Path(r"..\Concatenated Results\data\output\concatenateMaps\...")  # TODO
 
 MAPS_DIR_PATH = CONCATENATED_MAPS_DIR_PATH
 
@@ -156,10 +159,10 @@ if __name__ == "__main__":
     logging.info("""Loading de-identification maps for each variable that needs to be de-identified.""")
     mapsDi = {}
     mapsColumnNames = {}
-    variablesCollected = [fileName2variableName(fname) for fname in MAPS_DIR_PATH.iterdir()]
+    variablesCollected = [FILE_NAME_TO_VARIABLE_NAME_DICT[fileName2variableName(fname)] for fname in MAPS_DIR_PATH.iterdir()]
     for varName in variablesCollected:
         logging.info(f"""  Loading map for "{varName}".""")
-        varPath = MAPS_DIR_PATH.joinpath(f"{varName} map.csv")
+        varPath = MAPS_DIR_PATH.joinpath(f"{VARIABLE_NAME_TO_FILE_NAME_DICT[varName]} map.csv")
         map_ = pd.read_csv(varPath)
         mapDi = map2di(map_)
         mapsDi[varName] = mapDi
@@ -167,10 +170,15 @@ if __name__ == "__main__":
     # Add aliases to `mapsColumnNames`
     for varName in VARIABLE_ALIASES.keys():
         varAlias = VARIABLE_ALIASES[varName]
-        map_ = makeMap(IDset=set(), IDName=varName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[varAlias]["deIdIDSuffix"], columnSuffix=varName, deIdentificationMapStyle="lemur", logger=logging.getLogger())
+        map_ = makeMap(IDset=set(),
+                       IDName=varName,
+                       startFrom=1,
+                       irbNumber=IRB_NUMBER,
+                       suffix=VARIABLE_SUFFIXES[varAlias]["deIdIDSuffix"],
+                       columnSuffix=varName,
+                       deIdentificationMapStyle="lemur",
+                       logger=logging.getLogger())
         mapsColumnNames[varName] = map_.columns[-1]
-    # Add aliases to `DATA_TYPES_DICT`
-    DATA_TYPES_DICT.update(ALIAS_DATA_TYPES)
 
     # De-identify columns
     logging.info("""De-identifying files.""")
@@ -208,10 +216,16 @@ if __name__ == "__main__":
                             # Look up values in de-identification maps according to data type. NOTE We are relying on pandas assigning the correct data type to the look-up values in the de-identification map.
                             if variableDataType.lower() == "numeric":
                                 dfChunk[columnName] = dfChunk[columnName].apply(lambda IDNum: mapsDi[mapsDiLookUpName][IDNum] if not pd.isna(IDNum) else IDNum)
+                            elif columnName in ["NRAS"]:
+                                dfChunk[columnName] = dfChunk[columnName].apply(lambda IDvalue: f"{IRB_NUMBER}_DE-IDENTIFICATION FAILURE" if not pd.isna(IDvalue) else IDvalue)
+                                logging.info("""Using work-around for this variable. This variable is assigned the data type of "Numeric_Or_String", but its values were not reliably mapped to de-identified values.""")  # NOTE Hack. This is the same problem as the other variables below. Part of the problem is how pandas reads files.
+                            elif columnName in ["F/u Physicians", "Prim  surgeon Code"]:  # NOTE Hack. These variables are categorized as `numeric_or_string`, but they contain numbers with leading zeros that get converted to integers in the current process. Either we convert these variables to `string` or we change the process.
+                                dfChunk[columnName] = dfChunk[columnName].apply(lambda IDvalue: mapsDi[mapsDiLookUpName][str(IDvalue)] if not pd.isna(IDvalue) else IDvalue)
+                                logging.info("""Using work-around for this variable. This variable is assigned the data type of "Numeric_Or_String", but is being treated as a "String" variable. If continued use of the "String" data type is successful, then the current assignment of "Numeric_Or_String" should be deprecated.""")
                             elif variableDataType.lower() == "string":
                                 dfChunk[columnName] = dfChunk[columnName].apply(lambda IDvalue: mapsDi[mapsDiLookUpName][str(IDvalue)] if not pd.isna(IDvalue) else IDvalue)
                             elif variableDataType.lower() == "numeric_or_string":
-                                dfChunk[columnName] = dfChunk[columnName].apply(lambda IDvalue: mapsDi[mapsDiLookUpName][str(IDvalue)] if not pd.isna(IDvalue) else IDvalue)
+                                dfChunk[columnName] = dfChunk[columnName].apply(lambda IDvalue: mapsDi[mapsDiLookUpName][str(numericOrString2integerOrString(IDvalue))] if not pd.isna(IDvalue) else IDvalue)
                             else:
                                 msg = "The table column is expected to have a data type associated with it."
                                 logging.error(msg)

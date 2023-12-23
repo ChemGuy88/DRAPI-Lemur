@@ -14,6 +14,8 @@ import pandas as pd
 import pprint
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, getPercentDifference, successiveParents, makeMap
+from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT
+from drapi.constants.phiVariables import FILE_NAME_TO_VARIABLE_NAME_DICT
 # Project parameters: General
 from common import IRB_NUMBER
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
@@ -22,7 +24,7 @@ from common import VARIABLE_ALIASES
 from common import VARIABLE_SUFFIXES
 
 # Arguments
-NEW_MAPS_DIR_PATH = Path("data/output/makeMapsFromOthers/...")  # TODO
+NEW_MAPS_DIR_PATH = Path(r"..\Concatenated Results\data\output\makeMapsFromOthers\...")  # TODO
 DE_IDENTIFICATION_MAP_STYLE = "lemur"
 
 # Arguments: Meta-variables
@@ -92,13 +94,14 @@ if __name__ == "__main__":
 
     # Map new maps to variable names
     logging.info("""Mapping new maps to variable names.""")
-    pattern = r"^([a-zA-Z_0-9\(\)# ]+) map"
+    pattern = r"^([a-zA-Z_0-9\(\)# -]+) map"
     newMapsFileDict = {}
     for fpath in NEW_MAPS_DIR_PATH.iterdir():
         fname = fpath.stem
         obj = re.match(pattern, fname)
         if obj:
-            variableName = obj.groups()[0]
+            extractedText = obj.groups()[0]
+            variableName = FILE_NAME_TO_VARIABLE_NAME_DICT[extractedText]
         else:
             msg = "File name is of an unexpected format."
             logging.info(msg)
@@ -136,7 +139,14 @@ if __name__ == "__main__":
     for variableName, li in matchedMaps.items():
         logging.info(f"""  Working on variable "{variableName}".""")
         concatenatedMap = pd.DataFrame()
-        emptyMap = makeMap(IDset=set(), IDName=variableName, startFrom=1, irbNumber=IRB_NUMBER, suffix=VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"], columnSuffix=variableName, deIdentificationMapStyle=DE_IDENTIFICATION_MAP_STYLE, logger=logging.getLogger())
+        emptyMap = makeMap(IDset=set(),
+                           IDName=variableName,
+                           startFrom=1,
+                           irbNumber=IRB_NUMBER,
+                           suffix=VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"],
+                           columnSuffix=variableName,
+                           deIdentificationMapStyle=DE_IDENTIFICATION_MAP_STYLE,
+                           logger=logging.getLogger())
         newColumns = emptyMap.columns
         for fpath in li:
             fpath = Path(fpath)
@@ -149,7 +159,7 @@ if __name__ == "__main__":
             df.columns = newColumns
             concatenatedMap = pd.concat([concatenatedMap, df])
         concatenatedMapsDict[variableName] = concatenatedMap
-        fpath = runOutputDir.joinpath(f"{variableName} map.csv")
+        fpath = runOutputDir.joinpath(f"{VARIABLE_NAME_TO_FILE_NAME_DICT[variableName]} map.csv")
         concatenatedMap.to_csv(fpath, index=False)
 
     # Quality control

@@ -23,7 +23,7 @@ from common import NOTES_PORTION_FILE_CRITERIA
 from common import OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
-COLUMNS_TO_CONVERT_DI = {"person_id": "PatientKey"}
+COLUMNS_TO_CONVERT_DI = {"person_id": "Patient Key"}
 
 MAC_PATHS = [OMOP_PORTION_DIR_MAC]
 WIN_PATHS = [OMOP_PORTION_DIR_WIN]
@@ -31,7 +31,7 @@ WIN_PATHS = [OMOP_PORTION_DIR_WIN]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA]
 
-PERSON_ID_MAP_PATH = Path("data/output/makePersonIDMap/.../person_id map.csv")  # TODO
+PERSON_ID_MAP_PATH = Path(r"..\Intermediate Results\OMOP Portion\data\output\getPersonIDs\...\personIDsFound.csv")  # TODO
 
 CHUNK_SIZE = 50000
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
 
     # Load person ID map
     personIDMap = pd.read_csv(PERSON_ID_MAP_PATH)
-    personIDMapDi = idealistMap2dict(personIDMap, "person_id", "patient_key")
+    personIDMapDi = idealistMap2dict(personIDMap, "person_id", "Patient Key")
 
     # Convert columns
     logging.info("""Getting the set of values for each variable to convert.""")

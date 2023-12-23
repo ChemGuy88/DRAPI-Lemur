@@ -7,6 +7,7 @@ Get the set of ID values for all variables to de-identify.
 
 __all__ = ["runIntermediateDataDir"]
 
+import csv
 import json
 import logging
 import sys
@@ -16,17 +17,23 @@ import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
+from drapi.drapi import sortIntegersAndStrings
+from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT
 # Project parameters: General
 from common import COLUMNS_TO_DE_IDENTIFY
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
 from common import DATA_TYPES_DICT
-# Project parameters: Portion paths and file criteria
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
-from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
+# Project parameters: Portion paths
+from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
+from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN
 from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
-from common import ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
+from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN
+from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+# Project parameters: File criteria
+from common import BO_PORTION_FILE_CRITERIA
+from common import I2B2_PORTION_FILE_CRITERIA
+from common import NOTES_PORTION_FILE_CRITERIA
+from common import OMOP_PORTION_FILE_CRITERIA
 
 
 # Arguments
@@ -48,19 +55,16 @@ else:
 PORTION_PATHS_MAC = {"BO": BO_PORTION_DIR_MAC,
                      "i2b2": I2B2_PORTION_DIR_MAC,
                      "Notes": NOTES_PORTION_DIR_MAC,
-                     "OMOP": OMOPPortionDirMac,
-                     "Zip Code": ZIP_CODE_PORTION_DIR_MAC}
+                     "OMOP": OMOPPortionDirMac}
 PORTION_PATHS_WIN = {"BO": BO_PORTION_DIR_WIN,
                      "i2b2": I2B2_PORTION_DIR_WIN,
                      "Notes": NOTES_PORTION_DIR_WIN,
-                     "OMOP": OMOPPortionDirWin,
-                     "Zip Code": ZIP_CODE_PORTION_DIR_WIN}
+                     "OMOP": OMOPPortionDirWin}
 
 DICT_OF_PORTION_CONDITIONS = {"BO": BO_PORTION_FILE_CRITERIA,
                               "i2b2": I2B2_PORTION_FILE_CRITERIA,
                               "Notes": NOTES_PORTION_FILE_CRITERIA,
-                              "OMOP": OMOP_PORTION_FILE_CRITERIA,
-                              "Zip Code": ZIP_CODE_PORTION_FILE_CRITERIA}
+                              "OMOP": OMOP_PORTION_FILE_CRITERIA}
 
 # Arguments: Meta-variables
 CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
@@ -160,7 +164,7 @@ if __name__ == "__main__":
             columnSetsVarsDi = json.loads(file.read())
     else:
         logging.info("""Getting the set of values for each variable to de-identify.""")
-        columnSetsVarsDi = {columnName: {"fpath": runIntermediateDataDir.joinpath(f"{columnName}.txt"),
+        columnSetsVarsDi = {columnName: {"fpath": runIntermediateDataDir.joinpath(f"{VARIABLE_NAME_TO_FILE_NAME_DICT[columnName]}.txt"),
                                          "fileMode": "w",
                                          "portionName": None,
                                          "collected": False} for columnName in COLUMNS_TO_DE_IDENTIFY}
@@ -173,8 +177,8 @@ if __name__ == "__main__":
                 if all(conditions):
                     # Read file
                     logging.info("""    File has met all conditions for processing.""")
-                    numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
-                    dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
+                    numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE, dtype=str)])
+                    dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE, low_memory=False)
                     for it, dfChunk in enumerate(dfChunks, start=1):
                         dfChunk = pd.DataFrame(dfChunk)
                         logging.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
@@ -182,11 +186,36 @@ if __name__ == "__main__":
                             logging.info(f"""  ..    Working on column "{columnName}".""")
                             if columnName in COLUMNS_TO_DE_IDENTIFY:
                                 logging.info("""  ..  ..  Column must be de-identified. Collecting values.""")
-                                values = dfChunk[columnName].dropna().drop_duplicates().sort_values()
+                                dataType = DATA_TYPES_DICT[columnName]
+                                series = dfChunk[columnName]
+                                series = series.dropna()
+                                series = series.drop_duplicates()
+                                if dataType == "Datetime":
+                                    values = series.sort_values()
+                                    quoting = csv.QUOTE_NONE
+                                elif dataType == "Numeric":
+                                    series = series.astype(float).astype("Int64")
+                                    values = series.sort_values()
+                                    quoting = csv.QUOTE_NONE
+                                elif dataType == "String":
+                                    values = series.astype(str).sort_values()
+                                    quoting = csv.QUOTE_ALL
+                                elif dataType == "Numeric_Or_String":
+                                    mask = series.apply(lambda el: isinstance(el, float))
+                                    series.loc[mask[mask].index] = series[mask].astype(int)
+                                    values = sortIntegersAndStrings(series.to_list())
+                                    values = pd.Series(values)
+                                    quoting = csv.QUOTE_ALL
+                                else:
+                                    raise Exception(f"""Unexpected `dataType` value: "{dataType}".""")
                                 columnSetFpath = columnSetsVarsDi[columnName]["fpath"]
                                 columnSetFileMode = columnSetsVarsDi[columnName]["fileMode"]
                                 # logging.info(f"""  ..  ..  Values table preview:\n{values.head()}.""")
-                                values.to_csv(path_or_buf=columnSetFpath, index=False, header=False, mode=columnSetFileMode)
+                                values.to_csv(path_or_buf=columnSetFpath,
+                                              quoting=quoting,
+                                              index=False,
+                                              header=False,
+                                              mode=columnSetFileMode)
                                 # logging.info(f"""  ..  ..  Preview of table after saving:\n{pd.read_table(columnSetFpath)}.""")
                                 columnSetsVarsDi[columnName]["fileMode"] = "a"
                                 columnSetsVarsDi[columnName]["portionName"] = portionName
@@ -211,7 +240,8 @@ if __name__ == "__main__":
 
     # Remove duplicates from set files and save according to data type
     logging.info("Removing duplicates from set files and saving according to data type.")
-    for columnName, fileDi in columnSetsVarsDi.items():
+    columnSetsVarsLi = sorted(list(columnSetsVarsDi.items()), key=lambda tu: tu[0].lower())
+    for columnName, fileDi in columnSetsVarsLi:
         logging.info(f"""  Working on variable "{columnName}".""")
         fpath = fileDi["fpath"]
         try:
@@ -223,20 +253,21 @@ if __name__ == "__main__":
         portionName = fileDi["portionName"]
         dataType = DATA_TYPES_DICT[columnName]
         if dataType == "Datetime":
-            pass  # TODO
+            quoting = csv.QUOTE_MINIMAL
         elif dataType == "Numeric":
             series = series.astype(float).astype("Int64")
+            quoting = csv.QUOTE_MINIMAL
         elif dataType == "String":
-            pass  # TODO
+            quoting = csv.QUOTE_ALL
         elif dataType == "Numeric_Or_String":
-            pass  # TODO
+            quoting = csv.QUOTE_ALL
         else:
             raise Exception(f"""Unexpected `dataType` value: "{dataType}".""")
         series = series.drop_duplicates()
         series = series.sort_values()
-        fpath2 = runOutputDir.joinpath("Set Files", f"{columnName}.txt")
+        fpath2 = runOutputDir.joinpath("Set Files", f"{VARIABLE_NAME_TO_FILE_NAME_DICT[columnName]}.txt")
         makeDirPath(fpath2.parent)
-        series.to_csv(fpath2, index=False, header=False)
+        series.to_csv(fpath2, quoting=quoting, index=False, header=False)
 
     # Return path to sets fo ID values
     # TODO If this is implemented as a function, instead of a stand-alone script, return `runOutputDir` to define `setsPathDir` in the "makeMap" scripts.

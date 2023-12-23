@@ -10,16 +10,30 @@ from pathlib import Path
 # Third-party packages
 import numpy as np
 import pandas as pd
+from colorama import init as colorama_init
+from colorama import Fore
+from colorama import Style
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, successiveParents
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
 from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
 from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
+from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
 from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
 from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
+from drapi.constants.phiVariables import LIST_OF_PHI_DATES_BO, LIST_OF_PHI_DATES_NOTES, LIST_OF_PHI_DATES_OMOP
 
-# Arguments
-LOG_LEVEL = "DEBUG"
+# Arguments: OMOP data set selection
+USE_MODIFIED_OMOP_DATA_SET = True
+
+# Arguments: Portion Paths and conditions
+if USE_MODIFIED_OMOP_DATA_SET:
+    OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
+    OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
+else:
+    OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
+    OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
+
 PORTIONS_OUTPUT_DIR_PATH_MAC = {"BO": BO_PORTION_DIR_MAC,  # TODO
                                 "i2b2": I2B2_PORTION_DIR_MAC,
                                 "Notes": NOTES_PORTION_DIR_MAC,
@@ -33,7 +47,11 @@ PORTION_FILE_CRITERIA_DICT = {"BO": BO_PORTION_FILE_CRITERIA,
                               "Notes": NOTES_PORTION_FILE_CRITERIA,
                               "OMOP": OMOP_PORTION_FILE_CRITERIA}
 
+COMPARISON_SET = LIST_OF_PHI_DATES_BO + LIST_OF_PHI_DATES_NOTES + LIST_OF_PHI_DATES_OMOP
+
 # Arguments: Meta-variables
+LOG_LEVEL = "DEBUG"
+
 CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
 PROJECT_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH  # The concatenation suite of scripts is considered to be the "project".
 IRB_DIR_DEPTH = CONCATENATED_RESULTS_DIRECTORY_DEPTH + 2
@@ -99,20 +117,43 @@ makeDirPath(runIntermediateDataDir)
 makeDirPath(runOutputDir)
 makeDirPath(runLogsDir)
 
+# Logging block
+logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
+logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+
+logger = logging.getLogger(__name__)
+
+fileHandler = logging.FileHandler(logpath)
+fileHandler.setLevel(9)
+fileHandler.setFormatter(logFormat)
+
+streamHandler = logging.StreamHandler()
+streamHandler.setLevel(LOG_LEVEL)
+streamHandler.setFormatter(logFormat)
+
+logger.addHandler(fileHandler)
+logger.addHandler(streamHandler)
+
+logger.setLevel(9)
+
 if __name__ == "__main__":
-    # Logging block
-    logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-    fileHandler = logging.FileHandler(logpath)
-    fileHandler.setLevel(LOG_LEVEL)
-    streamHandler = logging.StreamHandler()
-    streamHandler.setLevel(LOG_LEVEL)
+    logger.info(f"""Begin running "{thisFilePath}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Script arguments:
 
-    logging.basicConfig(format="[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s",
-                        handlers=[fileHandler, streamHandler],
-                        level=LOG_LEVEL)
 
-    logging.info(f"""Begin running "{thisFilePath}".""")
-    logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    # Arguments
+    ``: "{"..."}"
+
+    # Arguments: General
+    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
+    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}" --------------> "{IRBDir}"
+    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}" -> "{IDRDataRequestDir}"
+
+    `LOG_LEVEL` = "{LOG_LEVEL}"
+    """)
+    # Colorama initialization
+    colorama_init()
 
     # Get columns
     columns = {}
@@ -121,60 +162,63 @@ if __name__ == "__main__":
         content_paths = [Path(dirObj) for dirObj in os.scandir(portionPath)]
         content_names = "\n  ".join(sorted([path.name for path in content_paths]))
         dirRelativePath = portionPath.absolute().relative_to(rootDirectory)
-        logging.info(f"""Reading files from the directory "{dirRelativePath}". Below are its contents:""")
+        logger.info(f"""Reading files from the directory "{dirRelativePath}". Below are its contents:""")
         for fpath in sorted(content_paths):
-            logging.info(f"""  {fpath.name}""")
+            logger.info(f"""  {fpath.name}""")
         for file in content_paths:
             conditions = PORTION_FILE_CRITERIA_DICT[portionName]
             conditionResults = [func(file) for func in conditions]
             if all(conditionResults):
-                logging.debug(f"""  Reading "{file.absolute().relative_to(rootDirectory)}".""")
+                logger.debug(f"""  Reading "{file.absolute().relative_to(rootDirectory)}".""")
                 df = pd.read_csv(file, dtype=str, nrows=10)
                 columns[file.name] = df.columns
                 columnsByPortion[portionName][file.name] = df.columns
 
     # Get all columns by file
-    logging.info("""Printing columns by file.""")
+    logger.info("""Printing columns by file.""")
     allColumns = set()
     it = 0
     columnsOrdered = OrderedDict(sorted(columns.items()))
     for key, value1 in columnsOrdered.items():
         if it > -1:
-            logging.info(key)
-            logging.info("")
+            logger.info(key)
+            logger.info("")
             for el in sorted(value1):
-                logging.info(f"  {el}")
+                logger.info(f"  {el}")
                 allColumns.add(el)
-            logging.info("")
+            logger.info("")
         it += 1
 
-    # Get all columns by portion
-    logging.info("""Printing columns by portion and file.""")
+    # Get all columns by portion and file
+    logger.info("""Printing columns by portion and file.""")
     allColumnsByPortion = OrderedDict({portionName: set() for portionName in sorted(columnsByPortion.keys())})
     columnsByPortionOrdered = OrderedDict(sorted(columnsByPortion.items()))
     for portionName, di in columnsByPortionOrdered.items():
-        logging.info(f"{portionName}")
+        logger.info(f"{portionName}")
         for fileName, value2 in di.items():
-            logging.info(f"  {fileName}")
+            logger.info(f"  {fileName}")
             for el in sorted(value2):
-                logging.info(f"    {el}")
+                logger.info(f"    {el}")
                 allColumnsByPortion[portionName].add(el)
-            logging.info("")
+            logger.info("")
 
     # Print the set of all columns
-    logging.info("""Printing the set of all columns.""")
+    logger.info("""Printing the set of all columns.""")
     for el in sorted(list(allColumns)):
-        logging.info(f"  {el}")
-    logging.info("")
+        logger.info(f"  {el}")
+    logger.info("")
 
     # Print the set of all columns by portion
-    logging.info("""Print set of columns by portion.""")
-    # TODO
+    logger.info("""Print set of columns by portion.""")
     for portionName, columnsSet in allColumnsByPortion.items():
-        logging.info(f"""{portionName}""")
+        logger.info(f"""{portionName}""")
         for columnName in sorted(list(columnsSet)):
-            logging.info(f"  {columnName}")
-        logging.info("")
+            if columnName in COMPARISON_SET:
+                text = f"""{Fore.LIGHTCYAN_EX}{columnName}{Style.RESET_ALL}"""
+            else:
+                text = columnName
+            logger.info(f"  {text}")
+        logger.info("")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")
+    logger.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

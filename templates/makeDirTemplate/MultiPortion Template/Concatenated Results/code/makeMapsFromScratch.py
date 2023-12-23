@@ -14,20 +14,40 @@ import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
 from drapi.drapi import getTimestamp, makeDirPath, makeMap, successiveParents
-from common import IRB_NUMBER, DATA_REQUEST_ROOT_DIRECTORY_DEPTH, NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA, VARIABLE_SUFFIXES
+# Local packages: Script parameters: General
+from common import IRB_NUMBER
+from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
+from common import VARIABLE_SUFFIXES
+# Project parameters: Portion paths
+from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
+from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN
+from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
+from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN
+from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+# Project parameters: File criteria
+from common import BO_PORTION_FILE_CRITERIA
+from common import I2B2_PORTION_FILE_CRITERIA
+from common import NOTES_PORTION_FILE_CRITERIA
+from common import OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
 LOG_LEVEL = "DEBUG"
 
-MAC_PATHS = [NOTES_PORTION_DIR_MAC,
+MAC_PATHS = [BO_PORTION_DIR_MAC,
+             I2B2_PORTION_DIR_MAC,
+             NOTES_PORTION_DIR_MAC,
              OMOP_PORTION_DIR_MAC]
-WIN_PATHS = [NOTES_PORTION_DIR_WIN,
+WIN_PATHS = [BO_PORTION_DIR_WIN,
+             I2B2_PORTION_DIR_WIN,
+             NOTES_PORTION_DIR_WIN,
              OMOP_PORTION_DIR_WIN]
 
-LIST_OF_PORTION_CONDITIONS = [NOTES_PORTION_FILE_CRITERIA,
+LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
+                              I2B2_PORTION_FILE_CRITERIA,
+                              NOTES_PORTION_FILE_CRITERIA,
                               OMOP_PORTION_FILE_CRITERIA]
 
-SETS_PATH = None
+SETS_PATH = Path(r"..\Concatenated Results\data\output\getIDValues\...\Set Files")
 
 CHUNK_SIZE = 50000
 
@@ -122,26 +142,14 @@ if __name__ == "__main__":
         # Read file
         try:
             df = pd.read_table(file, header=None)
+            series = df[0]
         except EmptyDataError as err:
             _ = err
-            df = pd.DataFrame()
-        # Assert
-        if df.shape[1] == 1:
-            # Try to convert to integer-type
-            try:
-                df.iloc[:, 0] = df.iloc[:, 0].astype(int)
-            except ValueError as err:
-                _ = err
-            # Check length differences
-            len0 = len(df)
-            values = set(df.iloc[:, 0].values)
-            len1 = len(values)
-            logging.info(f"""    The length of the ID array was reduced from {len0:,} to {len1:,} when removing duplicates.""")
-        elif df.shape[1] == 0:
-            pass
+            series = pd.Series()
+        values = set(series.values)
         # Map contents
         deIdIDSuffix = VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]
-        map_ = makeMap(IDset=values, IDName=variableName, startFrom=1, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName)
+        map_ = makeMap(IDset=values, IDName=variableName, startFrom=1, irbNumber=IRB_NUMBER, suffix=deIdIDSuffix, columnSuffix=variableName, logger=logging.getLogger())
         # Save map
         mapPath = runOutputDir.joinpath(f"{variableName} map.csv")
         map_.to_csv(mapPath, index=False)

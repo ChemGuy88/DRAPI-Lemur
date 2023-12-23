@@ -1,38 +1,235 @@
 """
-Gather files in a central location for the honest broker to review
-
-Define input files paths
-Define input directory paths
-Define destination directory path
-
-create compression archive in destination directory path
-for directory path in input directory paths
-    move all contents to compression archive
-for file in input file paths
-    move file to compression archive
+Copy files to a single destination directory. Optionally this directory can be added to a compressed archive.
 """
 
+import logging
+import os
+import shutil
+import zipfile
 from pathlib import Path
+# Third-party packages
+import pandas as pd
+# Local packages
+from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
 # Arguments
+if True:
+    LIST_OF_DIRECTORIES = [r"..\Concatenated Results\data\output\deIdentify\2023-12-20 17-33-56"]
+    LIST_OF_FILES = []
+    DESTINATION_FOLDER = r"..\Concatenated Results\disclosure\2023-12-20 17-33-56"
 
-PROJECT_ROOT_DIRECTORY = Path("").absolute().parent
+    OVERWRITE_IF_EXISTS_FOLDER = True
+    OVERWRITE_IF_EXISTS_FILE = False
 
-INPUT_FILE_PATHS = []
+    CREATE_COMPRESSED_ARCHIVE = True
+    DELETE_FOLDER_AFTER_ARCHIVING = True
+elif True:
+    LIST_OF_DIRECTORIES = [r"..\Concatenated Results\data\output\concatenateMaps\2023-11-07 12-24-34"]
+    LIST_OF_FILES = [r"..\Concatenated Results\data\output\makeMapsFromScratch\2023-12-20 15-42-03\Patient Encounter Key map.csv"]
+    DESTINATION_FOLDER = r"..\Concatenated Results\data\All Maps (Gathered)"
 
-INPUT_DIRECTORY_PATHS = [Path("data/output/deleteColumns/..."),  # TODO
-                         PROJECT_ROOT_DIRECTORY.joinpath("Intermediate Results/De-identified Notes/...")]  # TODO
+    OVERWRITE_IF_EXISTS_FOLDER = True
+    OVERWRITE_IF_EXISTS_FILE = False
 
-OUTPUT_DIRECTORY_PATH = Path("")
+    CREATE_COMPRESSED_ARCHIVE = False
+    DELETE_FOLDER_AFTER_ARCHIVING = True
 
-# List all input files
-inputFilePaths = [Path(string) for string in INPUT_FILE_PATHS]
-inputDirectoryPaths = [Path(string) for string in INPUT_DIRECTORY_PATHS]
+# Arguments: Meta-variables
+PROJECT_DIR_DEPTH = 2
+DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 2
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+IDR_DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 4
 
-# TODO Create compression archive
+ROOT_DIRECTORY = "IRB_DIRECTORY"  # TODO One of the following:
+                                                 # ["IDR_DATA_REQUEST_DIRECTORY",    # noqa
+                                                 #  "IRB_DIRECTORY",                 # noqa
+                                                 #  "DATA_REQUEST_DIRECTORY",        # noqa
+                                                 #  "PROJECT_OR_PORTION_DIRECTORY"]  # noqa
 
-# TODO Add all input files to compression archive
+LOG_LEVEL = "INFO"
 
-# TODO Move compression archive to destination directory
+# Arguments: SQL connection settings
+SERVER = "DWSRSRCH01.shands.ufl.edu"
+DATABASE = "DWS_PROD"
+USERDOMAIN = "UFAD"
+USERNAME = os.environ["USER"]
+UID = None
+PWD = os.environ["HFA_UFADPWD"]
 
-print("This is not implemented. Move files manually. See script arguments for what files need to be moved.")
+# Variables: Path construction: General
+runTimestamp = getTimestamp()
+thisFilePath = Path(__file__)
+thisFileStem = thisFilePath.stem
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
+dataDir = projectDir.joinpath("data")
+if dataDir:
+    inputDataDir = dataDir.joinpath("input")
+    outputDataDir = dataDir.joinpath("output")
+    if outputDataDir:
+        runOutputDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
+logsDir = projectDir.joinpath("logs")
+if logsDir:
+    runLogsDir = logsDir.joinpath(thisFileStem)
+sqlDir = projectDir.joinpath("sql")
+
+if ROOT_DIRECTORY == "PROJECT_OR_PORTION_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
+else:
+    raise Exception("An unexpected error occurred.")
+
+# Variables: Path construction: Project-specific
+pass
+
+# Variables: SQL Parameters
+if UID:
+    uid = UID[:]
+else:
+    uid = fr"{USERDOMAIN}\{USERNAME}"
+conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
+
+# Variables: Other
+pass
+
+# Directory creation: General
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
+
+# Logging block
+logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
+logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+
+logger = logging.getLogger(__name__)
+
+fileHandler = logging.FileHandler(logpath)
+fileHandler.setLevel(9)
+fileHandler.setFormatter(logFormat)
+
+streamHandler = logging.StreamHandler()
+streamHandler.setLevel(LOG_LEVEL)
+streamHandler.setFormatter(logFormat)
+
+logger.addHandler(fileHandler)
+logger.addHandler(streamHandler)
+
+logger.setLevel(9)
+
+if __name__ == "__main__":
+    logger.info(f"""Begin running "{thisFilePath}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Script arguments:
+
+
+    # Arguments
+    `LIST_OF_DIRECTORIES`: "{LIST_OF_DIRECTORIES}"
+    `LIST_OF_FILES`: "{LIST_OF_FILES}"
+    `DESTINATION_FOLDER`: "{DESTINATION_FOLDER}"
+    `OVERWRITE_IF_EXISTS_FOLDER`: "{OVERWRITE_IF_EXISTS_FOLDER}"
+    `OVERWRITE_IF_EXISTS_FILE`: "{OVERWRITE_IF_EXISTS_FILE}"
+
+    # Arguments: General
+    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
+    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}" --------------> "{IRBDir}"
+    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}" -> "{IDRDataRequestDir}"
+
+    `LOG_LEVEL` = "{LOG_LEVEL}"
+
+    # Arguments: SQL connection settings
+    `SERVER` = "{SERVER}"
+    `DATABASE` = "{DATABASE}"
+    `USERDOMAIN` = "{USERDOMAIN}"
+    `USERNAME` = "{USERNAME}"
+    `UID` = "{UID}"
+    `PWD` = censored
+    """)
+
+    # Define the destination path
+    destinationFolder = Path(DESTINATION_FOLDER)
+
+    # Copy files and directories
+    if destinationFolder.exists():
+        logger.warning(f"""WARNING: The destination folder already exists: "{destinationFolder.absolute().relative_to(rootDirectory)}".""")
+        if OVERWRITE_IF_EXISTS_FOLDER:
+            logger.info(f"""  Removing folder contents to make room for new files.""")
+            for fpath in destinationFolder.iterdir():
+                logger.info(f"""    Removing "{fpath.absolute().relative_to(rootDirectory)}".""")
+                os.remove(fpath)
+                logger.info(f"""    Removing "{fpath.absolute().relative_to(rootDirectory)}" - done.""")
+        else:
+            msg = "  The destination folder exists and no option was passed to over-write it."
+            logger.fatal(msg)
+            raise Exception(msg)
+    else:
+        logger.info(f"""Making destination folder: "{destinationFolder.absolute().relative_to(rootDirectory)}".""")
+        makeDirPath(destinationFolder)
+
+    logger.info(f"""Working on list of files.""")
+    for fpathString in LIST_OF_FILES:
+        fpath = Path(fpathString)
+        logger.info(f"""  Working on file "{fpath.absolute().relative_to(rootDirectory)}".""")
+        dest = destinationFolder.joinpath(fpath.name)
+        logger.info(f"""    Saving to "{dest.absolute().relative_to(rootDirectory)}".""")
+        shutil.copyfile(fpath, dest)
+    logger.info(f"""Working on list of files - done.""")
+
+    logger.info(f"""Working on list of directories.""")
+    for directoryString in LIST_OF_DIRECTORIES:
+        directory = Path(directoryString)
+        for fpath in directory.iterdir():
+            logger.info(f"""  Working on file "{fpath.absolute().relative_to(rootDirectory)}".""")
+            dest = destinationFolder.joinpath(fpath.name)
+            logger.info(f"""    The destination path is "{dest.absolute().relative_to(rootDirectory)}".""")
+            if dest.exists():
+                msg = f"""    WARNING: This file already exists: "{dest}"."""
+                logger.warning(msg)
+                if OVERWRITE_IF_EXISTS_FILE:
+                    continueOperation = True
+                else:
+                    continueOperation = False
+            else:
+                continueOperation = True
+            if continueOperation:
+                logger.info("""    Saving to destination path.""")
+                shutil.copyfile(fpath, dest)
+            else:
+                logger.info("""    The file was not saved to the destination path. File over-write is set to `False`.""")
+    logger.info(f"""Working on list of directories - done.""")
+
+    # Create compressed archive
+    if CREATE_COMPRESSED_ARCHIVE:
+        archivePath = destinationFolder.with_suffix(".ZIP")
+        logger.info(f"""Creating compressed archive: "{archivePath.absolute().relative_to(rootDirectory)}"".""")
+        if archivePath.exists():
+            logger.info(f"""The archive folder already exists and will be removed before writing.""")
+            os.remove(archivePath)
+        else:
+            pass
+
+        with zipfile.ZipFile(file=archivePath,
+                             mode="a",
+                             compression=zipfile.ZIP_DEFLATED) as zipObj:
+            logger.info("Adding files to archive.")
+            for fpath in destinationFolder.iterdir():
+                logger.info(f"""  Working on file "{fpath.absolute().relative_to(rootDirectory)}".""")
+                newPath = fpath.name
+                zipObj.write(filename=fpath, arcname=newPath)
+        logger.info("Creating compressed archive - done.")
+        
+        if DELETE_FOLDER_AFTER_ARCHIVING:
+            logger.info(f"""Removing intermediate folder.""")
+            shutil.rmtree(destinationFolder)
+            logger.info(f"""Removing intermediate folder - done.""")
+        else:
+            pass
+            
+
+    # End script
+    logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
