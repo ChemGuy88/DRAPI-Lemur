@@ -17,13 +17,13 @@ import pandas as pd
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
 # Arguments
-FREE_TEXT_DIR_PATH = Path(r"data\output\freeText\2023-11-03 16-40-33\free_text")
-COHORT_NAME = "PLUS"
+FREE_TEXT_DIR_PATH = Path(r"data\output\freeText\...\free_text")  # TODO
+COHORT_NAME = ""  # TODO
 NOTE_TYPES_TO_FILTER_BY = ["order_impression: IMAGING",
-                           "order_narative: IMAGING"]
-DE_IDENTIFICATION_MAP_PATH_FOR_NOTES = r"data\output\freeText\2023-11-03 16-40-33\mapping\map_note_link.csv"
-DE_IDENTIFICATION_MAP_PATH_FOR_ORDERS = r"data\output\freeText\2023-11-03 16-40-33\mapping\map_order.csv"
-USE_DE_IDENTIFIED_NOTE_VERSION = True
+                           "order_narative: IMAGING"]  # TODO
+DE_IDENTIFICATION_MAP_PATH_FOR_NOTES = r"data\output\freeText\...\mapping\map_note_link.csv"  # TODO
+DE_IDENTIFICATION_MAP_PATH_FOR_ORDERS = r"data\output\freeText\...\mapping\map_order.csv"  # TODO
+USE_DE_IDENTIFIED_NOTE_VERSION = True  # TODO
 CHUNKSIZE = 10000
 
 
