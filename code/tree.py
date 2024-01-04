@@ -58,17 +58,17 @@ if __name__ == "__main__":
                         help="The path of the directory for which to get the tree.",
                         type=str)
 
-    parser.add_argument("level",
+    parser.add_argument("--level",
                         help="The level.",
                         default=-1,
                         type=int)
 
-    parser.add_argument("limit_to_directories",
+    parser.add_argument("--limit_to_directories",
                         help="Limit to directories.",
                         default=False,
                         type=bool)
 
-    parser.add_argument("length_limit",
+    parser.add_argument("--length_limit",
                         help="The length limit.",
                         default=1000,
                         type=int)
