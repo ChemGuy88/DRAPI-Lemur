@@ -2,6 +2,14 @@
 
 This is a lab journal with notes about the IDR
 
+## IDR Virtual Environments
+
+Commonly used Python packages
+    - IPython
+    - pandas
+    - pymssql
+    - SQLAlchemy
+
 ## SQL Surprises
 
 The following are interesting or useful SQL tidbits.
