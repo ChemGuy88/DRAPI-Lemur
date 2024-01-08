@@ -1,14 +1,17 @@
 from distutils.core import setup
-from setuptools import find_packages
+from setuptools import find_packages  # noqa
+from setuptools import find_namespace_packages
 
-setup(name='drapiPackage',
-      packages=find_packages(include="drapiPackage/*"),
+setup(name='drapi-lemur',
+      package_data={"drapiPackage.sql": ["*"],
+                    "drapiPackage.templates": ["*"]},
+      package_dir={"": "drapiPackage"},
+      packages=find_namespace_packages(where="drapiPackage"),
       version='1.0.0',
       description='Data Request API for the Integrated Data Repository Research Services of University of Florida.',
       author='Herman Autore',
       author_email='hf.autore+drapi@gmail.com',
       url='https://github.com/ChemGuy88/hermanCode/archive/refs/tags/v1.0.0.tar.gz',
-      download_url='download link you saved',
       keywords=['CTSI',
                 'Clinical and Translational Science Institute',
                   'IDR',
