@@ -1,11 +1,12 @@
-	SELECT 
-		a.PATID,
-		a.PATNT_KEY as PatientKey,
-		b.IDENT_ID as MRN_UF,
-		c.IDENT_ID as MRN_JAX,
-		d.IDENT_ID as MRN_path
-	FROM [DWS_PCORNET].[pcnv5].[PATIENT_MAPPING] a
-	left outer join [DWS_PROD].[dbo].[ALL_PATIENT_IDENTITIES] b on a.patnt_key = b.patnt_key and b.ident_id_type=101 and b.LOOKUP_IND = 'Y'
-	left outer join [DWS_PROD].[dbo].[ALL_PATIENT_IDENTITIES] c on a.patnt_key = c.patnt_key and c.ident_id_type=110 and c.LOOKUP_IND = 'Y'
-	left outer join [DWS_PROD].[dbo].[ALL_PATIENT_IDENTITIES] d on a.patnt_key = d.patnt_key and d.ident_id_type=99 and d.LOOKUP_IND = 'Y'
-	where PATID in ( {PYTHON_VARIABLE: ONE_FLORIDA_PATIENT_IDS}  )  -- Give the list of OneFlorida patient IDs
+SELECT 
+	A.PATID AS 'OneFlorida Patient ID'
+	,A.PATNT_KEY AS 'Patient Key'
+	,B.IDENT_ID AS 'MRN (UF)'
+	,C.IDENT_ID AS 'MRN (Jax)'
+	,D.IDENT_ID AS 'MRN (Pathology)'
+FROM [DWS_PCORNET].[pcnv5].[PATIENT_MAPPING] AS A
+	LEFT OUTER JOIN [DWS_PROD].[dbo].[ALL_PATIENT_IDENTITIES] AS B on A.PATNT_KEY = B.PATNT_KEY AND B.IDENT_ID_TYPE=101 AND B.LOOKUP_IND = 'Y'
+	LEFT OUTER JOIN [DWS_PROD].[dbo].[ALL_PATIENT_IDENTITIES] AS C on A.PATNT_KEY = C.PATNT_KEY AND C.IDENT_ID_TYPE=110 AND C.LOOKUP_IND = 'Y'
+	LEFT OUTER JOIN [DWS_PROD].[dbo].[ALL_PATIENT_IDENTITIES] AS D on A.PATNT_KEY = D.PATNT_KEY AND D.IDENT_ID_TYPE=99 AND D.LOOKUP_IND = 'Y'
+WHERE
+    A.PATID in ( {PYTHON_VARIABLE: ONE_FLORIDA_PATIENT_IDS}  )
