@@ -2,7 +2,8 @@
 **/logs/*
 **/*.7z
 **/.DS_Store
-# **/*.bat
+**/*.bat
+!**/launchIPython.bat
 **/*.csv
 **/*.pdf
 **/*.tsv
@@ -12,7 +13,10 @@
 
 # >>> [start] Default IDR files >>>
 data/*
+!data/input/
+!data/output/
 documents/*
+HIPPA_disclosure/*
 settings.yaml
 types.yaml
 # <<< [end] Default IDR files <<<
@@ -131,7 +135,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+!.env
 .venv
 env/
 venv/

@@ -6,9 +6,8 @@
 # <<< [end] Things added by Herman <<<
 
 # >>> [start] Default IDR files >>>
-# Do not add IDR files to the top-level .gitignore or it will ignore the directories and files in the template directory.
-# settings.yaml
-# types.yaml
+settings.yaml
+types.yaml
 data/*
 !data/input/
 !data/output/
@@ -130,7 +129,8 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-!.env
+.env
+!drapiPackage/templates/makeDirTemplate/**/.env
 .venv
 env/
 venv/
