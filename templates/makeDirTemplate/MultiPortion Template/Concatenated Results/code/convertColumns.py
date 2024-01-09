@@ -18,8 +18,6 @@ from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
 # Local packages: Script parameters: Paths
 from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 # Local packages: Script parameters: File criteria
-from common import BO_PORTION_FILE_CRITERIA
-from common import NOTES_PORTION_FILE_CRITERIA
 from common import OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
@@ -28,11 +26,9 @@ COLUMNS_TO_CONVERT_DI = {"person_id": "Patient Key"}
 MAC_PATHS = [OMOP_PORTION_DIR_MAC]
 WIN_PATHS = [OMOP_PORTION_DIR_WIN]
 
-
-LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA, NOTES_PORTION_FILE_CRITERIA, OMOP_PORTION_FILE_CRITERIA]
+LIST_OF_PORTION_CONDITIONS = [OMOP_PORTION_FILE_CRITERIA]
 
 PERSON_ID_MAP_PATH = Path(r"..\Intermediate Results\OMOP Portion\data\output\getPersonIDs\...\personIDsFound.csv")  # TODO
-
 CHUNK_SIZE = 50000
 
 # Arguments: Meta-variables

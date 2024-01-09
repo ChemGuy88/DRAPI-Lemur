@@ -7,32 +7,19 @@ import os
 import shutil
 import zipfile
 from pathlib import Path
-# Third-party packages
-import pandas as pd
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
 # Arguments
-if True:
-    LIST_OF_DIRECTORIES = [r"..\Concatenated Results\data\output\deIdentify\2023-12-20 17-33-56"]
-    LIST_OF_FILES = []
-    DESTINATION_FOLDER = r"..\Concatenated Results\disclosure\2023-12-20 17-33-56"
+LIST_OF_DIRECTORIES = []
+LIST_OF_FILES = []
+DESTINATION_FOLDER = fr"..\Concatenated Results\disclosure\{getTimestamp()}"
 
-    OVERWRITE_IF_EXISTS_FOLDER = True
-    OVERWRITE_IF_EXISTS_FILE = False
+OVERWRITE_IF_EXISTS_FOLDER = False
+OVERWRITE_IF_EXISTS_FILE = False
 
-    CREATE_COMPRESSED_ARCHIVE = True
-    DELETE_FOLDER_AFTER_ARCHIVING = True
-elif True:
-    LIST_OF_DIRECTORIES = [r"..\Concatenated Results\data\output\concatenateMaps\2023-11-07 12-24-34"]
-    LIST_OF_FILES = [r"..\Concatenated Results\data\output\makeMapsFromScratch\2023-12-20 15-42-03\Patient Encounter Key map.csv"]
-    DESTINATION_FOLDER = r"..\Concatenated Results\data\All Maps (Gathered)"
-
-    OVERWRITE_IF_EXISTS_FOLDER = True
-    OVERWRITE_IF_EXISTS_FILE = False
-
-    CREATE_COMPRESSED_ARCHIVE = False
-    DELETE_FOLDER_AFTER_ARCHIVING = True
+CREATE_COMPRESSED_ARCHIVE = True
+DELETE_FOLDER_AFTER_ARCHIVING = True
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
@@ -105,7 +92,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 
@@ -158,7 +145,7 @@ if __name__ == "__main__":
     if destinationFolder.exists():
         logger.warning(f"""WARNING: The destination folder already exists: "{destinationFolder.absolute().relative_to(rootDirectory)}".""")
         if OVERWRITE_IF_EXISTS_FOLDER:
-            logger.info(f"""  Removing folder contents to make room for new files.""")
+            logger.info("""  Removing folder contents to make room for new files.""")
             for fpath in destinationFolder.iterdir():
                 logger.info(f"""    Removing "{fpath.absolute().relative_to(rootDirectory)}".""")
                 os.remove(fpath)
@@ -171,16 +158,16 @@ if __name__ == "__main__":
         logger.info(f"""Making destination folder: "{destinationFolder.absolute().relative_to(rootDirectory)}".""")
         makeDirPath(destinationFolder)
 
-    logger.info(f"""Working on list of files.""")
+    logger.info("""Working on list of files.""")
     for fpathString in LIST_OF_FILES:
         fpath = Path(fpathString)
         logger.info(f"""  Working on file "{fpath.absolute().relative_to(rootDirectory)}".""")
         dest = destinationFolder.joinpath(fpath.name)
         logger.info(f"""    Saving to "{dest.absolute().relative_to(rootDirectory)}".""")
         shutil.copyfile(fpath, dest)
-    logger.info(f"""Working on list of files - done.""")
+    logger.info("""Working on list of files - done.""")
 
-    logger.info(f"""Working on list of directories.""")
+    logger.info("""Working on list of directories.""")
     for directoryString in LIST_OF_DIRECTORIES:
         directory = Path(directoryString)
         for fpath in directory.iterdir():
@@ -201,14 +188,14 @@ if __name__ == "__main__":
                 shutil.copyfile(fpath, dest)
             else:
                 logger.info("""    The file was not saved to the destination path. File over-write is set to `False`.""")
-    logger.info(f"""Working on list of directories - done.""")
+    logger.info("""Working on list of directories - done.""")
 
     # Create compressed archive
     if CREATE_COMPRESSED_ARCHIVE:
         archivePath = destinationFolder.with_suffix(".ZIP")
         logger.info(f"""Creating compressed archive: "{archivePath.absolute().relative_to(rootDirectory)}"".""")
         if archivePath.exists():
-            logger.info(f"""The archive folder already exists and will be removed before writing.""")
+            logger.info("""The archive folder already exists and will be removed before writing.""")
             os.remove(archivePath)
         else:
             pass
@@ -222,14 +209,13 @@ if __name__ == "__main__":
                 newPath = fpath.name
                 zipObj.write(filename=fpath, arcname=newPath)
         logger.info("Creating compressed archive - done.")
-        
+
         if DELETE_FOLDER_AFTER_ARCHIVING:
-            logger.info(f"""Removing intermediate folder.""")
+            logger.info("""Removing intermediate folder.""")
             shutil.rmtree(destinationFolder)
-            logger.info(f"""Removing intermediate folder - done.""")
+            logger.info("""Removing intermediate folder - done.""")
         else:
             pass
-            
 
     # End script
     logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")

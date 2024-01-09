@@ -1,23 +1,94 @@
-import pandas as pd
 import os
+import logging
+from pathlib import Path
+from typing_extensions import Literal
+# Third-party packages
+import pandas as pd
 import pymssql
+# Local packages
+from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
-base_dir = r'Z:\SHARE\DSS\IDR Data Requests\ACTIVE RDRs\Guo_Yi\IRB202100946\Intermediate Results\i2b2 Portion'  # type the path to the base_dir.
-data_dir = os.path.join(base_dir, 'data')
-i2b2_dir = os.path.join(data_dir, 'i2b2')
-map_dir = os.path.join(data_dir, 'mapping')
-disclosure_dir = os.path.join(base_dir, 'disclosure')
+# Arguments
+COHORT_IDS_FILE_PATH = Path(r"..\..\Intermediate Results\i2b2 Portion\data\cohort.CSV")
+COHORT_NAME = ""  # A string. The name of cohort or study, e.g., "cancer_patients"
+IRB_NUMBER = ""  # A string. The IRB protocol and its number. E.g., "IRB123456789", "CED123456789", or "NH12345678". This is used in creating the patient de-identified IDs.
 
-host = 'EDW.shands.ufl.edu'
-database_prod = 'DWS_PROD'
-host_i2b2 = 'idr01.shands.ufl.edu'
-database_i2b2_GNV = 'I2B2LTDDATA'
-database_i2b2_JAX = 'I2B2LTDDATAJAX'
+# Arguments: Meta-variables
+PROJECT_DIR_DEPTH = 2
+DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 2
+IRB_DIR_DEPTH = DATA_REQUEST_DIR_DEPTH + 0
+IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
 
-cohort = 'ADSGM'  # Replace with the name of the cohort. E.g., cohort = 'subjects'
-irb = 'IRB202100946'  # Replace with the IRB number. This is used in deidentification step. E.g., irb = 'IRB200001234'
+ROOT_DIRECTORY = "IRB_DIRECTORY"  # TODO One of the following:
+                                                 # ["IDR_DATA_REQUEST_DIRECTORY",    # noqa
+                                                 #  "IRB_DIRECTORY",                 # noqa
+                                                 #  "DATA_REQUEST_DIRECTORY",        # noqa
+                                                 #  "PROJECT_OR_PORTION_DIRECTORY"]  # noqa
 
-# database methods for trusted connection (AD Windows authentication)
+LOG_LEVEL = "INFO"
+
+# Arguments: SQL connection settings
+SERVER = "EDW.shands.ufl.edu"
+DATABASE = "DWS_PROD"
+SERVER_I2B2 = "IDR01.shands.ufl.edu"
+DATABASE_I2B2_GNV = "I2B2LTDDATA"
+DATABASE_I2B2_JAX = "I2B2LTDDATAJAX"
+USERDOMAIN = "UFAD"
+USERNAME = os.environ["USER"]
+UID = None
+PWD = os.environ["HFA_UFADPWD"]
+
+# Variables: Path construction: General
+runTimestamp = getTimestamp()
+thisFilePath = Path(__file__)
+thisFileStem = thisFilePath.stem
+projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_DIR_DEPTH)
+IRBDir, _ = successiveParents(thisFilePath, IRB_DIR_DEPTH)
+IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
+dataDir = projectDir.joinpath("data")
+if dataDir:
+    inputDataDir = dataDir.joinpath("input")
+    outputDataDir = dataDir.joinpath("output")
+    if outputDataDir:
+        runOutputDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
+logsDir = projectDir.joinpath("logs")
+if logsDir:
+    runLogsDir = logsDir.joinpath(thisFileStem)
+sqlDir = projectDir.joinpath("sql")
+
+if ROOT_DIRECTORY == "PROJECT_OR_PORTION_DIRECTORY":
+    rootDirectory = projectDir
+elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+    rootDirectory = dataRequestDir
+elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+    rootDirectory = IRBDir
+elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+    rootDirectory = IDRDataRequestDir
+else:
+    raise Exception("An unexpected error occurred.")
+
+# Directory creation: General
+makeDirPath(runOutputDir)
+makeDirPath(runLogsDir)
+
+# Variables: Map legacy variables to DRAPI-LEMUR standard variables
+cohort = COHORT_NAME
+irb = IRB_NUMBER
+
+base_dir = projectDir
+data_dir = dataDir
+i2b2_dir = runOutputDir.joinpath("i2b2")
+map_dir = runOutputDir.joinpath("mapping")
+disclosure_dir = runOutputDir.joinpath("disclosure")
+
+host = SERVER
+database_prod = DATABASE
+host_i2b2 = SERVER_I2B2
+database_i2b2_GNV = DATABASE_I2B2_GNV
+database_i2b2_JAX = DATABASE_I2B2_JAX
+
+# Database methods for trusted connection (AD Windows authentication)
 
 
 def db_connect(host, database):
@@ -43,58 +114,74 @@ def db_execute_read_query(query, host, database):
     return result_df
 
 
-# methods
-def get_IDs():
+# Script functions
+def get_IDs(filterID = Literal["Patient Key", "EPIC Patient ID", "MRN (UF)", "MRN (Jax)"]):
     '''
-    Get i2b2 patient IDs from patient keys.
-    Assumption: patient keys are in 'Patient Key' column in cohort.csv file. The cohort.csv file is in 'data' directory.
+    Get i2b2 patient IDs from any of the following ID types:
+        - Patient Key
+        - EPIC Patient ID
+        - MRN (UF)
+        - MRN (Jax)
     '''
 
-    query = '''
-	select distinct
-	  a.PATIENT_IDE as 'EPIC_ID',
-	  a.PATIENT_NUM as 'I2B2_PATIENT_NUM',
-	  b.PATNT_KEY as 'PatientKey',
-	  c.IDENT_ID as 'MRN_UF',
-	  d.IDENT_ID as 'MRN_JAX'
-	from dws_I2B2.dbo.PATIENT_MAPPING a
-	LEFT OUTER JOIN dws_prod.dbo.all_patient_identities b ON a.patient_ide = b.patnt_id
-	LEFT OUTER JOIN dws_prod.dbo.all_patient_identities c ON a.patient_ide = c.patnt_id and c.IDENT_ID_TYPE=101 and c.LOOKUP_IND='Y'
-	LEFT OUTER JOIN dws_prod.dbo.all_patient_identities d ON a.patient_ide = d.patnt_id and d.IDENT_ID_TYPE=110 and d.LOOKUP_IND='Y'
-	where a.patient_ide in (XXXXX )
-	--where  b.PATNT_KEY in (XXXXX)
+    if filterID == "Patient Key":
+        filterStatement = "WHERE\n\tB.PATNT_KEY IN (XXXXX)"
+        filterIDColumnName = "Patient Key"
+    elif filterID == "EPIC Patient ID":
+        filterStatement = "WHERE\n\tA.PATIENT_IDE IN (XXXXX)"
+        filterIDColumnName = "EPIC Patient ID"
+    elif filterID == "MRN (UF)":
+        filterStatement = "WHERE\n\tC.IDENT_ID IN (XXXXX)"  # NOTE: Not tested
+        filterIDColumnName = "MRN (UF)"
+    elif filterID == "MRN (Jax)":
+        filterStatement = "WHERE\n\tD.IDENT_ID IN (XXXXX)"  # NOTE: Not tested
+        filterIDColumnName = "MRN (Jax)"
+    else:
+        raise Exception("No valid option for `filterID` was passed.")
+
+    query = f'''
+	SELECT DISTINCT
+        A.PATIENT_IDE AS 'EPIC Patient ID',
+        A.PATIENT_NUM AS 'I2B2_PATIENT_NUM',
+        B.PATNT_KEY AS 'Patient Key',
+        C.IDENT_ID AS 'MRN (UF)',
+        D.IDENT_ID AS 'MRN (Jax)'
+	FROM
+        [DWS_I2B2].[dbo].PATIENT_MAPPING A
+	    LEFT OUTER JOIN [DWS_PROD].[dbo].ALL_PATIENT_IDENTITIES B ON A.PATIENT_IDE = B.PATNT_ID
+	    LEFT OUTER JOIN [DWS_PROD].[dbo].ALL_PATIENT_IDENTITIES C ON A.PATIENT_IDE = C.PATNT_ID AND C.IDENT_ID_TYPE=101 AND C.LOOKUP_IND='Y'
+	    LEFT OUTER JOIN [DWS_PROD].[dbo].ALL_PATIENT_IDENTITIES D ON A.PATIENT_IDE = D.PATNT_ID AND D.IDENT_ID_TYPE=110 AND D.LOOKUP_IND='Y'
+	{filterStatement}
 	'''
     m = 'w'
     h = True
-    for chunk in pd.read_csv(os.path.join(data_dir, 'cohort.csv'), chunksize=3000):
-        chunk = chunk[['EPIC Patient ID']]
+    for chunk in pd.read_csv(COHORT_IDS_FILE_PATH, chunksize=3000):
+        chunk = chunk[[filterIDColumnName]]
         chunk = chunk.drop_duplicates()
-        id = chunk['EPIC Patient ID'].tolist()
+        id = chunk[filterIDColumnName].tolist()
         ids = "','".join(str(x) for x in id)
         ids = "'" + ids + "'"
         query1 = query.replace('XXXXX', ids)
         result = db_execute_read_query(query1, host, database_prod)
         result = result.drop_duplicates()
-        result.to_csv(os.path.join(data_dir, 'Cohort_IDs.csv'), index=False, mode=m, header=h)
+        result.to_csv(os.path.join(data_dir, 'Cohort IDs.CSV'), index=False, mode=m, header=h)
         m = 'a'
         h = False
 
 
-def i2b2_dump_main(source, table, cohort_dir, i2b2_dir, cohort):
+def i2b2_dump_main(source, table, cohort_dir, i2b2_dir, cohort, logger):
     '''
     source: 'GNV' or 'JAX'. Indicates which i2b2 instance to use as the source of data.
-    table: 'patient_dimension', 'visit_dimension', or observation_fact'. Indicates which table to dump.
+    table: 'patient_dimension', 'visit_dimension', or 'observation_fact'. Indicates which table to dump.
     cohort_dir: Specifies directory where cohort file is saved.
     i2b2_dir: directory where i2b2 data will be saved.
     cohort: The name of the cohort. E.g., 'subjects'.
     '''
-    h = True  # header of the output file
-    m = 'w'  # mode of the output file
-    counter = 0  # used only for tracking/time estimation purposes.
-    # cohort should be saved in Cohort_IDs.csv file. It should contain i2b2 patient IDs in 'I2B2_PATIENT_NUM' column.
-    for ids in pd.read_csv(os.path.join(cohort_dir, 'Cohort_IDs.csv'), chunksize=100):
-        counter = counter + 1
-        print(counter)
+    h = True
+    m = 'w'
+    # Cohort should be saved in "Cohort IDs.CSV" file. It should contain i2b2 patient IDs in 'I2B2_PATIENT_NUM' column.
+    for it, ids in enumerate(pd.read_csv(os.path.join(cohort_dir, 'Cohort IDs.CSV'), chunksize=100), start=1):
+        logger.info(f"""  Working on batch {it:,}.""")
         ids = ids[['I2B2_PATIENT_NUM']].drop_duplicates().dropna()
         ids = ids['I2B2_PATIENT_NUM'].unique().tolist()
         ids = "','".join(str(x) for x in ids)
@@ -135,19 +222,17 @@ def i2b2_dump_main(source, table, cohort_dir, i2b2_dir, cohort):
         result.to_csv(os.path.join(i2b2_dir, file), mode=m, header=h, index=False)
         h = False
         m = 'a'
-    print("i2b2 dump {} {} completed".format(table, source))
-    return
+    logger.info(f"""Completed i2b2 dump for table "{table}" for location "{source}".""")
 
 
 def generate_patient_map(map_dir, cohort_dir):
-    pat = pd.read_csv(os.path.join(cohort_dir, 'Cohort_IDs.csv'))
-    pat_map = pat[['PatientKey']].drop_duplicates()
+    pat = pd.read_csv(os.path.join(cohort_dir, 'Cohort IDs.CSV'))
+    pat_map = pat[['Patient Key']].drop_duplicates()
     pat_map = pat_map.reset_index()
     pat_map['deid_num'] = pat_map.index + 1
     pat_map['deid_pat_ID'] = pat_map.apply(lambda row: str(irb) + '_PAT_' + str(int(row['deid_num'])), axis=1)
-    pat = pd.merge(pat, pat_map, how='left', on='PatientKey')
+    pat = pd.merge(pat, pat_map, how='left', on='Patient Key')
     pat.to_csv(os.path.join(map_dir, 'map_patient.csv'), index=False)
-    return
 
 
 def generate_encounter_map_i2b2(map_dir, i2b2_dir):
@@ -168,6 +253,7 @@ def generate_encounter_map_i2b2(map_dir, i2b2_dir):
     df['deid_enc_ID'] = df.apply(lambda row: str(irb) + '_ENC_' + str(int(row['deid_num'])), axis=1)
     df['source'] = 'GNV'
     size = df.shape[0]
+
     # JAX
     in_file = cohort + '_visit_dimension_JAX.csv'
     df2 = pd.read_csv(os.path.join(i2b2_dir, in_file))
@@ -184,29 +270,28 @@ def generate_encounter_map_i2b2(map_dir, i2b2_dir):
     df2['deid_num'] = df2.index + 1 + size
     df2['deid_enc_ID'] = df2.apply(lambda row: str(irb) + '_ENC_' + str(int(row['deid_num'])), axis=1)
     df2['source'] = 'JAX'
-    # concatenate GNV and JAX
+
+    # Concatenate GNV and JAX
     df = pd.concat([df, df2])
     df.to_csv(os.path.join(map_dir, 'map_encounter.csv'), index=False)
-    return
 
 
 def generate_mappings():
     generate_patient_map(map_dir, data_dir)
     generate_encounter_map_i2b2(map_dir, i2b2_dir)
-    return
 
 
-def lds_i2b2(map_dir, i2b2_dir, disclosure_dir_i2b2):
-    lds_i2b2_patient_dim(map_dir, i2b2_dir, disclosure_dir_i2b2)
-    lds_i2b2_visit_dim(map_dir, i2b2_dir, disclosure_dir_i2b2)
-    lds_i2b2_observation_fact(map_dir, i2b2_dir, disclosure_dir_i2b2)
-    return
+def lds_i2b2(map_dir, i2b2_dir, disclosure_dir_i2b2, logger):
+    lds_i2b2_patient_dim(map_dir, i2b2_dir, disclosure_dir_i2b2, logger=logger)
+    lds_i2b2_visit_dim(map_dir, i2b2_dir, disclosure_dir_i2b2, logger=logger)
+    lds_i2b2_observation_fact(map_dir, i2b2_dir, disclosure_dir_i2b2, logger=logger)
 
 
-def lds_i2b2_patient_dim(map_dir, i2b2_dir, disclosure_dir_i2b2):
+def lds_i2b2_patient_dim(map_dir, i2b2_dir, disclosure_dir_i2b2, logger):
     map_pat = pd.read_csv(os.path.join(map_dir, 'map_patient.csv'))
     df = pd.DataFrame(columns=['deid_pat_ID', 'VITAL_STATUS_CD', 'BIRTH_DATE', 'DEATH_DATE', 'SEX_CD', 'AGE_IN_YEARS_NUM', 'LANGUAGE_CD', 'RACE_CD', 'MARITAL_STATUS_CD', 'RELIGION_CD', 'ZIP_CD', 'STATECITYZIP_PATH', 'INCOME_CD', 'ETHNIC_CD', 'PAYER_CD', 'SMOKING_STATUS_CD', 'COUNTY_CD', 'SSN_VITAL_STATUS_CD', 'MYCHART_CD', 'CANCER_IND'])
     df.to_csv(os.path.join(disclosure_dir_i2b2, 'patient_dimension.csv'), index=False)
+
     # GNV
     in_file = cohort + '_patient_dimension_GNV.csv'
     for df in pd.read_csv(os.path.join(i2b2_dir, in_file), chunksize=10000):
@@ -214,7 +299,8 @@ def lds_i2b2_patient_dim(map_dir, i2b2_dir, disclosure_dir_i2b2):
         df = pd.merge(df, map_pat, how='left', left_on='PATIENT_NUM', right_on='I2B2_PATIENT_NUM')
         df = df[['deid_pat_ID', 'VITAL_STATUS_CD', 'BIRTH_DATE', 'DEATH_DATE', 'SEX_CD', 'AGE_IN_YEARS_NUM', 'LANGUAGE_CD', 'RACE_CD', 'MARITAL_STATUS_CD', 'RELIGION_CD', 'ZIP_CD', 'STATECITYZIP_PATH', 'INCOME_CD', 'ETHNIC_CD', 'PAYER_CD', 'SMOKING_STATUS_CD', 'COUNTY_CD', 'SSN_VITAL_STATUS_CD', 'MYCHART_CD', 'CANCER_IND']]
         df.to_csv(os.path.join(disclosure_dir_i2b2, 'patient_dimension.csv'), header=False, index=False, mode='a')
-    print("deidentified GNV patient dimension")
+    logger.info("De-identified GNV patient dimension.")
+
     # JAX
     in_file = cohort + '_patient_dimension_JAX.csv'
     for df in pd.read_csv(os.path.join(i2b2_dir, in_file), chunksize=10000):
@@ -222,15 +308,15 @@ def lds_i2b2_patient_dim(map_dir, i2b2_dir, disclosure_dir_i2b2):
         df = pd.merge(df, map_pat, how='left', left_on='PATIENT_NUM', right_on='I2B2_PATIENT_NUM')
         df = df[['deid_pat_ID', 'VITAL_STATUS_CD', 'BIRTH_DATE', 'DEATH_DATE', 'SEX_CD', 'AGE_IN_YEARS_NUM', 'LANGUAGE_CD', 'RACE_CD', 'MARITAL_STATUS_CD', 'RELIGION_CD', 'ZIP_CD', 'STATECITYZIP_PATH', 'INCOME_CD', 'ETHNIC_CD', 'PAYER_CD', 'SMOKING_STATUS_CD', 'COUNTY_CD', 'SSN_VITAL_STATUS_CD', 'MYCHART_CD', 'CANCER_IND']]
         df.to_csv(os.path.join(disclosure_dir_i2b2, 'patient_dimension.csv'), header=False, index=False, mode='a')
-    print("deidentified JAX patient dimension")
-    return
+    logger.info("De-identified JAX patient dimension.")
 
 
-def lds_i2b2_visit_dim(map_dir, i2b2_dir, disclosure_dir_i2b2):
+def lds_i2b2_visit_dim(map_dir, i2b2_dir, disclosure_dir_i2b2, logger):
     map_pat = pd.read_csv(os.path.join(map_dir, 'map_patient.csv'))
     map_enc = pd.read_csv(os.path.join(map_dir, 'map_encounter.csv'))
     df = pd.DataFrame(columns=['deid_pat_ID', 'deid_enc_ID', 'ACTIVE_STATUS_CD', 'START_DATE', 'END_DATE', 'INOUT_CD', 'LOCATION_CD', 'LOCATION_PATH', 'LENGTH_OF_STAY'])
     df.to_csv(os.path.join(disclosure_dir_i2b2, 'visit_dimension.csv'), index=False)
+
     # GNV
     in_file = cohort + '_visit_dimension_GNV.csv'
     for df in pd.read_csv(os.path.join(i2b2_dir, in_file), chunksize=10000):
@@ -239,7 +325,8 @@ def lds_i2b2_visit_dim(map_dir, i2b2_dir, disclosure_dir_i2b2):
         df = pd.merge(df, map_enc, how='left', on='ENCOUNTER_NUM')
         df = df[['deid_pat_ID', 'deid_enc_ID', 'ACTIVE_STATUS_CD', 'START_DATE', 'END_DATE', 'INOUT_CD', 'LOCATION_CD', 'LOCATION_PATH', 'LENGTH_OF_STAY']]
         df.to_csv(os.path.join(disclosure_dir_i2b2, 'visit_dimension.csv'), header=False, index=False, mode='a')
-    print("deidentified GNV visit dimension")
+    logger.info("De-identified GNV visit dimension.")
+
     # JAX
     in_file = cohort + '_visit_dimension_JAX.csv'
     for df in pd.read_csv(os.path.join(i2b2_dir, in_file), chunksize=10000):
@@ -248,15 +335,15 @@ def lds_i2b2_visit_dim(map_dir, i2b2_dir, disclosure_dir_i2b2):
         df = pd.merge(df, map_enc, how='left', on='ENCOUNTER_NUM')
         df = df[['deid_pat_ID', 'deid_enc_ID', 'ACTIVE_STATUS_CD', 'START_DATE', 'END_DATE', 'INOUT_CD', 'LOCATION_CD', 'LOCATION_PATH', 'LENGTH_OF_STAY']]
         df.to_csv(os.path.join(disclosure_dir_i2b2, 'visit_dimension.csv'), header=False, index=False, mode='a')
-    print("deidentified JAX visit dimension")
-    return
+    logger.info("De-identified JAX visit dimension.")
 
 
-def lds_i2b2_observation_fact(map_dir, i2b2_dir, disclosure_dir_i2b2):
+def lds_i2b2_observation_fact(map_dir, i2b2_dir, disclosure_dir_i2b2, logger):
     map_pat = pd.read_csv(os.path.join(map_dir, 'map_patient.csv'))
     map_enc = pd.read_csv(os.path.join(map_dir, 'map_encounter.csv'))
     df = pd.DataFrame(columns=['deid_pat_ID', 'deid_enc_ID', 'CONCEPT_CD', 'START_DATE', 'MODIFIER_CD', 'VALTYPE_CD', 'TVAL_CHAR', 'NVAL_NUM', 'VALUEFLAG_CD', 'QUANTITY_NUM', 'UNITS_CD', 'END_DATE', 'LOCATION_CD'])
     df.to_csv(os.path.join(disclosure_dir_i2b2, 'observation_fact.csv'), index=False)
+
     # GNV
     in_file = cohort + '_observation_fact_GNV.csv'
     for df in pd.read_csv(os.path.join(i2b2_dir, in_file), chunksize=10000):
@@ -267,7 +354,8 @@ def lds_i2b2_observation_fact(map_dir, i2b2_dir, disclosure_dir_i2b2):
         df = pd.merge(df, map_enc, how='left', on='ENCOUNTER_NUM')
         df = df[['deid_pat_ID', 'deid_enc_ID', 'CONCEPT_CD', 'START_DATE', 'MODIFIER_CD', 'VALTYPE_CD', 'TVAL_CHAR', 'NVAL_NUM', 'VALUEFLAG_CD', 'QUANTITY_NUM', 'UNITS_CD', 'END_DATE', 'LOCATION_CD']]
         df.to_csv(os.path.join(disclosure_dir_i2b2, 'observation_fact.csv'), header=False, index=False, mode='a')
-    print("deidentified GNV observation fact")
+    logger.info("De-identified GNV observation fact.")
+
     # JAX
     in_file = cohort + '_observation_fact_JAX.csv'
     for df in pd.read_csv(os.path.join(i2b2_dir, in_file), chunksize=10000):
@@ -278,36 +366,79 @@ def lds_i2b2_observation_fact(map_dir, i2b2_dir, disclosure_dir_i2b2):
         df = pd.merge(df, map_enc, how='left', on='ENCOUNTER_NUM')
         df = df[['deid_pat_ID', 'deid_enc_ID', 'CONCEPT_CD', 'START_DATE', 'MODIFIER_CD', 'VALTYPE_CD', 'TVAL_CHAR', 'NVAL_NUM', 'VALUEFLAG_CD', 'QUANTITY_NUM', 'UNITS_CD', 'END_DATE', 'LOCATION_CD']]
         df.to_csv(os.path.join(disclosure_dir_i2b2, 'observation_fact.csv'), header=False, index=False, mode='a')
-    print("deidentified JAX observation fact")
-    return
+    logger.info("De-identified JAX observation fact.")
 
 
-def limited_data_set():
-    lds_i2b2(map_dir, i2b2_dir, disclosure_dir)
-    return
+def limited_data_set(logger):
+    lds_i2b2(map_dir, i2b2_dir, disclosure_dir, logger=logger)
 
 
-## MAIN ##
-if __name__ == '__main__':
-    print('START')
-    # generate i2b2 patient IDs
-    get_IDs()
+# Logging block
+logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
+logFormat = logging.Formatter(f"""[%(asctime)s]\n[%(levelname)s](%(funcName)s)\n{"-"*24}> %(message)s""")
 
-    # i2b2 dump
+logger = logging.getLogger(__name__)
+
+fileHandler = logging.FileHandler(logpath)
+fileHandler.setLevel(9)
+fileHandler.setFormatter(logFormat)
+
+streamHandler = logging.StreamHandler()
+streamHandler.setLevel(LOG_LEVEL)
+streamHandler.setFormatter(logFormat)
+
+logger.addHandler(fileHandler)
+logger.addHandler(streamHandler)
+
+logger.setLevel(9)
+
+if __name__ == "__main__":
+    logger.info(f"""Begin running "{thisFilePath}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Script arguments:
+
+
+    # Arguments
+    `COHORT_IDS_FILE_PATH`: "{COHORT_IDS_FILE_PATH}"
+    `COHORT_NAME`: "{COHORT_NAME}"
+    `IRB_NUMBER`: "{IRB_NUMBER}"
+
+    # Arguments: General
+    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}"
+    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}"
+    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}"
+
+    `LOG_LEVEL` = "{LOG_LEVEL}"
+
+    # Arguments: SQL connection settings
+    `SERVER` = "{SERVER}"
+    `DATABASE` = "{DATABASE}"
+    `USERDOMAIN` = "{USERDOMAIN}"
+    `USERNAME` = "{USERNAME}"
+    `UID` = "{UID}"
+    `PWD` = censored
+    """)
+
+    # Generate i2b2 patient IDs
+    get_IDs(filterID="Patient Key")
+
+    # Perform i2b2 dump
     if (not os.path.exists(i2b2_dir)):  # i2b2 dump will be saved in 'i2b2' subdirectory of 'data' folder.
         os.makedirs(i2b2_dir)
-    i2b2_dump_main('GNV', 'patient_dimension', data_dir, i2b2_dir, cohort)  # Pull data from patient_dimension in GNV i2b2 instance.
-    i2b2_dump_main('JAX', 'patient_dimension', data_dir, i2b2_dir, cohort)
-    i2b2_dump_main('GNV', 'visit_dimension', data_dir, i2b2_dir, cohort)
-    i2b2_dump_main('JAX', 'visit_dimension', data_dir, i2b2_dir, cohort)
-    i2b2_dump_main('GNV', 'observation_fact', data_dir, i2b2_dir, cohort)
-    i2b2_dump_main('JAX', 'observation_fact', data_dir, i2b2_dir, cohort)
+    i2b2_dump_main('GNV', 'patient_dimension', data_dir, i2b2_dir, cohort, logger=logger)  # Pull data from patient_dimension in GNV i2b2 instance.
+    i2b2_dump_main('JAX', 'patient_dimension', data_dir, i2b2_dir, cohort, logger=logger)
+    i2b2_dump_main('GNV', 'visit_dimension', data_dir, i2b2_dir, cohort, logger=logger)
+    i2b2_dump_main('JAX', 'visit_dimension', data_dir, i2b2_dir, cohort, logger=logger)
+    i2b2_dump_main('GNV', 'observation_fact', data_dir, i2b2_dir, cohort, logger=logger)
+    i2b2_dump_main('JAX', 'observation_fact', data_dir, i2b2_dir, cohort, logger=logger)
 
-    # prepare limited data set for disclosure
+    # Prepare limited data set for disclosure
     if (not os.path.exists(map_dir)):  # mappings for patient IDs and encounter IDs will be saved in 'mapping' subdirectory of 'data' folder.
         os.makedirs(map_dir)
     generate_mappings()
     if (not os.path.exists(disclosure_dir)):  # limited data set of i2b2 dump will be saved in 'disclosure' directory.
         os.makedirs(disclosure_dir)
-    limited_data_set()
-    print('END')
+    limited_data_set(logger=logger)
+
+    # End script
+    logger.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

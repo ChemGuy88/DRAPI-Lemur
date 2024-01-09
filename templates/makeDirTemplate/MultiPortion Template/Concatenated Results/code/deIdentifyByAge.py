@@ -12,7 +12,8 @@ import pandas as pd
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 from drapi.drapi import fileContainsColumn
 # Local packages: Script parameters: General
-from drapi.constants.phiVariables import DICT_OF_PHI_VARIABLES_BIRTHDATES, DICT_OF_PHI_VARIABLES_AGE
+from drapi.constants.phiVariables import DICT_OF_PHI_VARIABLES_AGE
+from drapi.constants.phiVariables import DICT_OF_PHI_VARIABLES_BIRTHDATES
 # Local packages: Script parameters: Paths
 from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
 from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
@@ -25,7 +26,7 @@ from common import OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
 AGE_MAP = Path(r"..\Concatenated Results\data\output\makeAgeMap\...\Age Map - De-identified Patient Key.CSV")
-USE_DE_IDENTIFIED_DATA_SET = True
+USE_DE_IDENTIFIED_DATES = True  # NOTE Set `USE_DE_IDENTIFIED_DATES` to `True` if the dates have been de-identified. If the IDs have been de-identified, it is not necessary to set this to `True`.
 
 DE_IDENTIFIED_AGE_VALUE = "> 90"
 DE_IDENTIFIED_BIRTHDATE_VALUE = "1/1/1800"
@@ -34,8 +35,8 @@ DE_IDENTIFIED_BIRTHDATE_VALUE = "1/1/1800"
 USE_MODIFIED_OMOP_DATA_SET = True
 
 # Variables: Script parameters: Date variables
-if USE_DE_IDENTIFIED_DATA_SET:
-    DE_IDENTIFICATION_PREFIX = "De-identified"
+if USE_DE_IDENTIFIED_DATES:
+    DE_IDENTIFICATION_PREFIX = "De-identified "
     dictOfPHIVariablesBirthdates = {portion: [] for portion in DICT_OF_PHI_VARIABLES_BIRTHDATES.keys()}
     for portion, li in DICT_OF_PHI_VARIABLES_BIRTHDATES.items():
         for columnName in li:
@@ -54,8 +55,8 @@ else:
     OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
-MAC_PATHS = [Path(r"..\Concatenated Results\data\output\shiftDates\2023-12-13 14-45-46")]
-WIN_PATHS = [Path(r"..\Concatenated Results\data\output\shiftDates\2023-12-13 14-45-46")]
+MAC_PATHS = [Path(r"..\Concatenated Results\data\output\...\...")]  # TODO
+WIN_PATHS = [Path(r"..\Concatenated Results\data\output\...\...")]  # TODO
 
 listOfAgeColumns = [el for value in dictOfPHIVariablesAge.values() for el in value]
 listOfBirthdateColumns = [el for value in dictOfPHIVariablesBirthdates.values() for el in value]
@@ -205,7 +206,7 @@ if __name__ == "__main__":
 
     # De-identify by age
     logger.info("""De-identifying files.""")
-    columnDeIdentificationRenamePrefix = f"{DE_IDENTIFICATION_PREFIX} "
+    columnDeIdentificationRenamePrefix = f"{DE_IDENTIFICATION_PREFIX}"
     for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
         # Act on directory
         logger.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
@@ -242,7 +243,7 @@ if __name__ == "__main__":
                                 dfChunk.loc[mask, columnName] = DE_IDENTIFIED_AGE_VALUE
                             elif columnName in listOfBirthdateColumns:
                                 dfChunk.loc[mask, columnName] = DE_IDENTIFIED_BIRTHDATE_VALUE
-                            if USE_DE_IDENTIFIED_DATA_SET:
+                            if USE_DE_IDENTIFIED_DATES:
                                 if columnName in listOfAgeColumns:
                                     columnRenamePrefix = columnDeIdentificationRenamePrefix
                                 else:

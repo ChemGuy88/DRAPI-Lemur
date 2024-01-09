@@ -2,10 +2,6 @@
 Deletes rows based on column values.
 """
 
-"""
-Shifts the dates in a data set according to the date shift map for a patient.
-"""
-
 import logging
 import os
 import sys
@@ -22,6 +18,7 @@ from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 from drapi.drapi import map2di
 from drapi.drapi import makeMap
 # Local packages: Script parameters: General
+from drapi.constants.phiValues import PHI_VALUES_DICT_ALL
 from drapi.constants.phiVariables import LIST_OF_PHI_DATES_BO, LIST_OF_PHI_DATES_NOTES, LIST_OF_PHI_DATES_OMOP
 # Local packages: Script parameters: General
 from common import IRB_NUMBER
@@ -36,7 +33,7 @@ from common import NOTES_PORTION_FILE_CRITERIA
 from common import OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
-COLUMN_VALUES_TO_DROP = {"observation_source_value": ["Zipcode"]}
+COLUMN_VALUES_TO_DROP = PHI_VALUES_DICT_ALL
 
 # Arguments: OMOP data set selection
 USE_MODIFIED_OMOP_DATA_SET = True
@@ -215,8 +212,9 @@ if __name__ == "__main__":
                         # Work on column
                         logger.info(f"""  ..    Working on column "{columnName}".""")
                         if columnName in COLUMN_VALUES_TO_DROP.keys():
-                            logger.info(f"""  ..  ..  Column has values that need to be dropped. Dropping values.""")
                             mask = ~dfChunk[columnName].isin(COLUMN_VALUES_TO_DROP[columnName])
+                            if mask.sum() > 0:
+                                logger.info(f"""  ..  ..  Column has values that need to be dropped. Dropping values.""")
                             dfChunk = dfChunk[mask]
                     # Save chunk
                     dfChunk.to_csv(exportPath, mode=fileMode, header=fileHeaders, index=False)

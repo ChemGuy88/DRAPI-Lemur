@@ -1,7 +1,15 @@
 """
 Creates an age de-identification map. This is an object that identifies patients who are aged 90 or more at the time of processing (i.e., now, when the script is run).
 
-This is usually run before `deIdentifyByAge`
+This is usually run before `deIdentifyByAge`.
+
+Optionally this also creates a second map using a second set of ID's, which is usually necessary if you are operating on a data set that has already had its IDs de-identified. This optional function uses the following parameters:
+
+    - `SECONDARY_MAP`
+    - `SECONDARY_MAP_COLUMN_NAME_FROM`
+    - `SECONDARY_MAP_COLUMN_NAME_TO`
+
+Note that there must be a variable (column) in common between the tables `SECONDARY_MAP` and `INPUT_FILE`, for the patients to be correctly mapped from one table to the other.
 """
 
 import logging
@@ -14,13 +22,13 @@ import pandas as pd
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
 
 # Arguments
-INPUT_FILE = Path(r"..\Concatenated Results\data\output\convertColumns\2023-12-13 10-49-05\person.csv")
+INPUT_FILE = Path(r"..\Concatenated Results\data\output\convertColumns\...\person.csv")
 PATIENT_ID_NAME = "Patient Key"
 DATE_OF_BIRTH_COLUMN = "birth_datetime"
 AGE_THRESHOLD = 90
 
-SECONDARY_MAP = Path(r"..\Concatenated Results\data\output\concatenateMaps\2023-12-13 11-59-04\Patient Key map.csv")  # Path object or `None`
-SECONDARY_MAP_COLUMN_NAME_FROM = PATIENT_ID_NAME
+SECONDARY_MAP = Path(r"..\Concatenated Results\data\output\concatenateMaps\...\Patient Key map.csv")  # Path object or `None`
+SECONDARY_MAP_COLUMN_NAME_FROM = "Patient Key"
 SECONDARY_MAP_COLUMN_NAME_TO = "De-identified Patient Key"
 
 # Arguments; General
@@ -29,8 +37,8 @@ CHUNK_SIZE = 50000
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
 DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 2
-IRB_DIR_DEPTH = DATA_REQUEST_DIR_DEPTH + 0
-IDR_DATA_REQUEST_DIR_DEPTH = IRB_DIR_DEPTH + 3
+IRB_DIR_DEPTH = PROJECT_DIR_DEPTH + 1
+IDR_DATA_REQUEST_DIR_DEPTH = PROJECT_DIR_DEPTH + 2
 
 ROOT_DIRECTORY = "IRB_DIRECTORY"  # TODO One of the following:
                                                  # ["IDR_DATA_REQUEST_DIRECTORY",    # noqa
@@ -206,6 +214,9 @@ if __name__ == "__main__":
         newMap.to_csv(savePath2, index=False, mode="a")
     else:
         pass
+
+    # Output location summary
+    logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
     logger.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

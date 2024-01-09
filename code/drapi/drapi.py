@@ -7,6 +7,7 @@ import logging
 import os
 import re
 from array import array
+from collections.abc import Collection
 from datetime import datetime
 from datetime import date
 from datetime import time
@@ -98,6 +99,16 @@ def getPercentDifference(x, y):
         return f"{x / y: 0.2%}"
     else:
         return "N/A"
+
+
+def flatExtend(iterable: Collection) -> list:
+    """
+    Creates a list from an iterable.
+    """
+    outputList = []
+    for el in iterable:
+        outputList.extend(el)
+    return outputList
 
 
 def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
@@ -244,11 +255,16 @@ def makeMap(IDset: set,
         | IDset[0] | numbers[0] | ... |
         | ...      | ...        | ... |
     """
+    # QA: `irbNumber` must not be NoneType
+    if isinstance(irbNumber, type(None)):
+        raise Exception("""`irbNumber` cannot be of type "None".""")
+
     # Assign header formats: de-Identififed ID Column Header
     if deIdentificationMapStyle == "classic":
         deIdentificationSerialNumberHeader = "deid_num"
     elif deIdentificationMapStyle == "lemur":
         deIdentificationSerialNumberHeader = "De-identification Serial Number"
+
     # Assign header formats: de-Identififed ID Column Header
     if deIdentificationMapStyle == "classic":
         deIdentifiedIDColumnHeader = f"deid_{columnSuffix}_id"
@@ -278,7 +294,7 @@ def makeMap(IDset: set,
     if lenIDli > 100000:
         itChunk = 1000
     else:
-        itChunk = max(round(lenIDli/50), 1)
+        itChunk = max(round(lenIDli / 50), 1)
     for it, IDNum in enumerate(IDli, start=1):
         fromGroup = False
         for group, groupAttributes in groups.items():
@@ -426,6 +442,7 @@ def personIDs2patientKeys(personIDList: List[int]) -> pd.DataFrame:
         xref.PERSON_MAPPING.person_id IN ({list2str})"""
     results = pd.read_sql(query, con=conStr)
     return results
+
 
 def epicID2patientKey(epicIDlist: List[str]) -> pd.DataFrame:
     """

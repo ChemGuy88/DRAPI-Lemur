@@ -2,6 +2,8 @@
 Useful definitions used throughout the IDR.
 """
 
+from drapi.drapi import flatExtend
+
 __all__ = ["LIST_OF_PHI_VARIABLES_BO",
            "LIST_OF_PHI_VARIABLES_NOTES",
            "LIST_OF_PHI_VARIABLES_OMOP",
@@ -11,7 +13,8 @@ __all__ = ["LIST_OF_PHI_VARIABLES_BO",
 DICT_OF_PHI_VARIABLES_BIRTHDATES = {"BO": ["Date Of Birth"],
                                     "OMOP": ["birth_datetime"]}
 DICT_OF_PHI_VARIABLES_AGE = {"BO": ["Current Age",
-                                    "Age At Diagnosis"]}
+                                    "Age At Diagnosis",
+                                    "Age at Encounter"]}
 
 LIST_OF_PHI_DATES_BO = ["Date of Diagnosis",
                         "Chemo Start Date Summary",
@@ -145,6 +148,7 @@ LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE = ["condition_occurrence_id",
                                             "location_source_value",
                                             "measurement_id",
                                             "observation_id",
+                                            "observation_period_id",
                                             "procedure_occurrence_id",
                                             "visit_detail_id"]
 
@@ -153,12 +157,17 @@ LIST_OF_PHI_VARIABLES_OMOP = ["care_site_id",
                               "city",
                               "county",
                               "location_id",
-                              "observation_period_id",
                               "patient_key",
                               "preceding_visit_occurrence_id",
                               "provider_id",
                               "visit_occurrence_id"]
 
+LIST_OF_PHI_VARIABLES = flatExtend([LIST_OF_PHI_VARIABLES_BO,
+                                    LIST_OF_PHI_VARIABLES_I2B2,
+                                    LIST_OF_PHI_VARIABLES_NOTES,
+                                    LIST_OF_PHI_VARIABLES_OMOP])
+
+# Variable suffixes
 VARIABLE_SUFFIXES_BO = {"Authoring Provider Key": {"columnSuffix": "provider",
                                                    "deIdIDSuffix": "PROV"},
                         "Authorizing Provider Key": {"columnSuffix": "provider",
@@ -174,7 +183,7 @@ VARIABLE_SUFFIXES_BO = {"Authoring Provider Key": {"columnSuffix": "provider",
                         "Cosign Provider Key": {"columnSuffix": "provider",
                                                 "deIdIDSuffix": "PROV"},
                         "Diagnosis County": {"columnSuffix": "location",
-                                               "deIdIDSuffix": "LOC"},
+                                             "deIdIDSuffix": "LOC"},
                         "EPIC Patient ID": {"columnSuffix": "patient",
                                             "deIdIDSuffix": "PAT"},
                         "Encounter #": {"columnSuffix": "encounter",
@@ -192,7 +201,7 @@ VARIABLE_SUFFIXES_BO = {"Authoring Provider Key": {"columnSuffix": "provider",
                         "Enterprise ID": {"columnSuffix": "patient",
                                           "deIdIDSuffix": "PAT"},
                         "F/u Physicians": {"columnSuffix": "provider",
-                                          "deIdIDSuffix": "PROV"},
+                                           "deIdIDSuffix": "PROV"},
                         "From Station": {"columnSuffix": "station",
                                          "deIdIDSuffix": "STN"},
                         "Linkage Note ID": {"columnSuffix": "link_note",
@@ -279,7 +288,7 @@ VARIABLE_SUFFIXES_OMOP = {"care_site_id": {"columnSuffix": "location",
                           "city": {"columnSuffix": "location",
                                    "deIdIDSuffix": "LOC"},
                           "county": {"columnSuffix": "location",
-                                   "deIdIDSuffix": "LOC"},
+                                     "deIdIDSuffix": "LOC"},
                           "csn": {"columnSuffix": "encounter",
                                   "deIdIDSuffix": "ENC"},
                           "location_id": {"columnSuffix": "location",
@@ -298,11 +307,8 @@ VARIABLE_SUFFIXES_OMOP = {"care_site_id": {"columnSuffix": "location",
                                                   "deIdIDSuffix": "ENC"}}
 
 # Variable name to file name map. This is necessary because some variable names have characters which are not allowed in file names, e.g., "/".
-LIST_OF_PHI_VARIABLES = LIST_OF_PHI_VARIABLES_BO + \
-                        LIST_OF_PHI_VARIABLES_I2B2 + \
-                        LIST_OF_PHI_VARIABLES_NOTES + \
-                        LIST_OF_PHI_VARIABLES_OMOP
 VARIABLE_NAME_TO_FILE_NAME_DICT = {varName: varName for varName in LIST_OF_PHI_VARIABLES}
+
 # Over-write the necessary values
 VARIABLES_TO_OVER_WRITE = {"F/u Physicians": "F-u Physicians"}
 VARIABLE_NAME_TO_FILE_NAME_DICT.update(VARIABLES_TO_OVER_WRITE)

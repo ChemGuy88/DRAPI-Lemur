@@ -13,7 +13,10 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, makeDirPath, successiveParents
+from drapi.drapi import flatExtend
+from drapi.drapi import getTimestamp
+from drapi.drapi import makeDirPath
+from drapi.drapi import successiveParents
 from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE
 from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL
 # Project parameters: General
@@ -74,7 +77,8 @@ NOTES_METADATA_FILES_TO_RELEASE = ["encounters.csv",
                                    f"{NOTES_COHORT_NAME}_order_metadata.csv",
                                    f"{NOTES_COHORT_NAME}_order_narrative_metadata.csv",
                                    f"{NOTES_COHORT_NAME}_order_result_comment_metadata.csv"]
-I2B2_COHORT_NAME = ""
+
+I2B2_COHORT_NAME = ""  # TODO
 I2B2_FILES_TO_RELEASE = [f"{I2B2_COHORT_NAME}_observation_fact_GNV.csv",
                          f"{I2B2_COHORT_NAME}_observation_fact_JAX.csv",
                          f"{I2B2_COHORT_NAME}_patient_dimension_GNV.csv",
@@ -94,13 +98,13 @@ OMOP_FILES_TO_RELEASE = ["condition_occurrence.csv",
                          "person.csv",
                          "procedure_occurrence.csv",
                          "visit_occurrence.csv"]
+
 ZIP_CODE_FILES_TO_RELEASE = ["zipcodes.csv"]
 
-FILES_TO_RELEASE = BO_FILES_TO_RELEASE + \
-                   I2B2_FILES_TO_RELEASE + \
-                   NOTES_METADATA_FILES_TO_RELEASE + \
-                   OMOP_FILES_TO_RELEASE + \
-                   ZIP_CODE_FILES_TO_RELEASE
+FILES_TO_RELEASE = flatExtend([BO_FILES_TO_RELEASE,
+                               NOTES_METADATA_FILES_TO_RELEASE,
+                               OMOP_FILES_TO_RELEASE])
+FILES_TO_RELEASE = [fname.lower() for fname in FILES_TO_RELEASE]
 
 _ = BO_PORTION_FILE_CRITERIA
 _ = I2B2_PORTION_FILE_CRITERIA
@@ -108,37 +112,48 @@ _ = NOTES_PORTION_FILE_CRITERIA
 _ = OMOP_PORTION_FILE_CRITERIA
 _ = ZIP_CODE_PORTION_FILE_CRITERIA
 
-CONCATENATED_PORTIONS_FILE_CRITERIA = [lambda pathObj: pathObj.name in FILES_TO_RELEASE,
+CONCATENATED_PORTIONS_FILE_CRITERIA = [lambda pathObj: pathObj.name.lower() in FILES_TO_RELEASE,
                                        lambda pathObj: pathObj.suffix.lower() == ".csv",
                                        lambda pathObj: pathObj.is_file()]
 
 LIST_OF_PORTION_CONDITIONS = [CONCATENATED_PORTIONS_FILE_CRITERIA]
 
-# Arguments: Columns to delete
-# TODO Columns to delete. The list variable deletes column matches in any file. The dictionary variable delete the columns that are in the file named in the dictionary key. Below are typical values for a limited data release.
+# Arguments: Columns to delete: By portion
+# TODO Columns to delete. The list variable deletes column matches in any file. The dictionary variable delete the columns that are in the file named in the dictionary key.
 if STUDY_TYPE == "Non-Human":
     COLUMNS_TO_DELETE_BO = ["HIV Status"]
 else:
     COLUMNS_TO_DELETE_BO = []
+
 COLUMNS_TO_DELETE_I2B2 = ["LOCATION_CD"]
+
 COLUMNS_TO_DELETE_OMOP = ["person_source_value"] + LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE
+
+COLUMNS_TO_DELETE = flatExtend([COLUMNS_TO_DELETE_BO,
+                                COLUMNS_TO_DELETE_I2B2,
+                                COLUMNS_TO_DELETE_OMOP])
+
+# Arguments: Columns to delete: By file
 if STUDY_TYPE == "Non-Human":
     COLUMNS_TO_DELETE_OMOP_TABLE_PERSON = LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL
 else:
     COLUMNS_TO_DELETE_OMOP_TABLE_PERSON = []
 if STUDY_TYPE == "Non-Human":
     COLUMNS_TO_DELETE_OMOP_TABLE_LOCATION = ["address_1",
-                                            "address_2",
-                                            "latitude",
-                                            "longitude",
-                                            "zip"]
+                                             "address_2",
+                                             "city",
+                                             "county",
+                                             "latitude",
+                                             "longitude",
+                                             "zip"]
 elif STUDY_TYPE == "Limited Data Set (LDS)":
-    COLUMNS_TO_DELETE_OMOP_TABLE_LOCATION = ["zip"]
+    COLUMNS_TO_DELETE_OMOP_TABLE_LOCATION = ["address_1",
+                                             "address_2",
+                                             "latitude",
+                                             "longitude"]
 else:
-    COLUMNS_TO_DELETE_OMOP_TABLE_LOCATION = []
-COLUMNS_TO_DELETE = COLUMNS_TO_DELETE_BO +\
-                    COLUMNS_TO_DELETE_I2B2 +\
-                    COLUMNS_TO_DELETE_OMOP
+    raise Exception(f"""Unexpected value for `STUDY_TYPE`: "{STUDY_TYPE}".""")
+
 COLUMNS_TO_DELETE_DICT = {"condition_occurrence": [],
                           "death": [],
                           "device_exposure": [],
