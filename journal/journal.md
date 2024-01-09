@@ -8,6 +8,14 @@ For IRB202100946 I created two auxilairy scripts for de-identifying i2b2 data se
 - i2b2MakeMap, which really just concatenates files
 - i2b2GetIDs, which is not needed if you use the output of the `get_IDs` function in the i2b2 portion.
 
+## IDR Virtual Environments
+
+Commonly used Python packages
+    - IPython
+    - pandas
+    - pymssql
+    - SQLAlchemy
+
 ## SQL Surprises
 
 The following are interesting or useful SQL tidbits.

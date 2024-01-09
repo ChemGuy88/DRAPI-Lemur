@@ -87,7 +87,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 
@@ -148,10 +148,10 @@ if __name__ == "__main__":
     # QA
     n1 = len(encounterMap)
     n2 = len(patientMap)
-    nu1 = len(encounterMap.iloc[:,0].unique())
-    nu2 = len(encounterMap.iloc[:,1].unique())
-    nu3 = len(patientMap.iloc[:,0].unique())
-    nu4 = len(patientMap.iloc[:,1].unique())
+    nu1 = len(encounterMap.iloc[:, 0].unique())
+    nu2 = len(encounterMap.iloc[:, 1].unique())
+    nu3 = len(patientMap.iloc[:, 0].unique())
+    nu4 = len(patientMap.iloc[:, 1].unique())
 
     logger.info(f"""QA statistics:
 encounter map length:           {n1:,}
