@@ -1,5 +1,5 @@
 """
-This is a work in progress; a version of the i2b2 data download script in the style of DRAPI-lemur.
+Concatenates files to create i2b2 `PATIENT_NUM` and `ENCOUNTER_NUM` maps.
 """
 
 import logging
@@ -7,12 +7,13 @@ import os
 from pathlib import Path
 # Third-party packages
 import pandas as pd
+from sqlalchemy import create_engine
 # Local packages
 from drapi.drapi import getTimestamp, successiveParents, makeDirPath
-from i2b2_dump import get_IDs, i2b2_dump_main
 
 # Arguments
-_ = None
+ENCOUNTER_MAP_DIR_PATH = Path(r"..\Intermediate Results\BO Data Portion\data\output\getData\2023-11-27 16-30-11")
+PATIENT_MAP_DIR_PATH = Path(r"..\Intermediate Results\BO Data Portion\data\output\getData\2023-11-27 16-45-28")
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
@@ -75,6 +76,7 @@ if UID:
 else:
     uid = fr"{USERDOMAIN}\{USERNAME}"
 conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
+connection = create_engine(conStr).connect().execution_options(stream_results=True)
 
 # Variables: Other
 pass
@@ -85,7 +87,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s]\n[%(levelname)s](%(funcName)s)\n{"-"*24}> %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 
@@ -107,14 +109,12 @@ if __name__ == "__main__":
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Script arguments:
 
-
     # Arguments
-    ``: "{"..."}"
+    `ENCOUNTER_MAP_DIR_PATH`: "{ENCOUNTER_MAP_DIR_PATH}"
+    `PATIENT_MAP_DIR_PATH`: "{PATIENT_MAP_DIR_PATH}"
 
     # Arguments: General
     `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}"
-    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}"
-    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}"
 
     `LOG_LEVEL` = "{LOG_LEVEL}"
 
@@ -127,28 +127,49 @@ if __name__ == "__main__":
     `PWD` = censored
     """)
 
-    print('START')
-    #generate i2b2 patient IDs
-    get_IDs()
+    # Load encounter map
+    encounterMap = pd.DataFrame()
+    for fpath in ENCOUNTER_MAP_DIR_PATH.iterdir():
+        if fpath.suffix.lower() == ".csv":
+            df = pd.read_csv(fpath)
+            encounterMap = pd.concat([encounterMap, df])
+        else:
+            pass
 
-	#i2b2 dump
-    if (not os.path.exists(i2b2_dir)): #i2b2 dump will be saved in 'i2b2' subdirectory of 'data' folder.
-        os.makedirs(i2b2_dir)
-    i2b2_dump_main('GNV', 'patient_dimension', data_dir, i2b2_dir, cohort)  #Pull data from patient_dimension in GNV i2b2 instance.
-    i2b2_dump_main('JAX', 'patient_dimension', data_dir, i2b2_dir, cohort)
-    i2b2_dump_main('GNV', 'visit_dimension', data_dir, i2b2_dir, cohort)
-    i2b2_dump_main('JAX', 'visit_dimension', data_dir, i2b2_dir, cohort)
-    i2b2_dump_main('GNV', 'observation_fact', data_dir, i2b2_dir, cohort)
-    i2b2_dump_main('JAX', 'observation_fact', data_dir, i2b2_dir, cohort)
+    # Load patient map
+    patientMap = pd.DataFrame()
+    for fpath in PATIENT_MAP_DIR_PATH.iterdir():
+        if fpath.suffix.lower() == ".csv":
+            df = pd.read_csv(fpath)
+            patientMap = pd.concat([patientMap, df])
+        else:
+            pass
 
-	#prepare limited data set for disclosure
-    if(not os.path.exists(map_dir)): #mappings for patient IDs and encounter IDs will be saved in 'mapping' subdirectory of 'data' folder.
-        os.makedirs(map_dir)
-    generate_mappings()
-    if(not os.path.exists(disclosure_dir)): #limited data set of i2b2 dump will be saved in 'disclosure' directory.
-        os.makedirs(disclosure_dir)
-    limited_data_set()
-    print('END')
+    # QA
+    n1 = len(encounterMap)
+    n2 = len(patientMap)
+    nu1 = len(encounterMap.iloc[:, 0].unique())
+    nu2 = len(encounterMap.iloc[:, 1].unique())
+    nu3 = len(patientMap.iloc[:, 0].unique())
+    nu4 = len(patientMap.iloc[:, 1].unique())
+
+    logger.info(f"""QA statistics:
+encounter map length:           {n1:,}
+num unique i2b2 encounter IDs:  {nu1:,}
+num unique other encounter IDs: {nu2:,}
+patient map length:             {n2:,}
+num unique i2b2 patient IDs:    {nu3:,}
+num unique other patient IDs:   {nu4:,}.""")
+
+    # Save maps
+    encounterpath = runOutputDir.joinpath("i2b2 Encounter Map.CSV")
+    patientpath = runOutputDir.joinpath("i2b2 Patient Map.CSV")
+
+    encounterMap.to_csv(encounterpath, index=False)
+    patientMap.to_csv(patientpath, index=False)
+
+    # Output location summary
+    logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")
+    logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")

@@ -17,7 +17,6 @@ from drapi.drapi import numericOrString2integerOrString
 from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT
 from drapi.constants.phiVariables import FILE_NAME_TO_VARIABLE_NAME_DICT
 # Local packages: Script parameters: General
-from common import ALIAS_DATA_TYPES
 from common import IRB_NUMBER
 from common import COLUMNS_TO_DE_IDENTIFY
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
@@ -154,6 +153,12 @@ if __name__ == "__main__":
 
     logging.info(f"""Begin running "{thisFilePath}".""")
     logging.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+
+    # Assert all portions have file criteria accounted for
+    if len(listOfPortionDirs) == len(LIST_OF_PORTION_CONDITIONS):
+        pass
+    else:
+        raise Exception("The number of portions does not equal the number of portion conditions.")
 
     # Load de-identification maps for each variable that needs to be de-identified
     logging.info("""Loading de-identification maps for each variable that needs to be de-identified.""")

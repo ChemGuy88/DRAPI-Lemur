@@ -1,8 +1,9 @@
 # >>> [start] Things added by Herman >>>
-**/logs/
+**/logs/*
 **/*.7z
 **/.DS_Store
 **/*.bat
+!**/launchIPython.bat
 **/*.csv
 **/*.pdf
 **/*.tsv
@@ -11,8 +12,11 @@
 # <<< [end] Things added by Herman <<<
 
 # >>> [start] Default IDR files >>>
-data/
-documents/
+data/*
+!data/input/
+!data/output/
+documents/*
+HIPPA_disclosure/*
 settings.yaml
 types.yaml
 # <<< [end] Default IDR files <<<
@@ -131,7 +135,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
+!.env
 .venv
 env/
 venv/

@@ -110,65 +110,6 @@ def db_info(config):
     return host, database, schema, list_of_tables, dict_of_dates, person_id_file_path, start_date, end_date, search_config, dict_of_search
 
 
-def cohort_mapping_file(search_config, person_id_list):
-    data_release = search_config.get('data_release')
-    person_id_list_string = ', '.join(map(str, person_id_list))
-    if ('deidentified' in data_release or 'limited' in data_release):
-        query_string = "SELECT t1.person_id, t1.visit_occurrence_id, t2.location_id FROM " + schema + ".visit_occurrence as t1, " + schema + ".person as t2 WHERE t1.person_id = t2.person_id AND t1.person_id IN (" + person_id_list_string + ") ORDER BY t1.person_id"
-
-        data = db_execute_read_query(host, database, query_string)
-        person_id_mapping, occurrence_id_mapping, location_id_mapping = deidentify.deidentify_shift(data, data_release)
-
-        mapping_file_location = search_config['data_output']['mapping_location'] + 'person_mapping.csv'
-        person_id_mapping.to_csv(mapping_file_location, index=False)
-
-        mapping_file_location = search_config['data_output']['mapping_location'] + 'occurrence_mapping.csv'
-        occurrence_id_mapping.to_csv(mapping_file_location, index=False)
-
-        mapping_file_location = search_config['data_output']['mapping_location'] + 'location_mapping.csv'
-        location_id_mapping.to_csv(mapping_file_location, index=False)
-
-    elif ('identified' in data_release):
-        query_string = "SELECT person_id, patient_key FROM xref.person_mapping WHERE person_id IN (" + person_id_list_string + ") ORDER BY person_id"
-        mrn_mapping = db_execute_read_query(host, database, query_string)
-        mapping_file_location = search_config['data_output']['mapping_location'] + 'mrn_mapping.csv'
-        patient_keys = mrn_mapping['patient_key']
-        patient_keys_list_string = ', '.join(map(str, patient_keys))
-        mrn_mapping.to_csv(mapping_file_location, index=False)
-
-        # patient key to MRN
-        query = f'''(SELECT person_id, patient_key
-        FROM xref.person_mapping)
-        JOIN
-        ((SELECT
-            DWS_PROD.dbo.ALL_PATIENTS.PATNT_KEY as PatientKey,
-            Table__1308.IDENT_ID_INT as MRN_GNV,
-            Table__1117.IDENT_ID_INT as MRN_JAX
-        FROM DWS_PROD.dbo.ALL_PATIENTS
-        RIGHT OUTER JOIN DWS_PROD.dbo.ALL_PATIENT_SNAPSHOTS
-        ALL_PT_SNAPSHOTS_ENCOUNTER ON
-        (ALL_PT_SNAPSHOTS_ENCOUNTER.PATNT_KEY=DWS_PROD.dbo.ALL_PATIENTS.PATNT_KEY)
-        LEFT OUTER JOIN (
-          SELECT *
-          FROM DWS_PROD.dbo.ALL_PATIENT_IDENTITIES
-          WHERE DWS_PROD.dbo.ALL_PATIENT_IDENTITIES.LOOKUP_IND = 'Y'
-          AND DWS_PROD.dbo.ALL_PATIENT_IDENTITIES.IDENT_ID_TYPE = 110)
-        Table__1117 ON (Table__1117.PATNT_KEY=ALL_PT_SNAPSHOTS_ENCOUNTER.PATNT_KEY)
-        LEFT OUTER JOIN (
-          SELECT *
-          FROM DWS_PROD.dbo.ALL_PATIENT_IDENTITIES
-          WHERE DWS_PROD.dbo.ALL_PATIENT_IDENTITIES.LOOKUP_IND = 'Y'
-          AND DWS_PROD.dbo.ALL_PATIENT_IDENTITIES.IDENT_ID_TYPE = 101)
-        Table__1308 ON (ALL_PT_SNAPSHOTS_ENCOUNTER.PATNT_KEY=Table__1308.PATNT_KEY)
-        WHERE DWS_PROD.dbo.ALL_PATIENTS.TEST_IND='N'))
-        WHERE person_id IN ({patient_keys_list_string})'''
-        # 1. Gets all patient keys
-        data = db_execute_read_query(host, database, query)
-        mapping_file_location = search_config['data_output']['mapping_location'] + 'MRN1_mapping.csv'
-        data.to_csv(mapping_file_location, index=False)
-    return mapping_file_location
-
-
 def person_info_query(search_config):
     person_id_file_path = interpretPath(search_config['person_id'])
     list_of_tables = search_config['person_information_tables']['person_and_death']
@@ -347,7 +288,6 @@ if __name__ == '__main__':
         path = Path(interpretPath(path))
         makeDirPath(path)
 
-    # mapping_file_location = cohort_mapping_file(search_config,person_id_list)
     if (list_of_tables):
         query_attempt(search_config, list_of_tables, dict_of_dates, person_id_file_path, start_date, end_date, dict_of_search)
     person_info_query(search_config)

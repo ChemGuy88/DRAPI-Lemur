@@ -23,38 +23,11 @@ from common import DATA_TYPES_DICT
 from common import OLD_MAPS_DIR_PATH
 from common import VARIABLE_ALIASES
 from common import VARIABLE_SUFFIXES
-# Local packages: Script parameters: Portion paths
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
-from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
-SETS_PATH = Path(r"..\Concatenated Results\data\output\aliasVariables\2023-12-13 11-28-28")
+SETS_PATH = Path(r"..\Concatenated Results\data\output\aliasVariables\...")
 
 CHUNK_SIZE = 50000
-
-# Arguments: OMOP data set selection
-USE_MODIFIED_OMOP_DATA_SET = True
-
-# Arguments: Portion Paths and conditions
-if USE_MODIFIED_OMOP_DATA_SET:
-    OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
-    OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
-else:
-    OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
-    OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
-
-MAC_PATHS = [BO_PORTION_DIR_MAC,
-             NOTES_PORTION_DIR_MAC,
-             OMOPPortionDirMac]
-WIN_PATHS = [BO_PORTION_DIR_WIN,
-             NOTES_PORTION_DIR_WIN,
-             OMOPPortionDirWin]
-
-LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
-                              NOTES_PORTION_FILE_CRITERIA,
-                              OMOP_PORTION_FILE_CRITERIA]
 
 # Arguments: Meta-variables
 CONCATENATED_RESULTS_DIRECTORY_DEPTH = DATA_REQUEST_ROOT_DIRECTORY_DEPTH - 1
@@ -156,7 +129,6 @@ if __name__ == "__main__":
     if len(missingVariableSuffixes) > 0:
         text = "\n".join(missingVariableSuffixes)
         raise Exception(f"Not all variables have a de-identification suffix assigned to them:\n{text}")
-
 
     # Create reverse-look-up alias map
     variableAliasesReverse = {}
@@ -341,12 +313,12 @@ if __name__ == "__main__":
         numbers = sorted(list(newNumbersDict[variableName]))
         deIdIDSuffix = VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]
         map_ = makeMap(IDset=values,
-                       IDName=variableName, 
-                       startFrom=numbers, 
-                       irbNumber=IRB_NUMBER, 
-                       suffix=deIdIDSuffix, 
-                       columnSuffix=variableName, 
-                       deIdentificationMapStyle="lemur", 
+                       IDName=variableName,
+                       startFrom=numbers,
+                       irbNumber=IRB_NUMBER,
+                       suffix=deIdIDSuffix,
+                       columnSuffix=variableName,
+                       deIdentificationMapStyle="lemur",
                        logger=logging.getLogger())
         # Save map
         mapPath = runOutputDir.joinpath(f"{VARIABLE_NAME_TO_FILE_NAME_DICT[variableName]} map.csv")
