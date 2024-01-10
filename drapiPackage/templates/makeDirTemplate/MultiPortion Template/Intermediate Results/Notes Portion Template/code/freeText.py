@@ -1,37 +1,43 @@
+from __future__ import annotations
+
 import concurrent.futures
 import logging
 import os
 import random
 import re
 import shutil
-from datetime import datetime as dt
 from datetime import timedelta
 from logging import Logger
 from pathlib import Path
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from _typeshed.dbapi import DBAPIConnection
 # Third-party packages
 import pandas as pd
+import pymssql
 import sqlalchemy as sa
 # Local packages
 from drapi.drapi import makeDirPath, replace_sql_query, getTimestamp, successiveParents
 
 # Arguments: Script settings
-COHORT_NAME = ""                                    # An arbitrary name used in file names
-COHORT_FILE = ""                                    # A file name that is located directory specified by the variable `data_dir`
-IRB_NUMBER = ""                                     # Used for creating the de-identification map IDs.
-ID_TYPE = ""                                        # Pick from "EncounterCSN", "EncounterKey", or "PatientKey". Choose the ID type you used in `COHORT_FILE`
-NOTE_VERSION = ""                                   # Pick from "all", or "last"
-DE_IDENTIFICATION_MODE = ""                         # Pick from "deid", "lds", or "phi"
-LOG_LEVEL = ""                                      # See the "logging" module for valid values for the `loglevel` parameter.
-SQL_ENCOUNTER_EFFECTIVE_DATE_START = 'YYYY-MM-DD'   # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
-SQL_ENCOUNTER_EFFECTIVE_DATE_END = 'YYYY-MM-DD'     # The end of date range of encounters to collect. Format: YYYY-MM-DD
+COHORT_NAME = "SGMCPLGB"                                    # An arbitrary name used in file names
+COHORT_FILE = "cohort.csv"                                    # A file name that is located directory specified by the variable `data_dir`
+IRB_NUMBER = "IRB201902162"                                     # Used for creating the de-identification map IDs.
+ID_TYPE = "PatientKey"                                        # Pick from "EncounterCSN", "EncounterKey", or "PatientKey". Choose the ID type you used in `COHORT_FILE`
+NOTE_VERSION = "all"                                   # Pick from "all", or "last"
+DE_IDENTIFICATION_MODE = "phi"                         # Pick from "deid", "lds", or "phi"
+LOG_LEVEL = "DEBUG"                                      # See the "logging" module for valid values for the `loglevel` parameter.
+SQL_ENCOUNTER_EFFECTIVE_DATE_START = '2011-06-01'   # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
+SQL_ENCOUNTER_EFFECTIVE_DATE_END = '2023-12-31'     # The end of date range of encounters to collect. Format: YYYY-MM-DD
 
 # Arguments: SQL connection settings
+USE_WINDOWS_AUTHENTICATION = True
 SERVER = "DWSRSRCH01.shands.ufl.edu"
 DATABASE_PROD = "DWS_PROD"
 DATABASE_NOTES = "DWS_NOTES"
 USERDOMAIN = "UFAD"
 USERNAME = os.environ["USER"]
-UID = fr"{USERDOMAIN}\{USERNAME}"
+UID = None
 PWD = os.environ["HFA_UFADPWD"]
 
 # Arguments: Meta-variables
@@ -76,59 +82,80 @@ elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
 else:
     raise Exception("An unexpected error occurred.")
 
-# Variables: Path Construction: Variable mapping from DRAPI-LEMUR standard variable names to original variable names.
-base_dir = str(projectDir)
-data_dir = dataDir
-sql_dir = sqlDir
+# Variables: Path Construction: Project-specific
 notes_dir = runOutputDir.joinpath('free_text')  # all notes related files are saved in 'notes' subdirectory of 'data' directory
 map_dir = runOutputDir.joinpath('mapping')  # mappings are saved in 'mapping' subdirectory of 'data' folder.
-disclosure_dir = runOutputDir.joinpath( 'disclosure')
-for dir in [data_dir, sql_dir, notes_dir, map_dir, disclosure_dir]:
-    makeDirPath(dir)
+disclosure_dir = runOutputDir.joinpath('disclosure')
 
-# Variables: SQL connection settings
-host = SERVER
-database_prod = DATABASE_PROD
-database_notes = DATABASE_NOTES
-
-# Variables: Script settings
+# Variables: Map legacy variables to DRAPI-LEMUR standard variables: Script settings
 cohort = COHORT_NAME
 id_type = ID_TYPE
 note_version = NOTE_VERSION
 irb = IRB_NUMBER
 deid_mode = DE_IDENTIFICATION_MODE
 
+# Variables: Map legacy variables to DRAPI-LEMUR standard variables: Path construction
+base_dir = str(projectDir)
+data_dir = dataDir
+sql_dir = sqlDir
+
+# Variables: Map legacy variables to DRAPI-LEMUR standard variables: SQL Parameters
+host = SERVER
+database_prod = DATABASE_PROD
+database_notes = DATABASE_NOTES
+
+# Variables: SQL connection settings
+if UID:
+    uid = UID[:]
+else:
+    uid = fr"{USERDOMAIN}\{USERNAME}"
+
 # Directory creation: General
 makeDirPath(runOutputDir)
 makeDirPath(runLogsDir)
 
+# Directory creation: Project-specific
+for dir in [data_dir, sql_dir, notes_dir, disclosure_dir]:
+    makeDirPath(dir)
+if DE_IDENTIFICATION_MODE.lower() == "phi":
+    pass
+elif DE_IDENTIFICATION_MODE.lower() in ["deid", "lds"]:
+    makeDirPath(map_dir)
+else:
+    raise Exception(f"Unexpected value for `DE_IDENTIFICATION_MODE`: {DE_IDENTIFICATION_MODE}.")
 
-def db_connect(host, database):
-    connstr = f"mssql+pymssql://{UID}:{PWD}@{host}/{database}"
-    engine = sa.create_engine(connstr)
-    return engine
-
-
-def db_close(db_conn):
-    db_conn.dispose()
-
-
-def db_query(query, db_connection):
-    return pd.read_sql(query, db_connection)
+# Functions
 
 
-def db_execute_read_query(query, host, database):
-    db_conn = db_connect(host, database)
-    result_df = db_query(query, db_conn)
-    db_close(db_conn)
-    return result_df
+def connectToDatabase(host: str,
+                      database: str,
+                      useWindowsAuthentication=True) -> DBAPIConnection:
+    """
+    Connects to a SQL database given a `host` (server) and `database` value.
+    """
+    if useWindowsAuthentication:
+        connection = pymssql.connect(host=host,
+                                     database=database)
+    else:
+        conStr = f"mssql+pymssql://{uid}:{PWD}@{host}/{database}"
+        connection = sa.create_engine(conStr).connect()
+    return connection
 
 
-def read_sql_file(file):
-    with open(file) as f:
-        query = f.read()
-    f.close()
-    return query
+def executeQuery(query: str, host: str, database: str) -> pd.DataFrame:
+    """
+    Executes a SQL query.
+    INPUT:
+        `query`: a string
+        `host`: a string
+        `databse`: a string
+    OUTPUT:
+        A pandas dataframe object.
+    """
+    databaseConnection = connectToDatabase(host, database)
+    queryResult = pd.read_sql(query, databaseConnection)
+    databaseConnection.close()
+    return queryResult
 
 
 # notes methods
@@ -159,13 +186,17 @@ def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_d
         id_str = "'" + id_str + "'"
         query_file = note_type + '_metadata.sql'
         logger.info(f"Reading query file: {query_file}")
-        query = read_sql_file(os.path.join(sql_dir, query_file))
+        fpath = os.path.join(sql_dir, query_file)
+        with open(fpath, "r") as file:
+            query = file.read()
         query = replace_sql_query(query, "XXXXX", id_str)
         query = replace_sql_query(query, "{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_START}", SQL_ENCOUNTER_EFFECTIVE_DATE_START)
         query = replace_sql_query(query, "{PYTHON_VARIABLE: SQL_ENCOUNTER_EFFECTIVE_DATE_END}", SQL_ENCOUNTER_EFFECTIVE_DATE_END)
 
         logger.log(9, f"Using the following query:\n>>> Begin query >>>\n{query}\n<<< End query <<<")
-        result = db_execute_read_query(query, host, database_prod)
+        result = executeQuery(query=query,
+                              host=host,
+                              database=database_prod)
 
         logger.info(f"The chunk query has {len(result):,} rows.")
         result = result.drop_duplicates()
@@ -213,9 +244,13 @@ def pull_text(item, note_type, note_id, sql_dir, notes_dir, dir_final, logger: L
         note_list = ",".join(str(int(x)) for x in note_list)
         query_file = note_type + '_text.sql'
         query_file = os.path.join(sql_dir, query_file)
-        query = read_sql_file(query_file)
+        fpath = os.path.join(sql_dir, query_file)
+        with open(fpath, "r") as file:
+            query = file.read()
         query = replace_sql_query(query, "XXXXX", note_list)
-        result = db_execute_read_query(query, host, database_notes)
+        result = executeQuery(query=query,
+                              host=host,
+                              database=database_notes)
         # ensure that all ID columns are integers
         columns = result.columns
         for c in ['LinkageNoteID', 'OrderKey']:
@@ -589,21 +624,22 @@ if __name__ == "__main__":
     `SQL_ENCOUNTER_EFFECTIVE_DATE_START`: "{SQL_ENCOUNTER_EFFECTIVE_DATE_START}"
     `SQL_ENCOUNTER_EFFECTIVE_DATE_END`: "{SQL_ENCOUNTER_EFFECTIVE_DATE_END}"
 
+    # Arguments: SQL connection settings
+    `USE_WINDOWS_AUTHENTICATION` : "{USE_WINDOWS_AUTHENTICATION}"
+    `SERVER`                     : "{SERVER}"
+    `DATABASE_PROD`              : "{DATABASE_PROD}"
+    `DATABASE_NOTES`             : "{DATABASE_NOTES}"
+    `USERDOMAIN`                 : "{USERDOMAIN}"
+    `USERNAME`                   : "{USERNAME}"
+    `UID`                        : "{UID}"
+    `PWD`                        : censored
+
     # Arguments: General
     `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
     `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}" --------------> "{IRBDir}"
     `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}" -> "{IDRDataRequestDir}"
 
     `LOG_LEVEL` = "{LOG_LEVEL}"
-
-    # Arguments: SQL connection settings
-    `SERVER` = "{SERVER}"
-    `DATABASE` = "{DATABASE_PROD}"
-    `DATABASE` = "{DATABASE_NOTES}"
-    `USERDOMAIN` = "{USERDOMAIN}"
-    `USERNAME` = "{USERNAME}"
-    `UID` = "{UID}"
-    `PWD` = censored
     """)
     logger.info(f"""`base_dir` set to "{base_dir}".""")
 
