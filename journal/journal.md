@@ -10,11 +10,41 @@ For IRB202100946 I created two auxilairy scripts for de-identifying i2b2 data se
 
 ## IDR Virtual Environments
 
-Commonly used Python packages
-    - IPython
-    - pandas
-    - pymssql
-    - SQLAlchemy
+Below is a list of typical IDR virtual environments and their dependencies.
+
+| Environment | Dependencies     |
+| ----------- | ---------------- |
+| IDR (Bian)  | numpy            |
+|             | autopep8         |
+|             | bs4              |
+|             | ca-certificates  |
+|             | certifi          |
+|             | colorama         |
+|             | console_shortcut |
+|             | drapi-lemur      |
+|             | flake8           |
+|             | ipython          |
+|             | jinja2           |
+|             | matplotlib       |
+|             | openpyxl         |
+|             | pandas           |
+|             | pymssql          |
+|             | pyodbc           |
+|             | python=3.11      |
+|             | pywin32          |
+|             | pyyaml           |
+|             | requests         |
+|             | selenium         |
+|             | sqlalchemy       |
+|             | sqlite           |
+|             | xlrd             |
+|             | xlwings          |
+
+To create this environment use
+
+```text
+conda create -n idr-bian autopep8 bs4 ca-certificates certifi colorama console_shortcut flake8 ipython jinja2 matplotlib numpy openpyxl pandas pymssql pyodbc python=3.11 pywin32 pyyaml requests selenium sqlalchemy sqlite xlrd xlwings
+```
 
 ## SQL Surprises
 
