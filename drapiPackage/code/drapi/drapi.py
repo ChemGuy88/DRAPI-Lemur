@@ -111,6 +111,30 @@ def flatExtend(iterable: Collection) -> list:
     return outputList
 
 
+def readDataFile(fname: Path, chunkSize=int) -> pd.DataFrame:
+    """
+    Opens a file based on the fiel extension of its file name `fname` using a Pandas built-in to return a DataFrame object.
+    """
+    suffix = fname.suffix.lower()
+    if suffix.endswith(('.csv',)):
+        df = pd.read_csv(fname, chunksize=chunkSize)
+    elif suffix.endswith(('.tsv',)):
+        df = pd.read_csv(fname, delimiter="\t", chunksize=chunkSize)
+    elif suffix.endswith(('.json',)):
+        df = pd.read_json(fname, chunksize=chunkSize)
+    elif suffix.endswith(('.xml',)):
+        df = pd.read_xml(fname, chunksize=chunkSize)
+    elif suffix.endswith(('.xls', 'xlsx',)):
+        df = pd.read_excel(fname, chunksize=chunkSize)
+    elif suffix.endswith(('.hdf',)):
+        df = pd.read_hdf(fname, chunksize=chunkSize)
+    elif suffix.endswith(('.sql',)):
+        df = pd.read_sql(fname, chunksize=chunkSize)
+    else:
+        raise ValueError(f'Unsupported filetype: {fname}')
+    return df
+
+
 def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
     """
     Successively get the parents of the Path object submitted.
