@@ -24,9 +24,17 @@ jobs:
               with:
                 name: python-package-distributions
                 path: dist/
+    printCondition:
+        name: Print condition
+        runs-on: macos-latest
+        steps:
+        - name: Step1
+          id: Run_test
+          run: |
+               echo "${{ startsWith(github.ref, 'refs/tags/') }}" >> $GITHUB_OUTPUT
+               echo "$GITHUB_CONTEXT"
     publish-to-pypi:
-        name: >-
-            Publish DRAPI Lemur distribution 📦 to PyPI
+        name: Publish DRAPI Lemur distribution 📦 to PyPI
         if:
             startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
         needs:
