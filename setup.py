@@ -2,11 +2,10 @@ from distutils.core import setup
 from setuptools import find_namespace_packages
 
 setup(name='drapi-lemur',
-      package_data={"drapiPackage.sql": ["*"],
-                    "drapiPackage.templates": ["*"]},
-      package_dir={"": "drapiPackage"},
-      packages=find_namespace_packages(where="drapiPackage"),
-      version='1.0.0',
+      package_dir={"": "src"},
+      include_package_data=True,
+      packages=find_namespace_packages(where="src"),
+      version='1.0.3',
       description='Data Request API for the Integrated Data Repository Research Services of University of Florida.',
       author='Herman Autore',
       author_email='hf.autore+drapi@gmail.com',
