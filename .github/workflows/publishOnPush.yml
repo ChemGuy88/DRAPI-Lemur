@@ -25,10 +25,10 @@ jobs:
                 name: python-package-distributions
                 path: dist/
     printContext:
-        name: Print $GITHUB_CONTEXT
+        name: Print GitHub variables from Environment Variable
         runs-on: ubuntu-latest
         steps:
-        - name: Step1
+        - name: Step 1
           id: Run_test
           env:
             GITHUB_CONTEXT: ${{ toJson(github)}}
@@ -37,43 +37,38 @@ jobs:
         name: Print GitHub Ref from Expression
         runs-on: ubuntu-latest
         steps:
-        - name: Step1
+        - name: Step 1
           id: Run_test
           run: echo "${{ github.ref }}"
     printGHRefVar:
         name: Print GitHub Ref from Environment Variable
         runs-on: ubuntu-latest
         steps:
-        - name: Step1
+        - name: Step 1
           id: Run_test
           run: echo "$GITHUB_REF"
-    printGH:
-        name: Print GitHub variables from expression
-        runs-on: ubuntu-latest
-        steps:
-        - name: Step1
-          id: Run_test
-          run: echo "${{ github }}"
     printGHJSON:
-        name: Print GitHub variables from expression
+        name: Print GitHub variables from Expression
         runs-on: ubuntu-latest
         steps:
-        - name: Step1
+        - name: Step 1
           id: Run_test
           run: echo "${{ toJSON(github) }}"
     assignValue:
         name: Assign condition
         runs-on: ubuntu-latest
         steps:
-        - name: Step1
+        - name: Step 1
           id: Run_test
-          run: echo "${{ startsWith(github.ref, 'refs/tags/') }}">>${GITHUB_OUTPUT}
+          env:
+            REF: ${{ startsWith(github.ref, 'refs/tags/') }}
+          run: echo "$REF">>${GITHUB_OUTPUT}
                echo "$GITHUB_OUTPUT"
     printCondition:
         name: Print condition
         runs-on: ubuntu-latest
         steps:
-        - name: Step1
+        - name: Step 1
           id: Run_test
           run: |
                echo "${{ startsWith(github.ref, 'refs/tags/') }}"
