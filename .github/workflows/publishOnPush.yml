@@ -24,6 +24,23 @@ jobs:
               with:
                 name: python-package-distributions
                 path: dist/
+    assignValue:
+        name: Assign condition
+        runs-on: macos-latest
+        steps:
+        - name: Step1
+          id: Run_test
+          run: |
+               echo "${{ startsWith(github.ref, 'refs/tags/') }}" >> ${STARTSWITH}
+               echo "$STARTSWITH"
+    printContext:
+        name: Print $GITHUB_CONTEXT
+        runs-on: macos-latest
+        steps:
+        - name: Step1
+          id: Run_test
+          run: |
+               echo "$GITHUB_CONTEXT"
     printCondition:
         name: Print condition
         runs-on: macos-latest
@@ -31,7 +48,7 @@ jobs:
         - name: Step1
           id: Run_test
           run: |
-               echo "${{ startsWith(github.ref, 'refs/tags/') }}" >> $GITHUB_OUTPUT
+               echo "${{ startsWith(github.ref, 'refs/tags/') }}" >> ${GITHUB_OUTPUT}
                echo "$GITHUB_CONTEXT"
     publish-to-pypi:
         name: Publish DRAPI Lemur distribution 📦 to PyPI
