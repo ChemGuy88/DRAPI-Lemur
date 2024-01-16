@@ -3,7 +3,7 @@ on: push
 jobs:
     build:
         name: Build distribution 📦
-        runs-on: macos-latest
+        runs-on: ubuntu-latest
 
         steps:
             - uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
                 path: dist/
     assignValue:
         name: Assign condition
-        runs-on: macos-latest
+        runs-on: ubuntu-latest
         steps:
         - name: Step1
           id: Run_test
@@ -35,7 +35,7 @@ jobs:
                echo "$STARTSWITH"
     printContext:
         name: Print $GITHUB_CONTEXT
-        runs-on: macos-latest
+        runs-on: ubuntu-latest
         steps:
         - name: Step1
           id: Run_test
@@ -43,7 +43,7 @@ jobs:
                echo "$GITHUB_CONTEXT"
     printCondition:
         name: Print condition
-        runs-on: macos-latest
+        runs-on: ubuntu-latest
         steps:
         - name: Step1
           id: Run_test
@@ -56,7 +56,7 @@ jobs:
             startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
         needs:
         - build
-        runs-on: macos-latest
+        runs-on: ubuntu-latest
         environment:
             name: pypi
             url: https://pypi.org/p/drapi-lemur  # Replace <package-name> with your PyPI project name
@@ -74,7 +74,7 @@ jobs:
         name: Publish DRAPI Lemur distribution 📦 to TestPyPI
         needs:
         - build
-        runs-on: macos-latest
+        runs-on: ubuntu-latest
 
         environment:
           name: testpypi
