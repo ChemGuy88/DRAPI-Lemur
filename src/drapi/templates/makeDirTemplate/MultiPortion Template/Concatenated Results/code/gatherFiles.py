@@ -8,7 +8,9 @@ import shutil
 import zipfile
 from pathlib import Path
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
 
 # Arguments
 LIST_OF_DIRECTORIES = []

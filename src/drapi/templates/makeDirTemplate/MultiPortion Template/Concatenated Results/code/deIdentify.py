@@ -12,30 +12,33 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath, fileName2variableName, map2di, makeMap
-from drapi.drapi import numericOrString2integerOrString
-from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT
-from drapi.constants.phiVariables import FILE_NAME_TO_VARIABLE_NAME_DICT
+from drapi.drapi import (fileName2variableName,
+                         getTimestamp,
+                         makeDirPath,
+                         makeMap,
+                         map2di,
+                         numericOrString2integerOrString,
+                         successiveParents)
+from drapi.constants.phiVariables import (FILE_NAME_TO_VARIABLE_NAME_DICT,
+                                          VARIABLE_NAME_TO_FILE_NAME_DICT)
 # Local packages: Script parameters: General
-from common import IRB_NUMBER
-from common import COLUMNS_TO_DE_IDENTIFY
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
-from common import DATA_TYPES_DICT
-from common import VARIABLE_ALIASES
-from common import VARIABLE_SUFFIXES
+from common import (IRB_NUMBER,
+                    COLUMNS_TO_DE_IDENTIFY,
+                    DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
+                    DATA_TYPES_DICT,
+                    VARIABLE_ALIASES,
+                    VARIABLE_SUFFIXES)
 # Local packages: Script parameters: Paths
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
-from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN
-from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
-from common import ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN
+from common import (BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN,
+                    I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN,
+                    MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
+                    NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN,
+                    OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN)
 # Local packages: Script parameters: File criteria
-from common import BO_PORTION_FILE_CRITERIA
-from common import I2B2_PORTION_FILE_CRITERIA
-from common import NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_FILE_CRITERIA
-from common import ZIP_CODE_PORTION_FILE_CRITERIA
+from common import (BO_PORTION_FILE_CRITERIA,
+                    I2B2_PORTION_FILE_CRITERIA,
+                    NOTES_PORTION_FILE_CRITERIA,
+                    OMOP_PORTION_FILE_CRITERIA)
 
 # Arguments
 CONCATENATED_MAPS_DIR_PATH = Path(r"..\Concatenated Results\data\output\concatenateMaps\...")  # TODO
@@ -56,19 +59,16 @@ else:
 MAC_PATHS = [BO_PORTION_DIR_MAC,
              I2B2_PORTION_DIR_MAC,
              NOTES_PORTION_DIR_MAC,
-             OMOPPortionDirMac,
-             ZIP_CODE_PORTION_DIR_MAC]
+             OMOPPortionDirMac]
 WIN_PATHS = [BO_PORTION_DIR_WIN,
              I2B2_PORTION_DIR_WIN,
              NOTES_PORTION_DIR_WIN,
-             OMOPPortionDirWin,
-             ZIP_CODE_PORTION_DIR_WIN]
+             OMOPPortionDirWin]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA,
                               I2B2_PORTION_FILE_CRITERIA,
                               NOTES_PORTION_FILE_CRITERIA,
-                              OMOP_PORTION_FILE_CRITERIA,
-                              ZIP_CODE_PORTION_FILE_CRITERIA]
+                              OMOP_PORTION_FILE_CRITERIA]
 
 # Arguments; General
 CHUNK_SIZE = 50000

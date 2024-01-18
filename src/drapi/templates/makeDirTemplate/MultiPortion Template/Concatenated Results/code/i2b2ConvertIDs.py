@@ -9,7 +9,9 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy import create_engine
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
 
 # Arguments
 I2B2_PORTION_OUTPUT_DIR_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\output\i2b2_dump\...\i2b2")
@@ -90,7 +92,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +136,7 @@ if __name__ == "__main__":
     """)
 
     # Load maps
-    logger.info(f"""Loading maps.""")
+    logger.info("""Loading maps.""")
     encounterMap = pd.read_csv(ENCOUNTER_MAP_PATH)
 
     # Get un-linked patients and drop them.
@@ -148,13 +150,13 @@ if __name__ == "__main__":
                    "PATIENT_NUM": TARGET_ID_NAME}
 
     # Convert maps to dictionaries
-    logger.info(f"""Converting maps to dictionaries.""")
-    encounterDict = {k: v for k, v in zip(encounterMap.iloc[:,0], encounterMap.iloc[:,1])}
+    logger.info("""Converting maps to dictionaries.""")
+    encounterDict = {k: v for k, v in zip(encounterMap.iloc[:, 0], encounterMap.iloc[:, 1])}
     encounterDict[""] = ""
     patientDict3 = {k: v for k, v in zip(cohortIDs["I2B2_PATIENT_NUM"], cohortIDs[TARGET_ID_NAME])}
 
     # Convert i2b2 IDs
-    logger.info(f"""Converting i2b2 IDs.""")
+    logger.info("""Converting i2b2 IDs.""")
     MESSAGE_MODULO = 50
     for fpath in I2B2_PORTION_OUTPUT_DIR_PATH.iterdir():
         logger.info(f"""  Working on file "{fpath.absolute().relative_to(rootDirectory)}".""")
@@ -168,7 +170,7 @@ if __name__ == "__main__":
                 numChunksTenth = numChunks
             else:
                 numChunksTenth = round(numChunks / MESSAGE_MODULO)
-            
+
             # Iterate over file chunks
             header = True
             mode = "w"

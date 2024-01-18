@@ -88,7 +88,7 @@ for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
 BO_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/BO Portion/data/output/getData/...")  # TODO
 BO_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\BO Portion\data\output\getData\...")  # TODO
 
-I2B2_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Concatenated Results\data\output\i2b2ConvertIDs\...")  # TODO
+I2B2_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Concatenated Results/data/output/i2b2ConvertIDs/...")  # TODO
 I2B2_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Concatenated Results\data\output\i2b2ConvertIDs\...")  # TODO
 
 MODIFIED_OMOP_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
@@ -100,8 +100,6 @@ NOTES_PORTION_DIR_WIN = NOTES_ROOT_DIRECTORY.joinpath("free_text")
 OMOP_PORTION_DIR_MAC = dataRequestRootDirectory.joinpath("Intermediate Results/OMOP Portion/data/output/...")  # TODO
 OMOP_PORTION_DIR_WIN = dataRequestRootDirectory.joinpath(r"Intermediate Results\OMOP Portion\data\output\...")  # TODO
 
-ZIP_CODE_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
-ZIP_CODE_PORTION_DIR_WIN = Path("data/output/convertColumns/...")  # TODO
 
 # File criteria
 BO_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]

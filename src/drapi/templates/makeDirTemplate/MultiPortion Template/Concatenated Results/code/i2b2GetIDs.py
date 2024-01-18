@@ -11,7 +11,9 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy import create_engine
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
 
 # Arguments
 I2B2_PORTION_OUTPUT_DIR_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\output\i2b2_dump\2023-11-20 20-35-58\i2b2")

@@ -11,17 +11,28 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from colorama import init as colorama_init
-from colorama import Fore
-from colorama import Style
+from colorama import (Fore,
+                      Style)
 # Local packages
-from drapi.drapi import getTimestamp, makeDirPath, successiveParents
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
+# Project parameters:
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
-from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
-from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
-from drapi.constants.phiVariables import LIST_OF_PHI_DATES_BO, LIST_OF_PHI_DATES_NOTES, LIST_OF_PHI_DATES_OMOP
+# Project parameters: Portion paths and criteria
+from common import (BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN,
+                    I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN,
+                    MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
+                    NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN,
+                    OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN)
+# Project parameters: Criteria
+from common import (BO_PORTION_FILE_CRITERIA,
+                    I2B2_PORTION_FILE_CRITERIA,
+                    NOTES_PORTION_FILE_CRITERIA,
+                    OMOP_PORTION_FILE_CRITERIA)
+from drapi.constants.phiVariables import (LIST_OF_PHI_DATES_BO,
+                                          LIST_OF_PHI_DATES_NOTES,
+                                          LIST_OF_PHI_DATES_OMOP)
 
 # Arguments: OMOP data set selection
 USE_MODIFIED_OMOP_DATA_SET = True
@@ -119,7 +130,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 

@@ -19,7 +19,9 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
 
 # Arguments
 INPUT_FILE = Path(r"..\Concatenated Results\data\output\convertColumns\...\person.csv")
@@ -109,7 +111,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +155,6 @@ if __name__ == "__main__":
     `UID` = "{UID}"
     `PWD` = censored
     """)
-
 
     logger.info(f"""Working on file "{INPUT_FILE.absolute().relative_to(rootDirectory)}".""")
     # Set file options

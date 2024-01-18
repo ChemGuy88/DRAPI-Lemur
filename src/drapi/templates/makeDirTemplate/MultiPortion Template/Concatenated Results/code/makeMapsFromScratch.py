@@ -13,22 +13,24 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import getTimestamp, makeDirPath, makeMap, successiveParents
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         makeMap,
+                         successiveParents)
 # Local packages: Script parameters: General
-from common import IRB_NUMBER
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
-from common import VARIABLE_SUFFIXES
+from common import (IRB_NUMBER,
+                    DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
+                    VARIABLE_SUFFIXES)
 # Project parameters: Portion paths
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
-from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN
-from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
+from common import (BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN,
+                    I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN,
+                    NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN,
+                    OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN)
 # Project parameters: File criteria
-from common import BO_PORTION_FILE_CRITERIA
-from common import I2B2_PORTION_FILE_CRITERIA
-from common import NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_FILE_CRITERIA
+from common import (BO_PORTION_FILE_CRITERIA,
+                    I2B2_PORTION_FILE_CRITERIA,
+                    NOTES_PORTION_FILE_CRITERIA,
+                    OMOP_PORTION_FILE_CRITERIA)
 
 # Arguments
 LOG_LEVEL = "DEBUG"

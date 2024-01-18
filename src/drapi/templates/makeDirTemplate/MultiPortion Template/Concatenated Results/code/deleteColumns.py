@@ -13,22 +13,21 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import flatExtend
-from drapi.drapi import getTimestamp
-from drapi.drapi import makeDirPath
-from drapi.drapi import successiveParents
-from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE
-from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL
+from drapi.drapi import (flatExtend,
+                         getTimestamp,
+                         makeDirPath,
+                         successiveParents)
+from drapi.constants.phiVariables import (LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE,
+                                          LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL)
 # Project parameters: General
-from common import STUDY_TYPE
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
+from common import (STUDY_TYPE,
+                    DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
 # Project parameters: Portion paths and criteria
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN, BO_PORTION_FILE_CRITERIA
-from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN, I2B2_PORTION_FILE_CRITERIA
-from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN, NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN, OMOP_PORTION_FILE_CRITERIA
-from common import ZIP_CODE_PORTION_DIR_MAC, ZIP_CODE_PORTION_DIR_WIN, ZIP_CODE_PORTION_FILE_CRITERIA
+from common import (BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN,
+                    I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN,
+                    MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
+                    NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN,
+                    OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN)
 
 # Arguments: Use concatenated files
 USE_CONCATENATED_FILES = True  # TODO
@@ -58,17 +57,16 @@ else:
     MAC_PATHS = [BO_PORTION_DIR_MAC,
                  I2B2_PORTION_DIR_MAC,
                  NOTES_PORTION_DIR_MAC,
-                 OMOPPortionDirMac,
-                 ZIP_CODE_PORTION_DIR_MAC]
+                 OMOPPortionDirMac]
     WIN_PATHS = [BO_PORTION_DIR_WIN,
                  I2B2_PORTION_DIR_WIN,
                  OMOPPortionDirWin,
-                 NOTES_PORTION_DIR_WIN,
-                 ZIP_CODE_PORTION_DIR_WIN]
+                 NOTES_PORTION_DIR_WIN]
 
 # Arguments: Definition of criteria for file release
 # NOTE (Developer's Note) The files to release and the file criteiria both act as criteria to release. The argument structure here is not very clear and it will take some time to create a generalizeable template. However, it seems that `LIST_OF_PORTION_CONDITIONS` is the only output of this arguments section, i.e., the only require input for the script. Also note that each portion has its own criteria, but they are not used in the template.
 BO_FILES_TO_RELEASE = []  # TODO
+
 NOTES_COHORT_NAME = ""  # TODO
 NOTES_METADATA_FILES_TO_RELEASE = ["encounters.csv",
                                    "provider_metadata.csv",
@@ -106,11 +104,6 @@ FILES_TO_RELEASE = flatExtend([BO_FILES_TO_RELEASE,
                                OMOP_FILES_TO_RELEASE])
 FILES_TO_RELEASE = [fname.lower() for fname in FILES_TO_RELEASE]
 
-_ = BO_PORTION_FILE_CRITERIA
-_ = I2B2_PORTION_FILE_CRITERIA
-_ = NOTES_PORTION_FILE_CRITERIA
-_ = OMOP_PORTION_FILE_CRITERIA
-_ = ZIP_CODE_PORTION_FILE_CRITERIA
 
 CONCATENATED_PORTIONS_FILE_CRITERIA = [lambda pathObj: pathObj.name.lower() in FILES_TO_RELEASE,
                                        lambda pathObj: pathObj.suffix.lower() == ".csv",

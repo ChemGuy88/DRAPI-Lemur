@@ -15,8 +15,13 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import ParserError
 # Local packages
-from drapi.drapi import getTimestamp, makeDirPath, successiveParents
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH, BO_PORTION_DIR, BO_PORTION_FILE_CRITERIA
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
+from common import (DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
+                    BO_PORTION_DIR_MAC,
+                    BO_PORTION_DIR_WIN,
+                    BO_PORTION_FILE_CRITERIA)
 
 # Arguments
 CHUNK_SIZE = 50000
@@ -25,8 +30,8 @@ CHUNK_SIZE = 50000
 USE_MODIFIED_OMOP_DATA_SET = True
 
 # Arguments: Portion Paths and conditions
-MAC_PATHS = [BO_PORTION_DIR]
-WIN_PATHS = [BO_PORTION_DIR]
+MAC_PATHS = [BO_PORTION_DIR_MAC]
+WIN_PATHS = [BO_PORTION_DIR_WIN]
 
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA]
 

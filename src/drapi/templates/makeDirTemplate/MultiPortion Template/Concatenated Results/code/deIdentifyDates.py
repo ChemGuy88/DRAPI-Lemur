@@ -10,26 +10,23 @@ from pathlib import Path
 import re
 from typing import Union
 # Third-party packages
-import numpy as np
 import pandas as pd
 from pandas.errors import OutOfBoundsDatetime
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
-from drapi.drapi import map2di
-from drapi.drapi import makeMap
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         makeMap,
+                         map2di,
+                         successiveParents)
 # Local packages: Script parameters: General
-from drapi.constants.phiVariables import LIST_OF_PHI_DATES_BO, LIST_OF_PHI_DATES_NOTES, LIST_OF_PHI_DATES_OMOP
+from drapi.constants.phiVariables import (LIST_OF_PHI_DATES_BO,
+                                          LIST_OF_PHI_DATES_NOTES,
+                                          LIST_OF_PHI_DATES_OMOP)
 # Local packages: Script parameters: General
 from common import IRB_NUMBER
 # Local packages: Script parameters: Paths
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
-from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 # Local packages: Script parameters: File criteria
 from common import BO_PORTION_FILE_CRITERIA
-from common import NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
 """
@@ -44,22 +41,12 @@ Argument descriptions
 `WIN_PATHS`:                                A list of Path objects. The Path objects point to the directories that should be processed.
 `LIST_OF_PORTION_CONDITIONS`:               A list of functions. All these fucntions are evaluated on each of the files in each of the directories defined by `*_PATHS`.
 """
-PATIENT_DATE_SHIFT_MAP = Path(r"..\Concatenated Results\data\output\makeDateShiftMap\2023-12-13 14-44-22\Date Shift Map.CSV")
+PATIENT_DATE_SHIFT_MAP = Path(r"..\Concatenated Results\data\output\makeDateShiftMap\...\Date Shift Map.CSV")
 LOOK_UP_NAME_MAP_INDEX = 2
 LOOK_UP_NAME_DE_IDENTIFICATION_FORMAT = "lemur"
 LIST_OF_PHI_DATES = LIST_OF_PHI_DATES_BO + LIST_OF_PHI_DATES_NOTES + LIST_OF_PHI_DATES_OMOP
 
-# Arguments: OMOP data set selection
-USE_MODIFIED_OMOP_DATA_SET = True
-
 # Arguments: Portion Paths and conditions
-if USE_MODIFIED_OMOP_DATA_SET:
-    OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
-    OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
-else:
-    OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
-    OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
-
 MAC_PATHS = [Path(r"..\Concatenated Results\data\output\deIdentify\2023-12-13 13-58-38")]
 WIN_PATHS = [Path(r"..\Concatenated Results\data\output\deIdentify\2023-12-13 13-58-38")]
 
@@ -155,7 +142,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 
@@ -180,7 +167,6 @@ if __name__ == "__main__":
 
     # Arguments
     `PATIENT_DATE_SHIFT_MAP`: "{PATIENT_DATE_SHIFT_MAP}"
-    `USE_MODIFIED_OMOP_DATA_SET`: "{USE_MODIFIED_OMOP_DATA_SET}"
     `MAC_PATHS`: "{MAC_PATHS}"
     `WIN_PATHS`: "{WIN_PATHS}"
 
@@ -236,7 +222,6 @@ if __name__ == "__main__":
         logger.error(msg)
         raise Exception(msg)
 
-
     def string2datetime(string: str) -> Union[datetime.datetime, pd.Timestamp]:
         """
         Attempts to convert a string to a pandas datetime object. If it's out of range it converts it to a Python datetime object.
@@ -265,7 +250,7 @@ if __name__ == "__main__":
             elif reObj3:
                 newValue = datetime.datetime.strptime(string, "%m/%d/%Y")
         return newValue
-    
+
     def datetimeOffset(timeObj: Union[datetime.datetime, pd.Timestamp], offset: int):
         """
         `offset`, an int, is the number of days.
@@ -275,7 +260,6 @@ if __name__ == "__main__":
         else:
             newValue = timeObj + datetime.timedelta(days=offset)
         return newValue
-
 
     logger.info("""De-identifying files.""")
     for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
@@ -303,7 +287,7 @@ if __name__ == "__main__":
                         # Work on column
                         logger.info(f"""  ..    Working on column "{columnName}".""")
                         if columnName in LIST_OF_PHI_DATES:
-                            logger.info(f"""  ..  ..  Column must be de-identified. Date-shifting values.""")
+                            logger.info("""  ..  ..  Column must be de-identified. Date-shifting values.""")
                             if lookUpNameSelected in dfChunk.columns:
                                 lookUpName = lookUpNameSelected
                             elif any([alias in dfChunk.columns for alias in listOfLookUpNameAliases]):

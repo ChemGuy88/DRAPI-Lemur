@@ -9,24 +9,19 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
-from drapi.drapi import fileContainsColumn
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
 # Local packages: Script parameters: General
-from drapi.constants.phiVariables import DICT_OF_PHI_VARIABLES_AGE
-from drapi.constants.phiVariables import DICT_OF_PHI_VARIABLES_BIRTHDATES
+from drapi.constants.phiVariables import (DICT_OF_PHI_VARIABLES_AGE,
+                                          DICT_OF_PHI_VARIABLES_BIRTHDATES)
 # Local packages: Script parameters: Paths
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
-from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 # Local packages: Script parameters: File criteria
 from common import BO_PORTION_FILE_CRITERIA
-from common import NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
-AGE_MAP = Path(r"..\Concatenated Results\data\output\makeAgeMap\...\Age Map - De-identified Patient Key.CSV")
-USE_DE_IDENTIFIED_DATES = True  # NOTE Set `USE_DE_IDENTIFIED_DATES` to `True` if the dates have been de-identified. If the IDs have been de-identified, it is not necessary to set this to `True`.
+AGE_MAP = Path(r"..\Concatenated Results\data\output\makeAgeMap\2024-01-03 13-20-23\Age Map - De-identified Patient Key.CSV")
+USE_DE_IDENTIFIED_DATES = True
 
 DE_IDENTIFIED_AGE_VALUE = "> 90"
 DE_IDENTIFIED_BIRTHDATE_VALUE = "1/1/1800"
@@ -35,6 +30,7 @@ DE_IDENTIFIED_BIRTHDATE_VALUE = "1/1/1800"
 USE_MODIFIED_OMOP_DATA_SET = True
 
 # Variables: Script parameters: Date variables
+# NOTE Set `USE_DE_IDENTIFIED_DATES` to `True` if the dates have been de-identified. If the IDs have been de-identified, it is not necessary to set this to `True`.
 if USE_DE_IDENTIFIED_DATES:
     DE_IDENTIFICATION_PREFIX = "De-identified "
     dictOfPHIVariablesBirthdates = {portion: [] for portion in DICT_OF_PHI_VARIABLES_BIRTHDATES.keys()}
@@ -48,20 +44,12 @@ else:
 dictOfPHIVariablesAge = DICT_OF_PHI_VARIABLES_AGE
 
 # Arguments: Portion Paths and conditions
-if USE_MODIFIED_OMOP_DATA_SET:
-    OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
-    OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
-else:
-    OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
-    OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
-
-MAC_PATHS = [Path(r"..\Concatenated Results\data\output\...\...")]  # TODO
-WIN_PATHS = [Path(r"..\Concatenated Results\data\output\...\...")]  # TODO
+MAC_PATHS = [Path(r"..\Concatenated Results\data\output\deIdentify\...")]  # TODO
+WIN_PATHS = [Path(r"..\Concatenated Results\data\output\deIdentify\...")]  # TODO
 
 listOfAgeColumns = [el for value in dictOfPHIVariablesAge.values() for el in value]
 listOfBirthdateColumns = [el for value in dictOfPHIVariablesBirthdates.values() for el in value]
 listOfColumnsToDeIdentify = listOfAgeColumns + listOfBirthdateColumns
-LIST_OF_PORTION_CONDITIONS = [li + [lambda pathObj: fileContainsColumn(pathObj, listOfColumnsToDeIdentify) if pathObj.suffix.lower() == ".csv" else False] for li in [BO_PORTION_FILE_CRITERIA]]
 LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA]
 
 # Arguments; General
@@ -151,7 +139,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 

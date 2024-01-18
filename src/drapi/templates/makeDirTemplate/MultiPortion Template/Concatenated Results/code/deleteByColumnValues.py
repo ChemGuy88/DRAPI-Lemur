@@ -5,32 +5,19 @@ Deletes rows based on column values.
 import logging
 import os
 import sys
-import datetime
 from pathlib import Path
-import re
-from typing import Union
 # Third-party packages
-import numpy as np
 import pandas as pd
-from pandas.errors import OutOfBoundsDatetime
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
-from drapi.drapi import map2di
-from drapi.drapi import makeMap
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
 # Local packages: Script parameters: General
 from drapi.constants.phiValues import PHI_VALUES_DICT_ALL
-from drapi.constants.phiVariables import LIST_OF_PHI_DATES_BO, LIST_OF_PHI_DATES_NOTES, LIST_OF_PHI_DATES_OMOP
 # Local packages: Script parameters: General
-from common import IRB_NUMBER
 # Local packages: Script parameters: Paths
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
-from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
 # Local packages: Script parameters: File criteria
 from common import BO_PORTION_FILE_CRITERIA
-from common import NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_FILE_CRITERIA
 
 # Arguments
 COLUMN_VALUES_TO_DROP = PHI_VALUES_DICT_ALL
@@ -39,13 +26,6 @@ COLUMN_VALUES_TO_DROP = PHI_VALUES_DICT_ALL
 USE_MODIFIED_OMOP_DATA_SET = True
 
 # Arguments: Portion Paths and conditions
-if USE_MODIFIED_OMOP_DATA_SET:
-    OMOPPortionDirMac = MODIFIED_OMOP_PORTION_DIR_MAC
-    OMOPPortionDirWin = MODIFIED_OMOP_PORTION_DIR_WIN
-else:
-    OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
-    OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
-
 MAC_PATHS = [Path(r"..\Concatenated Results\data\output\deIdentifyByAge\...")]
 WIN_PATHS = [Path(r"..\Concatenated Results\data\output\deIdentifyByAge\...")]
 
@@ -141,7 +121,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 
@@ -214,7 +194,7 @@ if __name__ == "__main__":
                         if columnName in COLUMN_VALUES_TO_DROP.keys():
                             mask = ~dfChunk[columnName].isin(COLUMN_VALUES_TO_DROP[columnName])
                             if mask.sum() > 0:
-                                logger.info(f"""  ..  ..  Column has values that need to be dropped. Dropping values.""")
+                                logger.info("""  ..  ..  Column has values that need to be dropped. Dropping values.""")
                             dfChunk = dfChunk[mask]
                     # Save chunk
                     dfChunk.to_csv(exportPath, mode=fileMode, header=fileHeaders, index=False)

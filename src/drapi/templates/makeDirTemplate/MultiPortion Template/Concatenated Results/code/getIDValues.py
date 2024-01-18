@@ -16,24 +16,26 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import getTimestamp, makeDirPath, successiveParents
-from drapi.drapi import sortIntegersAndStrings
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         sortIntegersAndStrings,
+                         successiveParents)
 from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT
 # Project parameters: General
-from common import COLUMNS_TO_DE_IDENTIFY
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
-from common import DATA_TYPES_DICT
-# Project parameters: Portion paths
-from common import BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN
-from common import I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN
-from common import MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN
-from common import NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN
-from common import OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN
-# Project parameters: File criteria
-from common import BO_PORTION_FILE_CRITERIA
-from common import I2B2_PORTION_FILE_CRITERIA
-from common import NOTES_PORTION_FILE_CRITERIA
-from common import OMOP_PORTION_FILE_CRITERIA
+from common import (COLUMNS_TO_DE_IDENTIFY,
+                    DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
+                    DATA_TYPES_DICT)
+# Project parameters: Portion paths and criteria
+from common import (BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN,
+                    I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN,
+                    MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
+                    NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN,
+                    OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN)
+# Project parameters: Criteria
+from common import (BO_PORTION_FILE_CRITERIA,
+                    I2B2_PORTION_FILE_CRITERIA,
+                    NOTES_PORTION_FILE_CRITERIA,
+                    OMOP_PORTION_FILE_CRITERIA)
 
 
 # Arguments

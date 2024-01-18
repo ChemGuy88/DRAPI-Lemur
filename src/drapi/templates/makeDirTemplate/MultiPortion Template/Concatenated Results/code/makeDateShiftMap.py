@@ -9,7 +9,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
 
 # Arguments
 PATIENT_DE_IDENTIFICATION_MAP_PATH = Path(r"..\Concatenated Results\data\output\concatenateMaps\2023-12-13 11-59-04\Patient Key map.csv")
@@ -85,7 +87,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,9 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy import create_engine
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         successiveParents)
 
 # Arguments
 ENCOUNTER_MAP_DIR_PATH = Path(r"..\Intermediate Results\BO Data Portion\data\output\getData\2023-11-27 16-30-11")
