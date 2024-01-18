@@ -12,11 +12,11 @@ import logging
 import sys
 from pathlib import Path
 # Third-party packages
-import pandas as pd
 from pandas.errors import ParserError
 # Local packages
 from drapi.drapi import (getTimestamp,
                          makeDirPath,
+                         readDataFile,
                          successiveParents)
 from common import (DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
                     BO_PORTION_DIR_MAC,
@@ -129,7 +129,7 @@ if __name__ == "__main__":
                 # Test 1: Make sure all lines have the same number of delimiters
                 logging.info("""  ..  Test 1: Make sure all lines have the same number of delimiters.""")
                 try:
-                    numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
+                    numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
                     logging.info("""  ..    There are no apparent problems reading this file.""")
                 except ParserError as err:
                     args = err

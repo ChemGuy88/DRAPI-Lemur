@@ -18,11 +18,13 @@ from drapi.drapi import (fileName2variableName,
                          makeMap,
                          map2di,
                          numericOrString2integerOrString,
+                         readDataFile,
                          successiveParents)
 from drapi.constants.phiVariables import (FILE_NAME_TO_VARIABLE_NAME_DICT,
                                           VARIABLE_NAME_TO_FILE_NAME_DICT)
 # Local packages: Script parameters: General
 from common import (IRB_NUMBER,
+                    ALIAS_DATA_TYPES,
                     COLUMNS_TO_DE_IDENTIFY,
                     DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
                     DATA_TYPES_DICT,
@@ -184,6 +186,8 @@ if __name__ == "__main__":
                        deIdentificationMapStyle="lemur",
                        logger=logging.getLogger())
         mapsColumnNames[varName] = map_.columns[-1]
+    # Add aliases to `DATA_TYPES_DICT`
+    DATA_TYPES_DICT.update(ALIAS_DATA_TYPES)
 
     # De-identify columns
     logging.info("""De-identifying files.""")
@@ -201,9 +205,9 @@ if __name__ == "__main__":
                 # Read file
                 logging.info("""    File has met all conditions for processing.""")
                 logging.info("""  ..  Reading file to count the number of chunks.""")
-                numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
+                numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
                 logging.info(f"""  ..  This file has {numChunks} chunks.""")
-                dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
+                dfChunks = readDataFile(file, chunkSize=CHUNK_SIZE)
                 for it, dfChunk in enumerate(dfChunks, start=1):
                     dfChunk = pd.DataFrame(dfChunk)
                     # Work on chunk

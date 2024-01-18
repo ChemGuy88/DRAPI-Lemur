@@ -15,6 +15,7 @@ from pandas.errors import EmptyDataError
 from drapi.drapi import (getTimestamp,
                          makeDirPath,
                          personIDs2patientKeys,
+                         readDataFile,
                          successiveParents)
 from common import (DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
                     OMOP_PORTION_DIR_MAC,
@@ -130,8 +131,8 @@ if __name__ == "__main__":
                 if all(conditions):
                     # Read file
                     logging.info("""    File has met all conditions for processing.""")
-                    numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
-                    dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
+                    numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
+                    dfChunks = readDataFile(file, chunkSize=CHUNK_SIZE)
                     for it, dfChunk in enumerate(dfChunks, start=1):
                         logging.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
                         for columnName in dfChunk.columns:

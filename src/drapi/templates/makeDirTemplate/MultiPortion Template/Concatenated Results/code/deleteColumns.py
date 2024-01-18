@@ -16,6 +16,7 @@ import pandas as pd
 from drapi.drapi import (flatExtend,
                          getTimestamp,
                          makeDirPath,
+                         readDataFile,
                          successiveParents)
 from drapi.constants.phiVariables import (LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE,
                                           LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL)
@@ -68,8 +69,7 @@ else:
 BO_FILES_TO_RELEASE = []  # TODO
 
 NOTES_COHORT_NAME = ""  # TODO
-NOTES_METADATA_FILES_TO_RELEASE = ["encounters.csv",
-                                   "provider_metadata.csv",
+NOTES_METADATA_FILES_TO_RELEASE = ["provider_metadata.csv",
                                    f"{NOTES_COHORT_NAME}_note_metadata.csv",
                                    f"{NOTES_COHORT_NAME}_order_impression_metadata.csv",
                                    f"{NOTES_COHORT_NAME}_order_metadata.csv",
@@ -262,8 +262,8 @@ if __name__ == "__main__":
                 fileHeaders = True
                 # Read file
                 logging.info("""    File has met all conditions for processing.""")
-                numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
-                dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
+                numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
+                dfChunks = readDataFile(file, chunkSize=CHUNK_SIZE)
                 for it, dfChunk in enumerate(dfChunks, start=1):
                     dfChunk = pd.DataFrame(dfChunk)
                     # Work on chunk

@@ -24,12 +24,12 @@ from drapi.drapi import (ditchFloat,
 from drapi.constants.phiVariables import (FILE_NAME_TO_VARIABLE_NAME_DICT,
                                           VARIABLE_NAME_TO_FILE_NAME_DICT)
 # Local packages: Script parameters: General
-from common import IRB_NUMBER
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
-from common import DATA_TYPES_DICT
-from common import OLD_MAPS_DIR_PATH
-from common import VARIABLE_ALIASES
-from common import VARIABLE_SUFFIXES
+from common import (IRB_NUMBER,
+                    DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
+                    DATA_TYPES_DICT,
+                    OLD_MAPS_DIR_PATH,
+                    VARIABLE_ALIASES,
+                    VARIABLE_SUFFIXES)
 
 # Arguments
 SETS_PATH = Path(r"..\Concatenated Results\data\output\aliasVariables\...")

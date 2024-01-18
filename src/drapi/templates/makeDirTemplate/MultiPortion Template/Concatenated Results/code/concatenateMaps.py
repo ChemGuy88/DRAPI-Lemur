@@ -13,15 +13,19 @@ from pathlib import Path
 import pandas as pd
 import pprint
 # Local packages
-from drapi.drapi import getTimestamp, makeDirPath, getPercentDifference, successiveParents, makeMap
-from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT
-from drapi.constants.phiVariables import FILE_NAME_TO_VARIABLE_NAME_DICT
+from drapi.drapi import (getTimestamp,
+                         makeDirPath,
+                         getPercentDifference,
+                         successiveParents,
+                         makeMap)
+from drapi.constants.phiVariables import (VARIABLE_NAME_TO_FILE_NAME_DICT,
+                                          FILE_NAME_TO_VARIABLE_NAME_DICT)
 # Project parameters: General
-from common import IRB_NUMBER
-from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
-from common import OLD_MAPS_DIR_PATH
-from common import VARIABLE_ALIASES
-from common import VARIABLE_SUFFIXES
+from common import (IRB_NUMBER,
+                    DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
+                    OLD_MAPS_DIR_PATH,
+                    VARIABLE_ALIASES,
+                    VARIABLE_SUFFIXES)
 
 # Arguments
 NEW_MAPS_DIR_PATH = Path(r"..\Concatenated Results\data\output\makeMapsFromOthers\...")  # TODO
