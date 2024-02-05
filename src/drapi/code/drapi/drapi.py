@@ -1,5 +1,5 @@
 """
-Herman's utility functions commonly used in his projects
+Utility functions commonly used in IDR data request projects.
 """
 
 import datetime as dt
@@ -23,6 +23,7 @@ import numpy as np
 import pandas as pd
 import sqlalchemy as sa
 import sqlite3
+from pandas.io.parsers.readers import TextFileReader
 # Local packages
 pass
 
@@ -111,28 +112,35 @@ def flatExtend(iterable: Collection) -> list:
     return outputList
 
 
-def readDataFile(fname: Path, chunkSize=int) -> pd.DataFrame:
+def readDataFile(fname: Path, *args, **kwargs) -> TextFileReader:
     """
-    Opens a file based on the fiel extension of its file name `fname` using a Pandas built-in to return a DataFrame object.
+    Opens a file based on the file extension of its file name `fname` using a Pandas built-in to return a DataFrame object. Below is the list of Pandas built-ins, whose odcumentation you can search to find out what keyword arguments (`kwargs`) to use.
+      - `pd.read_csv`
+      - `pd.read_json`
+      - `pd.read_xml`
+      - `pd.read_excel`
+      - `pd.read_hdf`
+      - `pd.read_sql`
     """
     suffix = fname.suffix.lower()
     if suffix.endswith(('.csv',)):
-        df = pd.read_csv(fname, chunksize=chunkSize)
+        TextFileReaderObject = pd.read_csv(fname, *args, **kwargs)
     elif suffix.endswith(('.tsv',)):
-        df = pd.read_csv(fname, delimiter="\t", chunksize=chunkSize)
+        kwargs["delimiter"] = "\t"
+        TextFileReaderObject = pd.read_csv(fname, *args, **kwargs)
     elif suffix.endswith(('.json',)):
-        df = pd.read_json(fname, chunksize=chunkSize)
+        TextFileReaderObject = pd.read_json(fname, *args, **kwargs)
     elif suffix.endswith(('.xml',)):
-        df = pd.read_xml(fname, chunksize=chunkSize)
+        TextFileReaderObject = pd.read_xml(fname, *args, **kwargs)
     elif suffix.endswith(('.xls', 'xlsx',)):
-        df = pd.read_excel(fname, chunksize=chunkSize)
+        TextFileReaderObject = pd.read_excel(fname, *args, **kwargs)
     elif suffix.endswith(('.hdf',)):
-        df = pd.read_hdf(fname, chunksize=chunkSize)
+        TextFileReaderObject = pd.read_hdf(fname, *args, **kwargs)
     elif suffix.endswith(('.sql',)):
-        df = pd.read_sql(fname, chunksize=chunkSize)
+        TextFileReaderObject = pd.read_sql(fname, *args, **kwargs)
     else:
-        raise ValueError(f'Unsupported filetype: {fname}')
-    return df
+        raise ValueError(f"""Unsupported filetype for file "{fname}".""")
+    return TextFileReaderObject
 
 
 def successiveParents(pathObj: Path, numLevels: int) -> Tuple[Path, int]:
