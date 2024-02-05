@@ -17,6 +17,7 @@ where "New Directory" is the name of the directory to be created
 
 import argparse
 import json
+import os
 import shutil
 from pathlib import Path
 # Local imports
@@ -24,7 +25,7 @@ from drapi.templates.makeDirTemplate import PATH as makeDirTemplatePath
 
 ROOT_PATH = makeDirTemplatePath.__str__()
 optionsDict = {"BO": {"number": 2,
-                      "path": ROOT_PATH + r"\Intermediate Results\BO Portion Template"},
+                      "path": ROOT_PATH + r"\MultiPortion Template\Intermediate Results\BO Portion Template"},
                "De-identification Suite": {"number": 1,
                                            "path": ROOT_PATH + r"\MultiPortion Template\Concatenated Results"},
                "General Script": {"number": 3,
@@ -54,6 +55,11 @@ def copyTemplateDirectory(templateChoice: int,
 
     shutil.copytree(src=templateDirPath,
                     dst=destinationPath)
+
+    # Remove placeholder files
+    for fpath in Path(destinationPath).glob("./**/*.*"):
+        if fpath.name.lower() == ".deleteme":
+            os.remove(fpath)
 
 
 if __name__ == "__main__":
