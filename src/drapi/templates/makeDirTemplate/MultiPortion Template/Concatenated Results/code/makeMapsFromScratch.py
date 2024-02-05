@@ -13,10 +13,10 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         makeMap,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    makeMap,
+                                    successiveParents)
 # Local packages: Script parameters: General
 from common import (IRB_NUMBER,
                     DATA_REQUEST_ROOT_DIRECTORY_DEPTH,

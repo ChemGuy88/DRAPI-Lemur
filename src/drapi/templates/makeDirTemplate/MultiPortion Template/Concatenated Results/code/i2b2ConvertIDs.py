@@ -9,9 +9,9 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy import create_engine
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
 
 # Arguments
 I2B2_PORTION_OUTPUT_DIR_PATH = Path(r"..\Intermediate Results\i2b2 Portion\data\output\i2b2_dump\...\i2b2")

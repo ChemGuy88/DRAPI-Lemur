@@ -16,9 +16,11 @@ import pandas as pd
 import sqlalchemy as sa
 import yaml
 # Super-local libraries
-import drapi.omop.deidentify as deidentify
-from drapi.drapi import makeDirPath, getTimestamp
-from drapi.omop.configProcessing import editConfig, interpretPath
+import drapi.code.drapi.omop.deidentify as deidentify
+from drapi.code.drapi.drapi import (makeDirPath,
+                                    getTimestamp)
+from drapi.code.drapi.omop.configProcessing import (editConfig,
+                                                    interpretPath)
 
 # Arguments
 LOG_LEVEL = "DEBUG"  # Lowest level available is "9"

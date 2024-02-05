@@ -12,14 +12,14 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import (fileName2variableName,
-                         getTimestamp,
-                         makeDirPath,
-                         makeMap,
-                         map2di,
-                         numericOrString2integerOrString,
-                         readDataFile,
-                         successiveParents)
+from drapi.code.drapi.drapi import (fileName2variableName,
+                                    getTimestamp,
+                                    makeDirPath,
+                                    makeMap,
+                                    map2di,
+                                    numericOrString2integerOrString,
+                                    readDataFile,
+                                    successiveParents)
 from drapi.constants.phiVariables import (FILE_NAME_TO_VARIABLE_NAME_DICT,
                                           VARIABLE_NAME_TO_FILE_NAME_DICT)
 # Local packages: Script parameters: General

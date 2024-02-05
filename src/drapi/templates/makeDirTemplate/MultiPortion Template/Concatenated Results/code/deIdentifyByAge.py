@@ -9,9 +9,9 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
 # Local packages: Script parameters: General
 from drapi.constants.phiVariables import (DICT_OF_PHI_VARIABLES_AGE,
                                           DICT_OF_PHI_VARIABLES_BIRTHDATES)

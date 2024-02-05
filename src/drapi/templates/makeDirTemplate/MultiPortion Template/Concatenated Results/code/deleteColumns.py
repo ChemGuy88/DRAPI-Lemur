@@ -13,11 +13,11 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import (flatExtend,
-                         getTimestamp,
-                         makeDirPath,
-                         readDataFile,
-                         successiveParents)
+from drapi.code.drapi.drapi import (flatExtend,
+                                    getTimestamp,
+                                    makeDirPath,
+                                    readDataFile,
+                                    successiveParents)
 from drapi.constants.phiVariables import (LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE,
                                           LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL)
 # Project parameters: General

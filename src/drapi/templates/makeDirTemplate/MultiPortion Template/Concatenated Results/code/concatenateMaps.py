@@ -13,11 +13,11 @@ from pathlib import Path
 import pandas as pd
 import pprint
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         getPercentDifference,
-                         successiveParents,
-                         makeMap)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    getPercentDifference,
+                                    successiveParents,
+                                    makeMap)
 from drapi.constants.phiVariables import (VARIABLE_NAME_TO_FILE_NAME_DICT,
                                           FILE_NAME_TO_VARIABLE_NAME_DICT)
 # Project parameters: General

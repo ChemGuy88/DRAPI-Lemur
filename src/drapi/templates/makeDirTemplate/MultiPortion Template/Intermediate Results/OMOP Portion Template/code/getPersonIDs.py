@@ -8,7 +8,9 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
 
 # Arguments
 PATIENT_KEYS_CSV_FILE_PATH = Path("data/input/Cohort - Patient Key.CSV")  # TODO

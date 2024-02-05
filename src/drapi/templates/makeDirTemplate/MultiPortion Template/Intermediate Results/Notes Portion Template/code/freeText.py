@@ -17,7 +17,10 @@ import pandas as pd
 import pymssql
 import sqlalchemy as sa
 # Local packages
-from drapi.drapi import makeDirPath, replace_sql_query, getTimestamp, successiveParents
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    replace_sql_query,
+                                    successiveParents)
 
 # Arguments: Script settings
 COHORT_NAME = "SGMCPLGB"                                    # An arbitrary name used in file names
@@ -591,8 +594,7 @@ def copy_tsv(cohort, notes_dir, disclosure_dir):
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s]\n[%(levelname)s](%(funcName)s)\n{"-"*24}> %(message)s""")
-logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s) %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 

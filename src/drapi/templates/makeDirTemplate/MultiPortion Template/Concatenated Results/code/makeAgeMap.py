@@ -19,9 +19,9 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
 
 # Arguments
 INPUT_FILE = Path(r"..\Concatenated Results\data\output\convertColumns\...\person.csv")

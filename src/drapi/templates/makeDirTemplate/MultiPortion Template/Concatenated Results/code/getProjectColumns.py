@@ -14,9 +14,9 @@ from colorama import init as colorama_init
 from colorama import (Fore,
                       Style)
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
 # Project parameters:
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
 # Project parameters: Portion paths and criteria

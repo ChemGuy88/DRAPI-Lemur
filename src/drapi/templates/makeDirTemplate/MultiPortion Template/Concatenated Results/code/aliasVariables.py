@@ -20,9 +20,9 @@ import pandas as pd
 from pandas.errors import EmptyDataError
 from sqlalchemy import create_engine
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
 from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT, FILE_NAME_TO_VARIABLE_NAME_DICT
 # Super-local
 from common import VARIABLE_ALIASES, DATA_TYPES_DICT
@@ -102,7 +102,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter("[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 

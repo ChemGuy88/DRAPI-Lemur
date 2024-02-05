@@ -11,10 +11,10 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         readDataFile,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    readDataFile,
+                                    successiveParents)
 from drapi.idealist.idealist import idealistMap2dict
 # Local packages: Script parameters: General
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH

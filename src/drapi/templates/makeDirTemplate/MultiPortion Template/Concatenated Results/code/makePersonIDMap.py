@@ -12,11 +12,11 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         personIDs2patientKeys,
-                         readDataFile,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    personIDs2patientKeys,
+                                    readDataFile,
+                                    successiveParents)
 from common import (DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
                     OMOP_PORTION_DIR_MAC,
                     OMOP_PORTION_DIR_WIN,

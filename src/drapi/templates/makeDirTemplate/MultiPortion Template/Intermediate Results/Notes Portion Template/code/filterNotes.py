@@ -14,7 +14,9 @@ from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
 
 # Arguments
 FREE_TEXT_DIR_PATH = Path(r"data\output\freeText\...\free_text")  # TODO
@@ -99,7 +101,7 @@ makeDirPath(runLogsDir)
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 
@@ -159,12 +161,12 @@ if __name__ == "__main__":
     for fpath in FREE_TEXT_DIR_PATH.iterdir():
         logger.info(f"""  Working on directory item "{fpath.absolute().relative_to(rootDirectory)}".""")
         if fpath.suffix.lower() == ".csv" and any([fname in fpath.stem for fname in LIST_OF_TARGET_FILES_AND_FOLDERS]):
-            logger.info(f"""    This item has met the criteria for processing.""")
+            logger.info("""    This item has met the criteria for processing.""")
             numChunks = 0
-            logger.info(f"""    Counting the number of chunks in the file.""")
+            logger.info("""    Counting the number of chunks in the file.""")
             for dfchunk in pd.read_csv(fpath, chunksize=CHUNKSIZE):
                 numChunks += 1
-            logger.info(f"""    Counting the number of chunks in the file - done.""")
+            logger.info("""    Counting the number of chunks in the file - done.""")
             fileResults = pd.DataFrame()
             for it, dfchunk in enumerate(pd.read_csv(fpath, chunksize=CHUNKSIZE), start=1):
                 logger.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
@@ -173,7 +175,7 @@ if __name__ == "__main__":
                 fileResults = pd.concat([fileResults, subset])
             resultsdi[fpath.stem] = fileResults.drop_duplicates()
         else:
-            logger.info(f"""    This item has NOT met the criteria for processing.""")
+            logger.info("""    This item has NOT met the criteria for processing.""")
 
     # Save search results
     logger.info("Saving search results to the drive.")
@@ -232,7 +234,7 @@ if __name__ == "__main__":
             logger.info(f"""    Working on directory item "{fpath.absolute().relative_to(rootDirectory)}".""")
             listOfClassTargetFilesAndFolders = DICT_OF_TARGET_FILES_AND_FOLDERS[noteClass]
             if fpath.suffix.lower() == ".tsv" and any([fname in fpath.stem for fname in listOfClassTargetFilesAndFolders]) and "deid_" in fpath.stem:
-                logger.info(f"""  ..  This item has met the criteria for processing.""")
+                logger.info("""  ..  This item has met the criteria for processing.""")
                 # Determine note identifier
                 if any([f"{noteDeIdentificationPrefix}{nameRoot}" in fpath.stem for nameRoot in LIST_OF_NOTE_TARGET_FILES_AND_DIRS]):
                     noteIdentifierDeIdentifiedColumnName = "deid_link_note_id"
@@ -241,12 +243,12 @@ if __name__ == "__main__":
                 else:
                     raise Exception("Something went wrong.")
                 # Count number of chunks
-                logger.info(f"""  ..  Counting the number of chunks in the file.""")
+                logger.info("""  ..  Counting the number of chunks in the file.""")
                 numChunks = 0
                 for dfchunk in pd.read_csv(fpath, chunksize=CHUNKSIZE, delimiter="\t"):
                     numChunks += 1
                 # Iterate over chunks
-                logger.info(f"""  ..  Counting the number of chunks in the file - done.""")
+                logger.info("""  ..  Counting the number of chunks in the file - done.""")
                 header = True
                 mode = "w"
                 for it, dfchunk in enumerate(pd.read_csv(fpath, chunksize=CHUNKSIZE, delimiter="\t"), start=1):
@@ -257,7 +259,7 @@ if __name__ == "__main__":
                     selectedText = selectedText["note_text"]
                     # Define `savepath` based on `fpath`
                     savepath = runOutputDir.joinpath("Selected Notes",
-                                                    f"{fpath.stem}.TSV")
+                                                     "{fpath.stem}.TSV")
                     makeDirPath(savepath.parent)
                     # Save to file
                     selectedText = selectedText.reset_index()
@@ -266,7 +268,7 @@ if __name__ == "__main__":
                     mode = "a"
                 logger.info(f"""  ..  Chunks saved to "{savepath.absolute().relative_to(rootDirectory)}".""")
             else:
-                logger.info(f"""  ..  This item has NOT met the criteria for processing.""")
+                logger.info("""  ..  This item has NOT met the criteria for processing.""")
 
     # End script
     logger.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

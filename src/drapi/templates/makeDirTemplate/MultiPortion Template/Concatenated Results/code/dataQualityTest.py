@@ -14,10 +14,10 @@ from pathlib import Path
 # Third-party packages
 from pandas.errors import ParserError
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         readDataFile,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    readDataFile,
+                                    successiveParents)
 from common import (DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
                     BO_PORTION_DIR_MAC,
                     BO_PORTION_DIR_WIN,

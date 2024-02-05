@@ -17,7 +17,9 @@ import pandas as pd
 import pymssql
 import sqlalchemy as sa
 # Local packages
-from drapi.drapi import getTimestamp, successiveParents, makeDirPath
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
 
 # Arguments
 COHORT_IDS_FILE_PATH = Path(r"..\..\..\work_2023_02_21\data\intermediate\createCohortFile_requestedCohort\2023-03-02 10-15-50\i2b2Cohort_fromRequestedCohort.CSV")
@@ -441,7 +443,7 @@ def limited_data_set(logger):
 
 # Logging block
 logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s]\n[%(levelname)s](%(funcName)s)\n{"-"*24}> %(message)s""")
+logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
 
 logger = logging.getLogger(__name__)
 

@@ -14,13 +14,13 @@ from pathlib import Path
 import pandas as pd
 from pandas.errors import EmptyDataError
 # Local packages
-from drapi.drapi import (ditchFloat,
-                         getTimestamp,
-                         handleDatetimeForJson,
-                         makeDirPath,
-                         makeMap,
-                         makeSetComplement,
-                         successiveParents)
+from drapi.code.drapi.drapi import (ditchFloat,
+                                    getTimestamp,
+                                    handleDatetimeForJson,
+                                    makeDirPath,
+                                    makeMap,
+                                    makeSetComplement,
+                                    successiveParents)
 from drapi.constants.phiVariables import (FILE_NAME_TO_VARIABLE_NAME_DICT,
                                           VARIABLE_NAME_TO_FILE_NAME_DICT)
 # Local packages: Script parameters: General

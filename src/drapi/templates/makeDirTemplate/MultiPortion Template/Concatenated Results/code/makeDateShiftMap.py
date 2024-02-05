@@ -9,9 +9,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 # Local packages
-from drapi.drapi import (getTimestamp,
-                         makeDirPath,
-                         successiveParents)
+from drapi.code.drapi.drapi import (getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
 
 # Arguments
 PATIENT_DE_IDENTIFICATION_MAP_PATH = Path(r"..\Concatenated Results\data\output\concatenateMaps\2023-12-13 11-59-04\Patient Key map.csv")

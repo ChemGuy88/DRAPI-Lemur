@@ -29,7 +29,7 @@ from drapi.constants.phiVariables import (LIST_OF_PHI_VARIABLES_BO,
                                           VARIABLE_SUFFIXES_I2B2,
                                           VARIABLE_SUFFIXES_NOTES,
                                           VARIABLE_SUFFIXES_OMOP)
-from drapi.drapi import flatExtend
+from drapi.code.drapi.drapi import flatExtend
 
 # Project parameters: Meta-variables
 STUDY_TYPE = "Limited Data Set (LDS)"  # Pick from "Non-Human", "Limited Data Set (LDS)", "Identified"

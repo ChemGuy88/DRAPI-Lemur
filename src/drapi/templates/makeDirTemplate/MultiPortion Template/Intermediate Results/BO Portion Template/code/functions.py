@@ -8,7 +8,8 @@ from pathlib import Path
 import pandas as pd
 from sqlalchemy import create_engine
 # Local packages
-from drapi.drapi import makeChunks, replace_sql_query
+from drapi.code.drapi.drapi import (makeChunks,
+                                    replace_sql_query)
 
 
 def getData(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: pd.DataFrame, conStr: str, runOutputDir, queryChunkSize: int, logger: Logger) -> pd.DataFrame:
@@ -98,7 +99,6 @@ def getData2(queryName: str, querySubName: str, sqlFilePath: Path, cohortData: p
             IDListAsString1 = ",".join([f"{el}" for el in IDsChunk])
         elif variableDataType1 == "varchar":
             IDListAsString1 = ",".join([f"'{el}'" for el in IDsChunk])
-
 
         query = replace_sql_query(query=query0,
                                   old="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)) as "Admit BMI",""",
