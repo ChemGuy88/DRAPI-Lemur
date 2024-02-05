@@ -8,7 +8,7 @@ from typing_extensions import Literal
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.drapi import replace_sql_query, successiveParents
+from drapi.code.drapi.drapi import replace_sql_query, successiveParents
 
 
 # Arguments: SQL connection settings
@@ -50,16 +50,16 @@ def OFID2MRN(OFIDseries: pd.Series) -> pd.DataFrame:
     return MRNseries
 
 
-def mapOneFloridaIDs(IDTypeValues: pd.Series, IDType: Literal["PATID", "Patient Key", "UF (MRN)", "Jax (MRN)", "path (mrn)"]) -> pd.Series:
+def mapOneFloridaIDs(IDTypeValues: pd.Series, IDType: Literal["PATID", "Patient Key", "MRN (UF)", "MRN (Jax)", "MRN (Pathology)"]) -> pd.Series:
     """
     Queries the ID map containing all of the following variables, any of which can be used as a query filter using the `IDType` parameter. The values to query by are used in the `IDTypeValues` parameter.
         | Variable Definition           | Standard or Common Column Name    |
         |-------------------------------|-----------------------------------|
-        | OneFlorida patient ID         | PATID                             |
+        | OneFlorida patient ID         | OneFlorida Patient ID             |
         | IDR patient key               | Patient Key                       |
-        | UF Health Gainesvile MRN      | UF (MRN)                          |
-        | UF Health Jacksonville MRN    | Jax (MRN)                         |
-        | UF Health Pathology MRN       | path (MRN)                        |
+        | UF Health Gainesvile MRN      | MRN (UF)                          |
+        | UF Health Jacksonville MRN    | MRN (Jax)                         |
+        | UF Health Pathology MRN       | MRN (Pathology)                   |
     """
 
     listAsString = ",".join([f"'{el}'" for el in IDTypeValues.iloc[:].sort_values()])
@@ -71,11 +71,11 @@ def mapOneFloridaIDs(IDTypeValues: pd.Series, IDType: Literal["PATID", "Patient 
                               old="{PYTHON_VARIABLE: IDTypeValues}",
                               new=listAsString)
     IDTypeInput = IDType.lower()
-    IDTypeDict = {"patid": "a.PATID",
+    IDTypeDict = {"oneflorida patient id": "a.PATID",
                   "patient key": "a.PATNT_KEY",
-                  "uf (mrn)": "b.IDENT_ID",
-                  "jax (mrn)": "c.IDENT_ID",
-                  "path (mrn)": "d.IDENT_ID"}
+                  "mrn (uf)": "b.IDENT_ID",
+                  "mrn (jax)": "c.IDENT_ID",
+                  "mrn (pathology)": "d.IDENT_ID"}
     IDTypeSQL = IDTypeDict[IDTypeInput]
     query = replace_sql_query(query=query,
                               old="{PYTHON_VARIABLE: IDTypeSQL}",
