@@ -9,7 +9,7 @@ from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES
 __all__ = ["DeIdIDName2DeIdIDSuffix",
            "IDName2DeIdIDName",
            "mapDtypes",
-           "DATA_TYPES"]
+           "DATA_TYPES_DICT"]
 
 IDName2DeIdIDNameRoot = {"ENCNTR_CSN_ID": "enc",
                          "IDENT_ID_INT": "pat",
@@ -26,7 +26,7 @@ mapDtypes = {0: int,
              1: int,
              2: str}
 
-# Define data types. NOTE that all the `Numeric_Or_String` variables contain numbers with leading zeros that get converted to integers in the current process. Either we convert these variables to `string` or we change the process.
+# Define data types. NOTE that all the `String` variables contain numbers with leading zeros that get converted to integers in the current process. Either we convert these variables to `string` or we change the process.
 DATA_TYPES_BO = {"Acct Number - Enter DateTime Comb": "String",
                  "Acct Number - Exit DateTime Comb": "String",
                  "At Station": "String",
@@ -44,17 +44,17 @@ DATA_TYPES_BO = {"Acct Number - Enter DateTime Comb": "String",
                  "EncounterCSN": "Numeric",
                  "Enterprise ID": "String",
                  "From Station": "String",
-                 "F/u Physicians": "Numeric_Or_String",
+                 "F/u Physicians": "String",
                  "Linkage Note ID": "Numeric",
                  "Location of Svc": "String",
-                 "Location of Svc ID": "Numeric_Or_String",
+                 "Location of Svc ID": "String",
                  "Managing Physician": "String",
                  "Medical Record Number": "Numeric",
                  "MRN (Jax)": "Numeric",
                  "MRN (UF)": "Numeric",
                  "Note ID": "Numeric",
                  "Note Key": "Numeric",
-                 "NRAS": "Numeric_Or_String",
+                 "NRAS": "String",
                  "Order ID": "Numeric",
                  "Ordering Provider Key": "Numeric",
                  "Order Key": "Numeric",
@@ -63,7 +63,7 @@ DATA_TYPES_BO = {"Acct Number - Enter DateTime Comb": "String",
                  "Patient Key": "Numeric",
                  "PatientKey": "Numeric",
                  "Patnt Key": "Numeric",
-                 "Prim  surgeon Code": "Numeric_Or_String",
+                 "Prim  surgeon Code": "String",
                  "Radiation Hosp Code Desc": "String",
                  "Source Sys": "String",
                  "Surgery Rx Hosp Code Desc": "String",
@@ -100,6 +100,7 @@ DATA_TYPES_OMOP = {"care_site_id": "Numeric",
                    "location_id": "Numeric",
                    "observation_period_id": "Numeric",
                    "patient_key": "Numeric",
+                   "person_id": "Numeric",
                    "preceding_visit_occurrence_id": "Numeric",
                    "provider_id": "Numeric",
                    "visit_occurrence_id": "Numeric"}
@@ -112,6 +113,12 @@ DATA_TYPES_DICT.update(DATA_TYPES_OMOP)
 DATA_TYPES_BY_PORTION = {"BO": DATA_TYPES_BO,
                          "Notes": DATA_TYPES_NOTES,
                          "OMOP": DATA_TYPES_OMOP}
+
+# Convert DRAPI data types to SQL data types
+DRAPI_TO_SQL_DATA_TYPES_MAP = {"Datetime": "TEXT",
+                               "Numeric": "INTEGER",
+                               "String": "TEXT"}
+DATA_TYPES_DICT_SQL = {name: DRAPI_TO_SQL_DATA_TYPES_MAP[drapiDataType] for name, drapiDataType in DATA_TYPES_DICT.items()}
 
 # QA: Make sure all PHI variables have their data type defined
 # assert all([varName in DATA_TYPES_DICT.keys() for varName in LIST_OF_PHI_VARIABLES])
