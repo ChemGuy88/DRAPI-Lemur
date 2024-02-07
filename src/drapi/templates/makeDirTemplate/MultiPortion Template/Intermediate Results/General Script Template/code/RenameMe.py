@@ -131,5 +131,8 @@ if __name__ == "__main__":
     # Script
     _ = pd
 
+    # Output location summary
+    logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
+
     # End script
     logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
