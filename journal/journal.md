@@ -12,45 +12,116 @@ For IRB202100946 I created two auxilairy scripts for de-identifying i2b2 data se
 
 Below is a list of typical IDR virtual environments and their dependencies.
 
-| Environment | Dependencies     |
-| ----------- | ---------------- |
-| IDR (Bian)  | numpy            |
-|             | autopep8         |
-|             | bs4              |
-|             | ca-certificates  |
-|             | certifi          |
-|             | colorama         |
-|             | console_shortcut |
-|             | drapi-lemur      |
-|             | flake8           |
-|             | ipython          |
-|             | jinja2           |
-|             | matplotlib       |
-|             | openpyxl         |
-|             | pandas           |
-|             | pymssql          |
-|             | pyodbc           |
-|             | python=3.11      |
-|             | pywin32          |
-|             | pyyaml           |
-|             | requests         |
-|             | selenium         |
-|             | sqlalchemy       |
-|             | sqlite           |
-|             | xlrd             |
-|             | xlwings          |
+| Environment | Dependencies     | Channel     |
+| ----------- | ---------------- | ----------- |
+| IDR (Bian)  | autopep8         | defaults    |
+|             | bs4              | defaults    |
+|             | ca-certificates  | defaults    |
+|             | certifi          | defaults    |
+|             | colorama         | defaults    |
+|             | console_shortcut | defaults    |
+|             | drapi-lemur      | defaults    |
+|             | flake8           | defaults    |
+|             | ipython          | defaults    |
+|             | jinja2           | defaults    |
+|             | matplotlib       | defaults    |
+|             | numpy            | defaults    |
+|             | openpyxl         | defaults    |
+|             | pandas           | defaults    |
+|             | pymssql          | defaults    |
+|             | pyodbc           | defaults    |
+|             | python=3.11      | defaults    |
+|             | pywin32          | defaults    |
+|             | pyyaml           | defaults    |
+|             | requests         | defaults    |
+|             | selenium         | defaults    |
+|             | sqlalchemy       | defaults    |
+|             | sqlite           | defaults    |
+|             | xlrd             | defaults    |
+|             | xlwings          | conda-forge |
 
-To create this environment use
+To convert the above table to a bash command, run the following Python code
 
-```text
-conda create -n idr-bian autopep8 bs4 ca-certificates certifi colorama console_shortcut flake8 ipython jinja2 matplotlib numpy openpyxl pandas pymssql pyodbc python=3.11 pywin32 pyyaml requests selenium sqlalchemy sqlite xlrd xlwings
+```python
+import io
+import sys
+import pandas as pd
+platform = sys.platform
+WINDOWS_ONLY_LIST = ["pywin32"]
+DARWIN_ONLY_LIST = []
+TEXT = """
+| Environment | Dependencies     | Channel     |
+| ----------- | ---------------- | ----------- |
+| IDR (Bian)  | autopep8         | defaults    |
+|             | bs4              | defaults    |
+|             | ca-certificates  | defaults    |
+|             | certifi          | defaults    |
+|             | colorama         | defaults    |
+|             | console_shortcut | defaults    |
+|             | drapi-lemur      | defaults    |
+|             | flake8           | defaults    |
+|             | ipython          | defaults    |
+|             | jinja2           | defaults    |
+|             | matplotlib       | defaults    |
+|             | numpy            | defaults    |
+|             | openpyxl         | defaults    |
+|             | pandas           | defaults    |
+|             | pymssql          | defaults    |
+|             | pyodbc           | defaults    |
+|             | python=3.11      | defaults    |
+|             | pywin32          | defaults    |
+|             | pyyaml           | defaults    |
+|             | requests         | defaults    |
+|             | selenium         | defaults    |
+|             | sqlalchemy       | defaults    |
+|             | sqlite           | defaults    |
+|             | xlrd             | defaults    |
+|             | xlwings          | conda-forge |
+"""
+with io.StringIO() as ioText:
+    ioText.write(TEXT)
+    ioText.seek(0)
+    table0 = pd.read_table(ioText, skip_blank_lines=True, sep="\s*\|\s*", engine="python")
+mask = ~table0.applymap(lambda el: str(el).replace("-", "") == "").any(axis=1)
+table = table0[mask]
+environment = table["Environment"].dropna()
+dependencies0 = table["Dependencies"]
+channels0 = table["Channel"]
+if platform == "darwin":
+    osmask = ~dependencies0.isin(WINDOWS_ONLY_LIST)
+elif platofmr == "win32":
+    osmask = ~dependencies0.isin(DARWIN_ONLY_LIST)
+dependencies = dependencies0[osmask].dropna().sort_values()
+channels = channels0[osmask].dropna().drop_duplicates().sort_values()
+
+packagelist = " ".join(package for package in dependencies.values)
+channellist = " ".join(f"-c {channel}" for channel in channels.values)
+print(f"""conda create -n NEW_ENVIRONMENT_NAME {packagelist} {channellist}""")
 ```
+
+Where `<TEXT>` is the markdown text of the table above. For example,
+
+```python
+text = """
+| Environment | Dependencies |
+| ----------- | ------------ |
+| IDR (Bian)  | autopep8     |
+"""
+```
+
+To create this environment in a Linux-like OS use
+
+```bash
+conda create -n NEW_ENVIRONMENT_NAME autopep8 bs4 ca-certificates certifi colorama console_shortcut drapi-lemur flake8 ipython jinja2 matplotlib numpy openpyxl pandas pymssql pyodbc python=3.11 pyyaml requests selenium sqlalchemy sqlite xlrd xlwings -c conda-forge -c defaults
+```
+
+where `NEW_ENVIRONMENT_NAME` is the name of your new conda environment.
 
 ## SQL Surprises
 
 The following are interesting or useful SQL tidbits.
 
-### Average numberof note per patients
+### Average number of note per patients
 
 ```SQL
 -- COUNT THE NUMBER OF NOTE ENCOUNTER KEYS PER PATIENT. THE NOTE ENCOUNTER KEY IDENTIFIES THE UNIQUE TEXT
