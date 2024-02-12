@@ -2,6 +2,26 @@
 
 This is a lab journal with notes about the IDR
 
+## Publishing a package
+
+```shell
+# Package code
+python -m build
+# Check everything you wanted was packaged
+unzip dist/thePackageWheelFile -d dist/tempDir
+# Remove unzipped file
+rm -rf dist/tempDir
+# Upload package
+twine upload dist/*
+# Done!
+```
+
+References
+
+- https://packaging.python.org/en/latest/tutorials/packaging-projects/
+- https://packaging.python.org/en/latest/guides/using-testpypi/
+- 
+
 ## i2b2 Portion Template
 
 For IRB202100946 I created two auxilairy scripts for de-identifying i2b2 data sets
@@ -54,6 +74,7 @@ TEXT = """
 | ----------- | ---------------- | ----------- |
 | IDR (Bian)  | autopep8         | defaults    |
 |             | bs4              | defaults    |
+|             | build            | defaults    |
 |             | ca-certificates  | defaults    |
 |             | certifi          | defaults    |
 |             | colorama         | defaults    |
