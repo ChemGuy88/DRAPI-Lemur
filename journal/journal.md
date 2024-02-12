@@ -4,6 +4,8 @@ This is a lab journal with notes about the IDR
 
 ## Publishing a package
 
+The manual way is to use `twine`. However, all the below steps can be replaced using Continuous Improvement and Continuous Deployment, as implemented by GitHub Actions.
+
 ```shell
 # Package code
 python -m build
