@@ -75,6 +75,7 @@ TEXT = """
 |             | selenium         | defaults    |
 |             | sqlalchemy       | defaults    |
 |             | sqlite           | defaults    |
+|             | twine            | defaults    |
 |             | xlrd             | defaults    |
 |             | xlwings          | conda-forge |
 """
