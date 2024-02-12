@@ -2,7 +2,26 @@
 
 This is a lab journal with notes about the IDR
 
-## Publishing a package
+## Publishing a Package Automatically with CI/CD
+
+```shell
+# Commit your code
+# Create a tag
+git tag TAG_NAME
+# Push the tag
+git push REMOTE_NAME TAG_NAME
+```
+
+Note that there is a difference between `git push REMOTE_NAME BRANCH_NAME` and `git push REMOTE_NAME TAG_NAME`. To see the difference you can view the log as below.
+
+```shell
+# See the last five commits
+git log --oneline -n 5  
+# See the last five tag commits
+git log --oneline -n 5  --tags --no-walk
+```
+
+## Publishing a Package Manually
 
 The manual way is to use `twine`. However, all the below steps can be replaced using Continuous Improvement and Continuous Deployment, as implemented by GitHub Actions.
 
