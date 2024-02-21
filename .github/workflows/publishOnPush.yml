@@ -4,7 +4,6 @@ jobs:
     build:
         name: Build distribution 📦
         runs-on: ubuntu-latest
-
         steps:
             - uses: actions/checkout@v4
             - name: Set up Python
@@ -47,13 +46,6 @@ jobs:
         - name: Step 1
           id: Run_test
           run: echo "$GITHUB_REF"
-    printGHJSON:
-        name: Print GitHub variables from Expression
-        runs-on: ubuntu-latest
-        steps:
-        - name: Step 1
-          id: Run_test
-          run: echo "${{ toJSON(github) }}"
     assignValue:
         name: Assign condition
         runs-on: ubuntu-latest
@@ -85,7 +77,7 @@ jobs:
         runs-on: ubuntu-latest
         environment:
             name: pypi
-            url: https://pypi.org/p/drapi-lemur  # Replace <package-name> with your PyPI project name
+            url: https://pypi.org/p/drapi-lemur
         permissions:
             id-token: write  # IMPORTANT: mandatory for trusted publishing
         steps:

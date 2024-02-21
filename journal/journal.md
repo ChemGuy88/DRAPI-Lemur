@@ -2,7 +2,26 @@
 
 This is a lab journal with notes about the IDR
 
-## Publishing a package
+## Publishing a Package Automatically with CI/CD
+
+```shell
+# Commit your code
+# Create a tag
+git tag TAG_NAME
+# Push the tag
+git push REMOTE_NAME TAG_NAME
+```
+
+Note that there is a difference between `git push REMOTE_NAME BRANCH_NAME` and `git push REMOTE_NAME TAG_NAME`. To see the difference you can view the log as below.
+
+```shell
+# See the last five commits
+git log --oneline -n 5  
+# See the last five tag commits
+git log --oneline -n 5  --tags --no-walk
+```
+
+## Publishing a Package Manually
 
 The manual way is to use `twine`. However, all the below steps can be replaced using Continuous Improvement and Continuous Deployment, as implemented by GitHub Actions.
 
@@ -50,6 +69,7 @@ Below is a list of typical IDR virtual environments and their dependencies.
 |             | numpy            | defaults    |
 |             | openpyxl         | defaults    |
 |             | pandas           | defaults    |
+|             | pyarrow          | conda-forge |
 |             | pymssql          | defaults    |
 |             | pyodbc           | defaults    |
 |             | python=3.11      | defaults    |
@@ -72,35 +92,7 @@ platform = sys.platform
 WINDOWS_ONLY_LIST = ["pywin32"]
 DARWIN_ONLY_LIST = []
 TEXT = """
-| Environment | Dependencies     | Channel     |
-| ----------- | ---------------- | ----------- |
-| IDR (Bian)  | autopep8         | defaults    |
-|             | bs4              | defaults    |
-|             | build            | defaults    |
-|             | ca-certificates  | defaults    |
-|             | certifi          | defaults    |
-|             | colorama         | defaults    |
-|             | console_shortcut | defaults    |
-|             | drapi-lemur      | defaults    |
-|             | flake8           | defaults    |
-|             | ipython          | defaults    |
-|             | jinja2           | defaults    |
-|             | matplotlib       | defaults    |
-|             | numpy            | defaults    |
-|             | openpyxl         | defaults    |
-|             | pandas           | defaults    |
-|             | pymssql          | defaults    |
-|             | pyodbc           | defaults    |
-|             | python=3.11      | defaults    |
-|             | pywin32          | defaults    |
-|             | pyyaml           | defaults    |
-|             | requests         | defaults    |
-|             | selenium         | defaults    |
-|             | sqlalchemy       | defaults    |
-|             | sqlite           | defaults    |
-|             | twine            | defaults    |
-|             | xlrd             | defaults    |
-|             | xlwings          | conda-forge |
+<TEXT>>
 """
 with io.StringIO() as ioText:
     ioText.write(TEXT)
