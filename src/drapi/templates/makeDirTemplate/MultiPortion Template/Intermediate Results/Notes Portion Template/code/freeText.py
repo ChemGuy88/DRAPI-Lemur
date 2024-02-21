@@ -23,15 +23,15 @@ from drapi.code.drapi.drapi import (getTimestamp,
                                     successiveParents)
 
 # Arguments: Script settings
-COHORT_NAME = "SGMCPLGB"                                    # An arbitrary name used in file names
-COHORT_FILE = "cohort.csv"                                    # A file name that is located directory specified by the variable `data_dir`
-IRB_NUMBER = "IRB201902162"                                     # Used for creating the de-identification map IDs.
-ID_TYPE = "PatientKey"                                        # Pick from "EncounterCSN", "EncounterKey", or "PatientKey". Choose the ID type you used in `COHORT_FILE`
-NOTE_VERSION = "all"                                   # Pick from "all", or "last"
-DE_IDENTIFICATION_MODE = "phi"                         # Pick from "deid", "lds", or "phi"
-LOG_LEVEL = "DEBUG"                                      # See the "logging" module for valid values for the `loglevel` parameter.
-SQL_ENCOUNTER_EFFECTIVE_DATE_START = '2011-06-01'   # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
-SQL_ENCOUNTER_EFFECTIVE_DATE_END = '2023-12-31'     # The end of date range of encounters to collect. Format: YYYY-MM-DD
+COHORT_NAME = ""                                    # An arbitrary name used in file names
+COHORT_FILE = ""                                    # A file name that is located directory specified by the variable `data_dir`
+IRB_NUMBER = ""                                     # Used for creating the de-identification map IDs.
+ID_TYPE = ""                                        # Pick from "EncounterCSN", "EncounterKey", or "PatientKey". Choose the ID type you used in `COHORT_FILE`
+NOTE_VERSION = ""                                   # Pick from "all", or "last"
+DE_IDENTIFICATION_MODE = ""                         # Pick from "deid", "lds", or "phi"
+LOG_LEVEL = ""                                      # See the "logging" module for valid values for the `loglevel` parameter.
+SQL_ENCOUNTER_EFFECTIVE_DATE_START = ''   # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
+SQL_ENCOUNTER_EFFECTIVE_DATE_END = ''     # The end of date range of encounters to collect. Format: YYYY-MM-DD
 
 # Arguments: SQL connection settings
 USE_WINDOWS_AUTHENTICATION = True
