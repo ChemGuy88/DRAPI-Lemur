@@ -5,6 +5,7 @@
 **/*.bat
 !**/launchIPython.bat
 **/*.csv
+**/*.out
 **/*.pdf
 **/*.tsv
 **/*.xlsx
