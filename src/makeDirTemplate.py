@@ -33,6 +33,8 @@ def win2nixPath(string: str) -> str:
     platformSeparator = os.sep
     if platform == "darwin":
         newString = platformSeparator.join(string.split("\\"))
+    elif platform == "linux":
+        newString = platformSeparator.join(string.split("\\"))
     elif platform == "win32":
         newString = string
     else:
@@ -81,7 +83,6 @@ def copyTemplateDirectory(templateChoice: int,
             os.remove(fpath)
         # Modify ".gitignore"
         if fpath.name.lower() == ".gitignore":
-            print(fpath)
             with open(fpath, "r") as file:
                 text = file.read()
                 text = text.replace("!**/launchIPython.bat\n", "")
@@ -97,7 +98,7 @@ if __name__ == "__main__":
 
     parser.add_argument("templateChoice", help=f"""The template you wish to copy. Each template has a numerical option: {json.dumps(optionsNumbers)}""", choices=sorted(list(optionsDict2.keys())), type=int)
 
-    parser.add_argument("destinationPath", help="", type=str)
+    parser.add_argument("destinationPath", help="The directory path for `templateChoice`.", type=str)
 
     args = parser.parse_args()
 
