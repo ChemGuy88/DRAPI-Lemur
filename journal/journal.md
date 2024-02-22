@@ -178,14 +178,14 @@ WHERE
 ### Note types
 
 There are four clinical note types.
-    1. Notes
-    2. Order Impressions
-    3. Order Narratives
-    4. Order Result Comments
+  1. Notes
+  2. Order Impressions
+  3. Order Narratives
+  4. Order Result Comments
 
 These four note types themselves are categorized into two types
-    1. Notes
-    2. Orders
+  1. Notes
+  2. Orders
 
 The identifier for the note texts corresponds to these types
 
