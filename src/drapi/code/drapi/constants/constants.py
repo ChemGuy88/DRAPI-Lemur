@@ -4,7 +4,7 @@ Useful definitions used throughout IDR
 See the Notes portion for current IDR mapping standards: /Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Bian/IRB202202436/Intermediate Results/Notes Portion/Data/Output/mapping
 See Noah's data request for my attempt at using these standards: /Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Bian/IRB202202436/Concatenated Results/Code/makeMap.py
 """
-from drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES
+from drapi.code.drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES
 
 __all__ = ["DeIdIDName2DeIdIDSuffix",
            "IDName2DeIdIDName",

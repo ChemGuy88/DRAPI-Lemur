@@ -2,7 +2,7 @@
 Useful definitions used throughout the IDR.
 """
 
-from drapi.drapi import flatExtend
+from drapi.code.drapi.drapi import flatExtend
 
 __all__ = ["LIST_OF_PHI_VARIABLES_BO",
            "LIST_OF_PHI_VARIABLES_NOTES",
