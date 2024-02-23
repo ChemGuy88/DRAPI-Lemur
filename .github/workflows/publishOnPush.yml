@@ -23,55 +23,8 @@ jobs:
               with:
                 name: python-package-distributions
                 path: dist/
-    printContext:
-        name: Print GitHub variables from Environment Variable
-        runs-on: ubuntu-latest
-        steps:
-        - name: Step 1
-          id: Run_test
-          env:
-            GITHUB_CONTEXT: ${{ toJson(github)}}
-          run: echo "$GITHUB_CONTEXT"
-    printGHRefExpression:
-        name: Print GitHub Ref from Expression
-        runs-on: ubuntu-latest
-        steps:
-        - name: Step 1
-          id: Run_test
-          run: echo "${{ github.ref }}"
-    printGHRefVar:
-        name: Print GitHub Ref from Environment Variable
-        runs-on: ubuntu-latest
-        steps:
-        - name: Step 1
-          id: Run_test
-          run: echo "$GITHUB_REF"
-    assignValue:
-        name: Assign condition
-        runs-on: ubuntu-latest
-        steps:
-        - name: Step 1
-          id: step1
-          env:
-            REF: ${{ startsWith(github.ref, 'refs/tags/') }}
-          run: echo "condition=${REF}">>${GITHUB_OUTPUT}
-        - name: Step 2
-          id: step2
-          env:
-            OUTPUT_STEP1: ${{join(steps.step1.outputs.*, '\n')}}
-          run: echo "$OUTPUT_STEP1"
-    printCondition:
-        name: Print condition
-        runs-on: ubuntu-latest
-        steps:
-        - name: Step 1
-          id: Run_test
-          run: |
-               echo "${{ startsWith(github.ref, 'refs/tags/') }}"
     publish-to-pypi:
         name: Publish DRAPI Lemur distribution 📦 to PyPI
-        if:
-            startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
         needs:
         - build
         runs-on: ubuntu-latest
