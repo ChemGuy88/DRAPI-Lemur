@@ -8,7 +8,7 @@ import sys
 import pandas as pd
 from pathlib import Path
 # Local packages
-from c2s import checkStatus, doCheck
+from drapi.c2s.c2s import checkStatus, doCheck
 
 
 def checkStatusWrapper(fpath: str, columnName: str, statusType: str, location: str, verbosity):
