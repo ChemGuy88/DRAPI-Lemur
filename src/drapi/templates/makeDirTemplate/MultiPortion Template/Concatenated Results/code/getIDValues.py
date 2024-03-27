@@ -2,7 +2,6 @@
 Get the set of ID values for all variables to de-identify.
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
-# NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 """
 
 __all__ = ["runIntermediateDataDir"]
@@ -21,21 +20,17 @@ from drapi.code.drapi.drapi import (getTimestamp,
                                     readDataFile,
                                     sortIntegersAndStrings,
                                     successiveParents)
-from drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT
+from drapi.code.drapi.constants.phiVariables import VARIABLE_NAME_TO_FILE_NAME_DICT
 # Project parameters: General
 from common import (COLUMNS_TO_DE_IDENTIFY,
                     DATA_REQUEST_ROOT_DIRECTORY_DEPTH,
                     DATA_TYPES_DICT)
 # Project parameters: Portion paths and criteria
-from common import (BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN,
-                    I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN,
-                    MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
+from common import (MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
                     NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN,
                     OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN)
 # Project parameters: Criteria
-from common import (BO_PORTION_FILE_CRITERIA,
-                    I2B2_PORTION_FILE_CRITERIA,
-                    NOTES_PORTION_FILE_CRITERIA,
+from common import (NOTES_PORTION_FILE_CRITERIA,
                     OMOP_PORTION_FILE_CRITERIA)
 
 
@@ -55,18 +50,12 @@ else:
     OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
-PORTION_PATHS_MAC = {"BO": BO_PORTION_DIR_MAC,
-                     "i2b2": I2B2_PORTION_DIR_MAC,
-                     "Notes": NOTES_PORTION_DIR_MAC,
+PORTION_PATHS_MAC = {"Notes": NOTES_PORTION_DIR_MAC,
                      "OMOP": OMOPPortionDirMac}
-PORTION_PATHS_WIN = {"BO": BO_PORTION_DIR_WIN,
-                     "i2b2": I2B2_PORTION_DIR_WIN,
-                     "Notes": NOTES_PORTION_DIR_WIN,
+PORTION_PATHS_WIN = {"Notes": NOTES_PORTION_DIR_WIN,
                      "OMOP": OMOPPortionDirWin}
 
-DICT_OF_PORTION_CONDITIONS = {"BO": BO_PORTION_FILE_CRITERIA,
-                              "i2b2": I2B2_PORTION_FILE_CRITERIA,
-                              "Notes": NOTES_PORTION_FILE_CRITERIA,
+DICT_OF_PORTION_CONDITIONS = {"Notes": NOTES_PORTION_FILE_CRITERIA,
                               "OMOP": OMOP_PORTION_FILE_CRITERIA}
 
 # Arguments: Meta-variables
@@ -180,8 +169,8 @@ if __name__ == "__main__":
                 if all(conditions):
                     # Read file
                     logging.info("""    File has met all conditions for processing.""")
-                    numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
-                    dfChunks = readDataFile(file, chunkSize=CHUNK_SIZE)
+                    numChunks = sum([1 for _ in readDataFile(file, chunksize=CHUNK_SIZE)])
+                    dfChunks = readDataFile(file, chunksize=CHUNK_SIZE)
                     for it, dfChunk in enumerate(dfChunks, start=1):
                         dfChunk = pd.DataFrame(dfChunk)
                         logging.info(f"""  ..  Working on chunk {it} of {numChunks}.""")

@@ -2,7 +2,6 @@
 Convert OMOP person IDs to IDR patient keys.
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
-# NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 """
 
 import logging
@@ -131,8 +130,8 @@ if __name__ == "__main__":
                 if all(conditions):
                     # Read file
                     logging.info("""    File has met all conditions for processing.""")
-                    numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
-                    dfChunks = readDataFile(file, chunkSize=CHUNK_SIZE)
+                    numChunks = sum([1 for _ in readDataFile(file, chunksize=CHUNK_SIZE)])
+                    dfChunks = readDataFile(file, chunksize=CHUNK_SIZE)
                     for it, dfChunk in enumerate(dfChunks, start=1):
                         logging.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
                         for columnName in dfChunk.columns:

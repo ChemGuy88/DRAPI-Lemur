@@ -129,7 +129,7 @@ if __name__ == "__main__":
                 # Test 1: Make sure all lines have the same number of delimiters
                 logging.info("""  ..  Test 1: Make sure all lines have the same number of delimiters.""")
                 try:
-                    numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
+                    numChunks = sum([1 for _ in readDataFile(file, chunksize=CHUNK_SIZE)])
                     logging.info("""  ..    There are no apparent problems reading this file.""")
                 except ParserError as err:
                     args = err

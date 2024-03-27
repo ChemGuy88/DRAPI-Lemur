@@ -2,7 +2,6 @@
 De-identify files
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
-# NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 # TODO Assign portion name to each path (per OS) so that portion files are stored in their respective folders, this prevents file from being overwritten in the unlikely, but possible, case files from different portions have the same name.
 """
 
@@ -20,7 +19,7 @@ from drapi.code.drapi.drapi import (fileName2variableName,
                                     numericOrString2integerOrString,
                                     readDataFile,
                                     successiveParents)
-from drapi.constants.phiVariables import (FILE_NAME_TO_VARIABLE_NAME_DICT,
+from drapi.code.drapi.constants.phiVariables import (FILE_NAME_TO_VARIABLE_NAME_DICT,
                                           VARIABLE_NAME_TO_FILE_NAME_DICT)
 # Local packages: Script parameters: General
 from common import (IRB_NUMBER,
@@ -205,9 +204,9 @@ if __name__ == "__main__":
                 # Read file
                 logging.info("""    File has met all conditions for processing.""")
                 logging.info("""  ..  Reading file to count the number of chunks.""")
-                numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
+                numChunks = sum([1 for _ in readDataFile(file, chunksize=CHUNK_SIZE)])
                 logging.info(f"""  ..  This file has {numChunks} chunks.""")
-                dfChunks = readDataFile(file, chunkSize=CHUNK_SIZE)
+                dfChunks = readDataFile(file, chunksize=CHUNK_SIZE)
                 for it, dfChunk in enumerate(dfChunks, start=1):
                     dfChunk = pd.DataFrame(dfChunk)
                     # Work on chunk

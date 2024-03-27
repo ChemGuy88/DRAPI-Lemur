@@ -1,38 +1,23 @@
 """
-Deletes rows based on column values.
+Concatenates files by converting them to Pandas DataFrames and using `pd.concat`.
 """
 
 import logging
 import os
-import sys
 from pathlib import Path
 # Third-party packages
 import pandas as pd
 # Local packages
 from drapi.code.drapi.drapi import (getTimestamp,
                                     makeDirPath,
+                                    readDataFile,
                                     successiveParents)
-# Local packages: Script parameters: General
-from drapi.code.drapi.constants.phiValues import PHI_VALUES_DICT_ALL
-# Local packages: Script parameters: General
-# Local packages: Script parameters: Paths
-# Local packages: Script parameters: File criteria
-from common import BO_PORTION_FILE_CRITERIA
 
 # Arguments
-COLUMN_VALUES_TO_DROP = PHI_VALUES_DICT_ALL
+LIST_OF_FILE_PATHS = Path(r"..\..").iterdir()
+TARGET_FILE_PATH = Path()
 
-# Arguments: OMOP data set selection
-USE_MODIFIED_OMOP_DATA_SET = True
-
-# Arguments: Portion Paths and conditions
-MAC_PATHS = [Path(r"..\Concatenated Results\data\output\deIdentifyByAge\...")]
-WIN_PATHS = [Path(r"..\Concatenated Results\data\output\deIdentifyByAge\...")]
-
-LIST_OF_PORTION_CONDITIONS = [BO_PORTION_FILE_CRITERIA]
-
-# Arguments; General
-CHUNK_SIZE = 50000
+CHUNKSIZE = 10000
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
@@ -86,22 +71,6 @@ elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
 else:
     raise Exception("An unexpected error occurred.")
 
-# Variables: Path construction: OS-specific
-isAccessible = all([path.exists() for path in MAC_PATHS]) or all([path.exists() for path in WIN_PATHS])
-if isAccessible:
-    # If you have access to either of the below directories, use this block.
-    operatingSystem = sys.platform
-    if operatingSystem == "darwin":
-        listOfPortionDirs = MAC_PATHS[:]
-    elif operatingSystem == "win32":
-        listOfPortionDirs = WIN_PATHS[:]
-    else:
-        raise Exception("Unsupported operating system")
-else:
-    # If the above option doesn't work, manually copy the database to the `input` directory.
-    print("Not implemented. Check settings in your script.")
-    sys.exit()
-
 # Variables: Path construction: Project-specific
 pass
 
@@ -111,9 +80,6 @@ if UID:
 else:
     uid = fr"{USERDOMAIN}\{USERNAME}"
 conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
-
-# Variables: Other
-pass
 
 # Directory creation: General
 makeDirPath(runOutputDir)
@@ -145,10 +111,9 @@ if __name__ == "__main__":
 
 
     # Arguments
-    `COLUMN_VALUES_TO_DROP`: "{COLUMN_VALUES_TO_DROP}"
-    `USE_MODIFIED_OMOP_DATA_SET`: "{USE_MODIFIED_OMOP_DATA_SET}"
-    `MAC_PATHS`: "{MAC_PATHS}"
-    `WIN_PATHS`: "{WIN_PATHS}"
+    `LIST_OF_FILE_PATHS`: "{LIST_OF_FILE_PATHS}"
+    `TARGET_FILE_PATH`: "{TARGET_FILE_PATH}"
+    `CHUNKSIZE`: "{CHUNKSIZE}"
 
     # Arguments: General
     `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
@@ -166,43 +131,26 @@ if __name__ == "__main__":
     `PWD` = censored
     """)
 
-    logger.info("""De-identifying files.""")
-    for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
-        # Act on directory
-        logger.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
-        for file in directory.iterdir():
-            logger.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
-            conditions = [condition(file) for condition in fileConditions]
-            if all(conditions):
-                # Set file options
-                exportPath = runOutputDir.joinpath(file.name)
-                fileMode = "w"
-                fileHeaders = True
-                # Read file
-                logger.info("""    File has met all conditions for processing.""")
-                logger.info("""  ..  Reading file to count the number of chunks.""")
-                numChunks = sum([1 for _ in pd.read_csv(file, chunksize=CHUNK_SIZE)])
-                logger.info(f"""  ..  This file has {numChunks} chunks.""")
-                dfChunks = pd.read_csv(file, chunksize=CHUNK_SIZE)
-                for it, dfChunk in enumerate(dfChunks, start=1):
-                    dfChunk = pd.DataFrame(dfChunk)
-                    # Work on chunk
-                    logger.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
-                    for columnName in dfChunk.columns:
-                        # Work on column
-                        logger.info(f"""  ..    Working on column "{columnName}".""")
-                        if columnName in COLUMN_VALUES_TO_DROP.keys():
-                            mask = ~dfChunk[columnName].isin(COLUMN_VALUES_TO_DROP[columnName])
-                            if mask.sum() > 0:
-                                logger.info("""  ..  ..  Column has values that need to be dropped. Dropping values.""")
-                            dfChunk = dfChunk[mask]
-                    # Save chunk
-                    dfChunk.to_csv(exportPath, mode=fileMode, header=fileHeaders, index=False)
-                    fileMode = "a"
-                    fileHeaders = False
-                    logger.info(f"""  ..  Chunk saved to "{exportPath.absolute().relative_to(rootDirectory)}".""")
-            else:
-                logger.info("""    This file does not need to be processed.""")
+    # Concatenate files
+    mode = "w"
+    numFiles = len(LIST_OF_FILE_PATHS)
+    logger
+    for it1, fpath in enumerate(sorted(LIST_OF_FILE_PATHS), start=1):
+        logger.info(f"""  Working on file {it1:,} of {numFiles:,}: {fpath.absolute().relative_to(projectDir)}.""")
+        logger.info("""    Counting the number of chunks.""")
+        numChunks = sum([1 for _ in readDataFile(fname=fpath,
+                                                 chunksize=CHUNKSIZE)])
+        logger.info("""    Counting the number of chunks - done.""")
+        fileChunks = readDataFile(fname=fpath,
+                                  chunksize=CHUNKSIZE)
+        for it2, df in enumerate(fileChunks, start=1):
+            logger.info(f"""    Working on chunk {it2:,} of {numChunks:,}: {fpath.absolute().relative_to(projectDir)}.""")
+            df = pd.DataFrame(df)
+            topath = TARGET_FILE_PATH.joinpath(fpath.name)
+            df.to_csv(topath)
+
+    # Output location summary
+    logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
     logger.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

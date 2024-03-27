@@ -13,7 +13,7 @@ from drapi.code.drapi.drapi import (getTimestamp,
                                     makeDirPath,
                                     successiveParents)
 # Local packages: Script parameters: General
-from drapi.constants.phiVariables import (DICT_OF_PHI_VARIABLES_AGE,
+from drapi.code.drapi.constants.phiVariables import (DICT_OF_PHI_VARIABLES_AGE,
                                           DICT_OF_PHI_VARIABLES_BIRTHDATES)
 # Local packages: Script parameters: Paths
 # Local packages: Script parameters: File criteria

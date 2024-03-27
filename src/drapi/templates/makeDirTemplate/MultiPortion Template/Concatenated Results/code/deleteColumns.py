@@ -2,7 +2,6 @@
 De-identify files
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
-# NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 # TODO Assign portion name to each path (per OS) so that portion files are stored in their respective folders, this prevents file from being overwritten in the unlikely, but possible, case files from different portions have the same name.
 # TODO Investigate if a symlink can be made for files that are copied without alteration, to save space and time on larger projects.
 """
@@ -18,15 +17,13 @@ from drapi.code.drapi.drapi import (flatExtend,
                                     makeDirPath,
                                     readDataFile,
                                     successiveParents)
-from drapi.constants.phiVariables import (LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE,
+from drapi.code.drapi.constants.phiVariables import (LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE,
                                           LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL)
 # Project parameters: General
 from common import (STUDY_TYPE,
                     DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
 # Project parameters: Portion paths and criteria
-from common import (BO_PORTION_DIR_MAC, BO_PORTION_DIR_WIN,
-                    I2B2_PORTION_DIR_MAC, I2B2_PORTION_DIR_WIN,
-                    MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
+from common import (MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
                     NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN,
                     OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN)
 
@@ -37,8 +34,8 @@ USE_CONCATENATED_FILES = True  # TODO
 USE_MODIFIED_OMOP_DATA_SET = True
 
 # Arguments: File location definition: By concatenation
-CONCATENATED_PORTIONS_DIR_MAC = Path(r"..\Concatenated Results\data\output\deleteByColumnValues\...")  # TODO
-CONCATENATED_PORTIONS_DIR_WIN = Path(r"..\Concatenated Results\data\output\deleteByColumnValues\...")  # TODO
+CONCATENATED_PORTIONS_DIR_MAC = Path("../Concatenated Results/data/output/convertColumnsHash/2024-03-04 18-00-22/Portions/OMOP")  # TODO
+CONCATENATED_PORTIONS_DIR_WIN = Path("../Concatenated Results/data/output/convertColumnsHash/2024-03-04 18-00-22/Portions/OMOP")  # TODO
 
 # Arguments: Portion Paths and conditions
 if USE_MODIFIED_OMOP_DATA_SET:
@@ -55,13 +52,9 @@ if USE_CONCATENATED_FILES:
     MAC_PATHS = [CONCATENATED_PORTIONS_DIR_MAC]
     WIN_PATHS = [CONCATENATED_PORTIONS_DIR_WIN]
 else:
-    MAC_PATHS = [BO_PORTION_DIR_MAC,
-                 I2B2_PORTION_DIR_MAC,
-                 NOTES_PORTION_DIR_MAC,
+    MAC_PATHS = [NOTES_PORTION_DIR_MAC,
                  OMOPPortionDirMac]
-    WIN_PATHS = [BO_PORTION_DIR_WIN,
-                 I2B2_PORTION_DIR_WIN,
-                 OMOPPortionDirWin,
+    WIN_PATHS = [OMOPPortionDirWin,
                  NOTES_PORTION_DIR_WIN]
 
 # Arguments: Definition of criteria for file release
@@ -88,6 +81,7 @@ OMOP_FILES_TO_RELEASE = ["condition_occurrence.csv",
                          "death.csv",
                          "device_exposure.csv",
                          "drug_exposure.csv",
+                         "episode.CSV",
                          "location.csv",
                          "measurement_laboratories.csv",
                          "measurement.csv",
@@ -217,6 +211,8 @@ if isAccessible:
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
         listOfPortionDirs = MAC_PATHS[:]
+    elif operatingSystem == "linux":
+        listOfPortionDirs = MAC_PATHS[:]
     elif operatingSystem == "win32":
         listOfPortionDirs = WIN_PATHS[:]
     else:
@@ -251,7 +247,8 @@ if __name__ == "__main__":
     for directory, fileConditions in zip(listOfPortionDirs, LIST_OF_PORTION_CONDITIONS):
         # Act on directory
         logging.info(f"""Working on directory "{directory.absolute().relative_to(rootDirectory)}".""")
-        for file in directory.iterdir():
+        listOfFiles = sorted(list(directory.iterdir()))
+        for file in listOfFiles:
             logging.info(f"""  Working on file "{file.absolute().relative_to(rootDirectory)}".""")
             conditions = [condition(file) for condition in fileConditions]
             logging.info(f"""  Conditions: "{conditions}".""")
@@ -262,12 +259,15 @@ if __name__ == "__main__":
                 fileHeaders = True
                 # Read file
                 logging.info("""    File has met all conditions for processing.""")
-                numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
-                dfChunks = readDataFile(file, chunkSize=CHUNK_SIZE)
-                for it, dfChunk in enumerate(dfChunks, start=1):
+                chunkGenerator1 = readDataFile(file, chunksize=CHUNK_SIZE, low_memory=False)
+                chunkGenerator2 = readDataFile(file, chunksize=CHUNK_SIZE, low_memory=False)
+                logging.info(f"""  ..  Reading file to count the number of chunks.""")
+                it1Total = sum([1 for _ in chunkGenerator1])
+                logging.info(f"""  ..  Reading file to count the number of chunks. There are {it1Total:,} chunks.""")
+                for it1, dfChunk in enumerate(chunkGenerator2, start=1):
                     dfChunk = pd.DataFrame(dfChunk)
                     # Work on chunk
-                    logging.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
+                    logging.info(f"""  ..  Working on chunk {it1:,} of {it1Total:,}.""")
                     for columnName in dfChunk.columns:
                         # Work on column
                         logging.info(f"""  ..    Working on column "{columnName}".""")

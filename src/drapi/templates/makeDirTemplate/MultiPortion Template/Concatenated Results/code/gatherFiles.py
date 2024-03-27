@@ -4,24 +4,35 @@ Copy files to a single destination directory. Optionally this directory can be a
 
 import logging
 import os
+import pprint
 import shutil
 import zipfile
 from pathlib import Path
-# Local packages
+# First-party packages
 from drapi.code.drapi.drapi import (getTimestamp,
                                     makeDirPath,
                                     successiveParents)
 
 # Arguments
-LIST_OF_DIRECTORIES = []
+LIST_OF_DIRECTORIES = ["../Test For Archive/Folder 1/Portion 1",  # Notes Metadata
+                       "../Test For Archive/Folder 1/Portion 2",  # Notes Text
+                       "../Test For Archive/Folder 2/Portion 3"]  # OMOP
+LIST_OF_DIRECTORIES = ["test/data/output/convertColumnsHash/convertColumnsHash/2024-03-04 18-00-22/Portions/Notes Metadata",  # Notes Metadata
+                       "test/data/output/convertColumnsHash/convertColumnsHash/2024-03-04 18-00-22/Portions/Notes Text",  # Notes Text
+                       "test2/Concatenated Results/data/output/deleteColumns/deleteColumns/2024-03-08 00-14-59"]  # OMOP
+LIST_OF_DIRECTORIES_NEW_NAMES = ["Notes Metadata",
+                                 "Notes Text",
+                                 "OMOP"]
 LIST_OF_FILES = []
-DESTINATION_FOLDER = fr"..\Concatenated Results\disclosure\{getTimestamp()}"
+TIMESTAMP = getTimestamp()
+DESTINATION_FOLDER = fr"/data/herman/mnt/idr1/IRB202300703/{TIMESTAMP}"
 
 OVERWRITE_IF_EXISTS_FOLDER = False
 OVERWRITE_IF_EXISTS_FILE = False
 
+CREATE_MERGED_FOLDER = False
 CREATE_COMPRESSED_ARCHIVE = True
-DELETE_FOLDER_AFTER_ARCHIVING = True
+DELETE_FOLDER_AFTER_ARCHIVING = False
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
@@ -89,7 +100,6 @@ conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
 pass
 
 # Directory creation: General
-makeDirPath(runOutputDir)
 makeDirPath(runLogsDir)
 
 # Logging block
@@ -119,10 +129,15 @@ if __name__ == "__main__":
 
     # Arguments
     `LIST_OF_DIRECTORIES`: "{LIST_OF_DIRECTORIES}"
+    `LIST_OF_DIRECTORIES_NEW_NAMES`: "{LIST_OF_DIRECTORIES_NEW_NAMES}"
     `LIST_OF_FILES`: "{LIST_OF_FILES}"
     `DESTINATION_FOLDER`: "{DESTINATION_FOLDER}"
+
     `OVERWRITE_IF_EXISTS_FOLDER`: "{OVERWRITE_IF_EXISTS_FOLDER}"
     `OVERWRITE_IF_EXISTS_FILE`: "{OVERWRITE_IF_EXISTS_FILE}"
+
+    `CREATE_COMPRESSED_ARCHIVE`: "{CREATE_COMPRESSED_ARCHIVE}"
+    `DELETE_FOLDER_AFTER_ARCHIVING`: "{DELETE_FOLDER_AFTER_ARCHIVING}"
 
     # Arguments: General
     `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
@@ -141,83 +156,109 @@ if __name__ == "__main__":
     """)
 
     # Define the destination path
-    destinationFolder = Path(DESTINATION_FOLDER)
+    destinationRootFolder = Path(DESTINATION_FOLDER)
 
     # Copy files and directories
-    if destinationFolder.exists():
-        logger.warning(f"""WARNING: The destination folder already exists: "{destinationFolder.absolute().relative_to(rootDirectory)}".""")
-        if OVERWRITE_IF_EXISTS_FOLDER:
-            logger.info("""  Removing folder contents to make room for new files.""")
-            for fpath in destinationFolder.iterdir():
-                logger.info(f"""    Removing "{fpath.absolute().relative_to(rootDirectory)}".""")
-                os.remove(fpath)
-                logger.info(f"""    Removing "{fpath.absolute().relative_to(rootDirectory)}" - done.""")
+    if CREATE_MERGED_FOLDER:
+        if destinationRootFolder.exists():
+            logger.warning(f"""WARNING: The destination folder already exists: "{destinationRootFolder.absolute()}".""")
+            if OVERWRITE_IF_EXISTS_FOLDER:
+                logger.info("""  Removing folder contents to make room for new files.""")
+                for fpath in destinationRootFolder.iterdir():
+                    logger.info(f"""    Removing "{fpath.absolute()}".""")
+                    os.remove(fpath)
+                    logger.info(f"""    Removing "{fpath.absolute()}" - done.""")
+            else:
+                msg = "  The destination folder exists and no option was passed to over-write it."
+                logger.fatal(msg)
+                raise Exception(msg)
         else:
-            msg = "  The destination folder exists and no option was passed to over-write it."
-            logger.fatal(msg)
-            raise Exception(msg)
-    else:
-        logger.info(f"""Making destination folder: "{destinationFolder.absolute().relative_to(rootDirectory)}".""")
-        makeDirPath(destinationFolder)
+            logger.info(f"""Making destination folder: "{destinationRootFolder.absolute()}".""")
+            makeDirPath(destinationRootFolder)
 
-    logger.info("""Working on list of files.""")
-    for fpathString in LIST_OF_FILES:
-        fpath = Path(fpathString)
-        logger.info(f"""  Working on file "{fpath.absolute().relative_to(rootDirectory)}".""")
-        dest = destinationFolder.joinpath(fpath.name)
-        logger.info(f"""    Saving to "{dest.absolute().relative_to(rootDirectory)}".""")
-        shutil.copyfile(fpath, dest)
-    logger.info("""Working on list of files - done.""")
+        logger.info("""Working on list of files.""")
+        for fpathString in LIST_OF_FILES:
+            fpath = Path(fpathString)
+            logger.info(f"""  Working on file "{fpath.absolute()}".""")
+            dest = destinationRootFolder.joinpath(fpath.name)
+            logger.info(f"""    Saving to "{dest.absolute()}".""")
+            shutil.copyfile(fpath, dest)
+        logger.info("""Working on list of files - done.""")
 
-    logger.info("""Working on list of directories.""")
-    for directoryString in LIST_OF_DIRECTORIES:
-        directory = Path(directoryString)
-        for fpath in directory.iterdir():
-            logger.info(f"""  Working on file "{fpath.absolute().relative_to(rootDirectory)}".""")
-            dest = destinationFolder.joinpath(fpath.name)
-            logger.info(f"""    The destination path is "{dest.absolute().relative_to(rootDirectory)}".""")
-            if dest.exists():
-                msg = f"""    WARNING: This file already exists: "{dest}"."""
-                logger.warning(msg)
-                if OVERWRITE_IF_EXISTS_FILE:
-                    continueOperation = True
+        logger.info("""Working on list of directories.""")
+        if LIST_OF_DIRECTORIES_NEW_NAMES:
+            listOfDirectoriesNewNames = LIST_OF_DIRECTORIES_NEW_NAMES[:]
+        else:
+            listOfDirectoriesNewNames = ["" for _ in LIST_OF_DIRECTORIES]
+        directoryPathsAndNames = zip(LIST_OF_DIRECTORIES, listOfDirectoriesNewNames)
+        for directoryString, newDirectoryName in directoryPathsAndNames:
+            directory = Path(directoryString)
+            destinationFolder = destinationRootFolder.joinpath(newDirectoryName)
+            destinationFolder.mkdir()
+            listOfFiles1 = sorted(list(directory.iterdir()))
+            for fpath in listOfFiles1:
+                logger.info(f"""  Working on file "{fpath.absolute()}".""")
+                dest = destinationFolder.joinpath(fpath.name)
+                logger.info(f"""    The destination path is "{dest.absolute()}".""")
+                if dest.exists():
+                    msg = f"""    WARNING: This file already exists: "{dest}"."""
+                    logger.warning(msg)
+                    if OVERWRITE_IF_EXISTS_FILE:
+                        continueOperation = True
+                    else:
+                        continueOperation = False
                 else:
-                    continueOperation = False
-            else:
-                continueOperation = True
-            if continueOperation:
-                logger.info("""    Saving to destination path.""")
-                shutil.copyfile(fpath, dest)
-            else:
-                logger.info("""    The file was not saved to the destination path. File over-write is set to `False`.""")
-    logger.info("""Working on list of directories - done.""")
+                    continueOperation = True
+                if continueOperation:
+                    logger.info("""    Saving to destination path.""")
+                    shutil.copyfile(fpath, dest)
+                else:
+                    logger.info("""    The file was not saved to the destination path. File over-write is set to `False`.""")
+        logger.info("""Working on list of directories - done.""")
 
     # Create compressed archive
     if CREATE_COMPRESSED_ARCHIVE:
-        archivePath = destinationFolder.with_suffix(".ZIP")
-        logger.info(f"""Creating compressed archive: "{archivePath.absolute().relative_to(rootDirectory)}"".""")
+        archivePath = destinationRootFolder.with_suffix(".ZIP")
+        logger.info(f"""Creating compressed archive: "{archivePath.absolute()}"".""")
         if archivePath.exists():
             logger.info("""The archive folder already exists and will be removed before writing.""")
             os.remove(archivePath)
         else:
             pass
 
+        # Define list of files to archive, and their paths
+        if LIST_OF_DIRECTORIES_NEW_NAMES:
+            listOfDirectoriesNewNames = LIST_OF_DIRECTORIES_NEW_NAMES[:]
+        else:
+            listOfDirectoriesNewNames = ["" for _ in LIST_OF_DIRECTORIES]
+        directoryPathsAndNames = zip(LIST_OF_DIRECTORIES, listOfDirectoriesNewNames)
+        listOfFiles2All = []
+        for directoryString, newDirectoryName in directoryPathsAndNames:
+            directory = Path(directoryString)
+            listOfFiles2 = sorted(list(directory.iterdir()))
+            for fpath2 in listOfFiles2:
+                dest2 = Path(TIMESTAMP).joinpath(newDirectoryName, fpath2.name)
+                listOfFiles2All.append((fpath2, dest2))
+        
+        logger.info(f"""These are the files paths for the archived items:\n{pprint.pformat(listOfFiles2All)}.""")
+
         with zipfile.ZipFile(file=archivePath,
                              mode="a",
                              compression=zipfile.ZIP_DEFLATED) as zipObj:
             logger.info("Adding files to archive.")
-            for fpath in destinationFolder.iterdir():
-                logger.info(f"""  Working on file "{fpath.absolute().relative_to(rootDirectory)}".""")
-                newPath = fpath.name
-                zipObj.write(filename=fpath, arcname=newPath)
+            for fpath2, dest2 in sorted(listOfFiles2All):
+                logger.info(f"""  Working on file "{fpath2.absolute()}".""")
+                logger.info(f"""    This has a destination path of "{dest2}".""")
+                zipObj.write(filename=fpath2, arcname=dest2)
         logger.info("Creating compressed archive - done.")
 
-        if DELETE_FOLDER_AFTER_ARCHIVING:
-            logger.info("""Removing intermediate folder.""")
-            shutil.rmtree(destinationFolder)
-            logger.info("""Removing intermediate folder - done.""")
-        else:
-            pass
+        if CREATE_MERGED_FOLDER:
+            if DELETE_FOLDER_AFTER_ARCHIVING:
+                logger.info("""Removing intermediate folder.""")
+                shutil.rmtree(destinationRootFolder)
+                logger.info("""Removing intermediate folder - done.""")
+            else:
+                pass
 
     # End script
-    logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Finished running "{thisFilePath.absolute()}".""")

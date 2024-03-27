@@ -2,7 +2,6 @@
 Convert person ID column to patient key
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
-# NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 """
 
 import logging
@@ -15,7 +14,7 @@ from drapi.code.drapi.drapi import (getTimestamp,
                                     makeDirPath,
                                     readDataFile,
                                     successiveParents)
-from drapi.idealist.idealist import idealistMap2dict
+from drapi.code.drapi.idealist.idealist import idealistMap2dict
 # Local packages: Script parameters: General
 from common import DATA_REQUEST_ROOT_DIRECTORY_DEPTH
 # Local packages: Script parameters: Paths
@@ -136,8 +135,8 @@ if __name__ == "__main__":
                 fileHeaders = True
                 # Read file
                 logging.info("""    File has met all conditions for processing.""")
-                numChunks = sum([1 for _ in readDataFile(file, chunkSize=CHUNK_SIZE)])
-                dfChunks = readDataFile(file, chunkSize=CHUNK_SIZE)
+                numChunks = sum([1 for _ in readDataFile(file, chunksize=CHUNK_SIZE)])
+                dfChunks = readDataFile(file, chunksize=CHUNK_SIZE)
                 for it, dfChunk in enumerate(dfChunks, start=1):
                     dfChunk = pd.DataFrame(dfChunk)
                     logging.info(f"""  ..  Working on chunk {it} of {numChunks}.""")
