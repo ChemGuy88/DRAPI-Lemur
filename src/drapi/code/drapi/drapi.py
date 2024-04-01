@@ -750,7 +750,9 @@ def makeChunks(array_range: array, chunkSize: int) -> tuple:
 # h/t https://stackoverflow.com/a/59109706/5478086
 
 
-def tree(dir_path: Path, level: int = -1, limit_to_directories: bool = False,
+def tree(dir_path: Path,
+         level: int = -1,
+         limit_to_directories: bool = False,
          length_limit: int = 1000):
     """Given a directory Path object print a visual tree structure"""
     # prefix components:
