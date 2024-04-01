@@ -70,8 +70,6 @@ jobs:
                echo "${{ startsWith(github.ref, 'refs/tags/') }}"
     publish-to-pypi:
         name: Publish DRAPI Lemur distribution 📦 to PyPI
-        if:
-            startsWith(github.ref, 'refs/tags/')  # only publish to PyPI on tag pushes
         needs:
         - build
         runs-on: ubuntu-latest
