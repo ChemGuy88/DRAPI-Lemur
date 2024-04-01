@@ -19,7 +19,7 @@ from drapi.code.drapi.drapi import (getTimestamp,
                                     map2di,
                                     successiveParents)
 # Local packages: Script parameters: General
-from drapi.constants.phiVariables import (LIST_OF_PHI_DATES_BO,
+from drapi.code.drapi.constants.phiVariables import (LIST_OF_PHI_DATES_BO,
                                           LIST_OF_PHI_DATES_NOTES,
                                           LIST_OF_PHI_DATES_OMOP)
 # Local packages: Script parameters: General

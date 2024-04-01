@@ -2,7 +2,6 @@
 Makes de-identification maps, building on existing maps.
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
-# NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 """
 
 import logging
@@ -18,7 +17,7 @@ from drapi.code.drapi.drapi import (getTimestamp,
                                     getPercentDifference,
                                     successiveParents,
                                     makeMap)
-from drapi.constants.phiVariables import (VARIABLE_NAME_TO_FILE_NAME_DICT,
+from drapi.code.drapi.constants.phiVariables import (VARIABLE_NAME_TO_FILE_NAME_DICT,
                                           FILE_NAME_TO_VARIABLE_NAME_DICT)
 # Project parameters: General
 from common import (IRB_NUMBER,

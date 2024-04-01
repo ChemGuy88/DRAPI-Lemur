@@ -2,7 +2,6 @@
 Makes de-identification maps from scratch.
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
-# NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 # TODO Needs to combine similar IDs, like different providers IDs.
 """
 

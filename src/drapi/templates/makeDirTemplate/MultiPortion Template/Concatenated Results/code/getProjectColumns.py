@@ -30,7 +30,7 @@ from common import (BO_PORTION_FILE_CRITERIA,
                     I2B2_PORTION_FILE_CRITERIA,
                     NOTES_PORTION_FILE_CRITERIA,
                     OMOP_PORTION_FILE_CRITERIA)
-from drapi.constants.phiVariables import (LIST_OF_PHI_DATES_BO,
+from drapi.code.drapi.constants.phiVariables import (LIST_OF_PHI_DATES_BO,
                                           LIST_OF_PHI_DATES_NOTES,
                                           LIST_OF_PHI_DATES_OMOP)
 

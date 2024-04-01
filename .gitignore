@@ -10,13 +10,12 @@
 **/*.tsv
 **/*.xlsx
 **/*.zip
+**/data/output/**/*.yml
 # <<< [end] Things added by Herman <<<
 
 # >>> [start] Default IDR files >>>
 # Do not add IDR files to the top-level .gitignore or it will ignore the directories and files in the template directory.
 data/*
-!data/input/
-!data/output/
 documents/*
 HIPPA_disclosure/*
 settings.yaml

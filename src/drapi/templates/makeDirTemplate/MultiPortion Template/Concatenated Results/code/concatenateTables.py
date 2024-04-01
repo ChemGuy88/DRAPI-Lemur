@@ -1,5 +1,5 @@
 """
-Script template to pull BO data using a query filter.
+Concatenates files by converting them to Pandas DataFrames and using `pd.concat`.
 """
 
 import logging
@@ -7,20 +7,17 @@ import os
 from pathlib import Path
 # Third-party packages
 import pandas as pd
-from sqlalchemy import create_engine
 # Local packages
 from drapi.code.drapi.drapi import (getTimestamp,
                                     makeDirPath,
+                                    readDataFile,
                                     successiveParents)
-# Super-local imports
-from functions import checkFileConditions, getData, getData2
 
 # Arguments
-LIST_OF_SQL_FILES = []  # TODO
-COHORT_FILE_PATH = ""  # TODO
-USE_QUERY_FILTER = False  # TODO
+LIST_OF_FILE_PATHS = Path(r"..\..").iterdir()
+TARGET_FILE_PATH = Path()
 
-QUERY_CHUNK_SIZE = 10000
+CHUNKSIZE = 10000
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
@@ -83,13 +80,6 @@ if UID:
 else:
     uid = fr"{USERDOMAIN}\{USERNAME}"
 conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
-connection = create_engine(conStr).connect().execution_options(stream_results=True)
-
-# Variables: Other
-if not USE_QUERY_FILTER:
-    getDataFunction = getData
-else:
-    getDataFunction = getData2
 
 # Directory creation: General
 makeDirPath(runOutputDir)
@@ -119,10 +109,11 @@ if __name__ == "__main__":
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Script arguments:
 
+
     # Arguments
-    `LIST_OF_SQL_FILES`: "{LIST_OF_SQL_FILES}"
-    `USE_QUERY_FILTER`: "{USE_QUERY_FILTER}"
-    `COHORT_FILE_PATH`: "{COHORT_FILE_PATH}"
+    `LIST_OF_FILE_PATHS`: "{LIST_OF_FILE_PATHS}"
+    `TARGET_FILE_PATH`: "{TARGET_FILE_PATH}"
+    `CHUNKSIZE`: "{CHUNKSIZE}"
 
     # Arguments: General
     `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
@@ -140,26 +131,26 @@ if __name__ == "__main__":
     `PWD` = censored
     """)
 
-    # Read cohort file
-    logger.info("""Reading cohort file.""")
-    cohortData = pd.read_csv(COHORT_FILE_PATH)
-    logger.info("""Reading cohort file - done.""")
-
-    # Iterate over SQL directory contents
-    logger.info("""Iterating over SQL directory contents.""")
-    sqlFiles = sorted(LIST_OF_SQL_FILES)
-    for sqlFilePath in sqlFiles:
-        checkFileConditions(sqlFilePath=sqlFilePath,
-                            cohortData=cohortData,
-                            stepNumberCondition="NA",
-                            logger=logger,
-                            conStr=conStr,
-                            runOutputDir=runOutputDir,
-                            getDataFunction=getDataFunction,
-                            queryChunkSize=QUERY_CHUNK_SIZE)
+    # Concatenate files
+    mode = "w"
+    numFiles = len(LIST_OF_FILE_PATHS)
+    logger
+    for it1, fpath in enumerate(sorted(LIST_OF_FILE_PATHS), start=1):
+        logger.info(f"""  Working on file {it1:,} of {numFiles:,}: {fpath.absolute().relative_to(projectDir)}.""")
+        logger.info("""    Counting the number of chunks.""")
+        numChunks = sum([1 for _ in readDataFile(fname=fpath,
+                                                 chunksize=CHUNKSIZE)])
+        logger.info("""    Counting the number of chunks - done.""")
+        fileChunks = readDataFile(fname=fpath,
+                                  chunksize=CHUNKSIZE)
+        for it2, df in enumerate(fileChunks, start=1):
+            logger.info(f"""    Working on chunk {it2:,} of {numChunks:,}: {fpath.absolute().relative_to(projectDir)}.""")
+            df = pd.DataFrame(df)
+            topath = TARGET_FILE_PATH.joinpath(fpath.name)
+            df.to_csv(topath)
 
     # Output location summary
     logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")
 
     # End script
-    logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

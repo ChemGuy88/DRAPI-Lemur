@@ -16,14 +16,14 @@ import pandas as pd
 import sqlalchemy as sa
 import yaml
 # Super-local libraries
-import drapi.code.drapi.omop.deidentify as deidentify
-from drapi.code.drapi.drapi import (makeDirPath,
-                                    getTimestamp)
-from drapi.code.drapi.omop.configProcessing import (editConfig,
-                                                    interpretPath)
+import deidentify
+from drapi.drapi import (makeDirPath,
+                         getTimestamp)
+from drapi.omop.configProcessing import (editConfig,
+                                         interpretPath)
 
 # Arguments
-LOG_LEVEL = "DEBUG"  # Lowest level available is "9"
+LOG_LEVEL = "INFO"  # Lowest level available is "9"
 
 # Arguments: SQL server settings
 if False:
@@ -79,7 +79,7 @@ def db_query(query, db_connection):
     dfs = pd.DataFrame()
     for chunk in pd.read_sql(query, db_connection, chunksize=50000):
         df = pd.DataFrame(chunk)
-        dfs = dfs.append(df, ignore_index=False)
+        dfs = pd.concat([dfs, df], ignore_index=False)
     return dfs
 
 
@@ -183,7 +183,7 @@ def query_attempt(search_config, list_of_tables, dict_of_dates, person_id_file_p
         # Get number of chunks of table
         numChunks = sum([1 for _ in pd.read_csv(person_id_file_path, chunksize=500)])
         for it, person_id in enumerate(pd.read_csv(person_id_file_path, chunksize=500), start=1):
-            logging.debug(f"""    Working on table chunk {it} of {numChunks}""")
+            logging.info(f"""    Working on table chunk {it} of {numChunks}""")
             person_id_list = person_id.iloc[:, 0]
             person_id_list_string = ', '.join(map(str, person_id_list))
             date_sorted_by = dict_of_dates.get(current_table)
@@ -239,7 +239,7 @@ def query_attempt(search_config, list_of_tables, dict_of_dates, person_id_file_p
                 file_location = identified_file_location_asString + current_table + '.csv'
                 csv_output_file = (file_location)
                 try:
-                    logging.debug(f"""  ..  Saving query chunk results to "{csv_output_file}".""")
+                    logging.info(f"""  ..  Saving query chunk results to "{csv_output_file}".""")
                     data.to_csv(csv_output_file, index=False, header=h, mode=m)
                     h = False
                     m = 'a'
@@ -284,7 +284,7 @@ if __name__ == '__main__':
     # import connection information for DB connection
     host, database, schema, list_of_tables, dict_of_dates, person_id_file_path, start_date, end_date, search_config, dict_of_search = db_info(search_config)
 
-    logging.debug(f"""Reading cohort from `person_id_file_path`: "{person_id_file_path}".""")
+    logging.info(f"""Reading cohort from `person_id_file_path`: "{person_id_file_path}".""")
 
     for dataType, path in search_config["data_output"].items():
         path = Path(interpretPath(path))
@@ -292,6 +292,7 @@ if __name__ == '__main__':
 
     if (list_of_tables):
         query_attempt(search_config, list_of_tables, dict_of_dates, person_id_file_path, start_date, end_date, dict_of_search)
-    person_info_query(search_config)
+    if "person_information_tables" in search_config.keys():
+        person_info_query(search_config)
     # deidentify_(mapping_file_location)
     logging.info("Finished program.")

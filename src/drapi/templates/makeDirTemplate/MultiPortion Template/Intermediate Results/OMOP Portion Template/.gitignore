@@ -10,6 +10,7 @@
 **/*.tsv
 **/*.xlsx
 **/*.zip
+**/data/output/**/*.yml
 # <<< [end] Things added by Herman <<<
 
 # >>> [start] Default IDR files >>>

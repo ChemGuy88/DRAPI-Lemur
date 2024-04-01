@@ -6,6 +6,7 @@ import os
 import random
 import re
 import shutil
+import sys
 from datetime import timedelta
 from logging import Logger
 from pathlib import Path
@@ -22,7 +23,7 @@ from drapi.code.drapi.drapi import (getTimestamp,
                                     replace_sql_query,
                                     successiveParents)
 
-# Arguments: Script settings
+# Arguments: Script arguments
 COHORT_NAME = ""                                    # An arbitrary name used in file names
 COHORT_FILE = ""                                    # A file name that is located directory specified by the variable `data_dir`
 IRB_NUMBER = ""                                     # Used for creating the de-identification map IDs.
@@ -34,7 +35,7 @@ SQL_ENCOUNTER_EFFECTIVE_DATE_START = ''   # The beginning of date range of encou
 SQL_ENCOUNTER_EFFECTIVE_DATE_END = ''     # The end of date range of encounters to collect. Format: YYYY-MM-DD
 
 # Arguments: SQL connection settings
-USE_WINDOWS_AUTHENTICATION = True
+USE_WINDOWS_AUTHENTICATION = None                   # Boolean or `None`. By default this is determined based on the operating system, but can be forced by the user.
 SERVER = "DWSRSRCH01.shands.ufl.edu"
 DATABASE_PROD = "DWS_PROD"
 DATABASE_NOTES = "DWS_NOTES"
@@ -112,6 +113,16 @@ if UID:
     uid = UID[:]
 else:
     uid = fr"{USERDOMAIN}\{USERNAME}"
+if isinstance(USE_WINDOWS_AUTHENTICATION, type(None)):
+    operatingSystem = sys.platform
+    if operatingSystem in ["win32"]:
+        useWindowsAuthentication = True
+    elif operatingSystem in ["darwin", "linux"]:
+        useWindowsAuthentication = False
+    else:
+        raise Exception(f"""Unsupported operating system: "{operatingSystem}".""")
+else:
+    useWindowsAuthentication = USE_WINDOWS_AUTHENTICATION
 
 # Directory creation: General
 makeDirPath(runOutputDir)
@@ -129,6 +140,23 @@ else:
 
 # Functions
 
+def choosePathToLog(path: Path, rootPath: Path) -> Path:
+    """
+    Decides if a path is a subpath of `rootPath`. If it is, display it reltaive to `rootPath`. If it is not, display it as an absolute path.
+    """
+    commonPath = os.path.commonpath([path.absolute(), rootPath.absolute()])
+
+    lenCommonPath = len(commonPath)
+    lenRootPath = len(str(rootPath.absolute()))
+    if lenCommonPath < lenRootPath:
+        pathToDisplay = path
+    elif lenCommonPath >= lenRootPath:
+        pathToDisplay = path.absolute().relative_to(rootPath)
+    else:
+        raise Exception("An unexpected error occurred.")
+                                    
+    return pathToDisplay
+
 
 def connectToDatabase(host: str,
                       database: str,
@@ -145,17 +173,18 @@ def connectToDatabase(host: str,
     return connection
 
 
-def executeQuery(query: str, host: str, database: str) -> pd.DataFrame:
+def executeQuery(query: str, host: str, database: str, useWindowsAuthentication: bool) -> pd.DataFrame:
     """
     Executes a SQL query.
     INPUT:
         `query`: a string
         `host`: a string
         `databse`: a string
+        `useWindowsAuthentication`: a boolean
     OUTPUT:
         A pandas dataframe object.
     """
-    databaseConnection = connectToDatabase(host, database)
+    databaseConnection = connectToDatabase(host, database, useWindowsAuthentication=useWindowsAuthentication)
     queryResult = pd.read_sql(query, databaseConnection)
     databaseConnection.close()
     return queryResult
@@ -199,7 +228,8 @@ def pull_metadata(note_version, id_type, note_type, sql_dir, cohort_dir, notes_d
         logger.log(9, f"Using the following query:\n>>> Begin query >>>\n{query}\n<<< End query <<<")
         result = executeQuery(query=query,
                               host=host,
-                              database=database_prod)
+                              database=database_prod,
+                              useWindowsAuthentication=useWindowsAuthentication)
 
         logger.info(f"The chunk query has {len(result):,} rows.")
         result = result.drop_duplicates()
@@ -253,7 +283,8 @@ def pull_text(item, note_type, note_id, sql_dir, notes_dir, dir_final, logger: L
         query = replace_sql_query(query, "XXXXX", note_list)
         result = executeQuery(query=query,
                               host=host,
-                              database=database_notes)
+                              database=database_notes,
+                              useWindowsAuthentication=useWindowsAuthentication)
         # ensure that all ID columns are integers
         columns = result.columns
         for c in ['LinkageNoteID', 'OrderKey']:
@@ -309,63 +340,166 @@ def pull_text_in_parallel(note_type, sql_dir, notes_dir, cohort, logger: Logger)
     return
 
 
-def combine_order_metadata(notes_dir, cohort):
-    m = 'w'
-    h = True
-    for file1 in ['order_narrative', 'order_impression', 'order_result_comment']:
-        file = cohort + '_' + file1 + '_metadata.csv'
-        if os.path.exists(os.path.join(notes_dir, file)):
-            df = pd.read_csv(os.path.join(notes_dir, file))
-            if (file1 in ['order_narrative', 'order_impression']):
-                df['Line'] = ''
-            df = df[['OrderKey', 'Line', 'OrderID', 'OrderPlacedDatetime', 'OrderResultDatetime', 'PatientKey', 'MRN_GNV', 'MRN_JAX', 'NoteType', 'EncounterDate', 'EncounterKey', 'EncounterCSN', 'OrderingProviderKey', 'OrderingProviderType', 'OrderingProviderSpecialty', 'AuthorizingProviderKey', 'AuthorizingProviderType', 'AuthorizingProviderSpecialty']]
-            df.to_csv(os.path.join(notes_dir, '{}_order_metadata.csv'.format(cohort)), index=False, mode=m, header=h)
-            m = 'a'
-            h = False
+def combine_order_metadata(notes_dir, cohort, logger: logging.Logger):
+    ORDER_TYPE_LIST = ['order_impression',
+                       'order_narrative',
+                       'order_result_comment']
+    LIST_OF_COLUMNS_TO_INCLUDE = ['OrderKey',
+                                  'Line',
+                                  'OrderID',
+                                  'OrderPlacedDatetime',
+                                  'OrderResultDatetime',
+                                  'PatientKey',
+                                  'MRN_GNV',
+                                  'MRN_JAX',
+                                  'NoteType',
+                                  'EncounterDate',
+                                  'EncounterKey',
+                                  'EncounterCSN',
+                                  'OrderingProviderKey',
+                                  'OrderingProviderType',
+                                  'OrderingProviderSpecialty',
+                                  'AuthorizingProviderKey',
+                                  'AuthorizingProviderType',
+                                  'AuthorizingProviderSpecialty']
+    HEADER = True
+    MODE = 'w'
+    CHUNKSIZE = 100000
+    for orderType in ORDER_TYPE_LIST:
+        file = cohort + '_' + orderType + '_metadata.csv'
+        fpath = os.path.join(notes_dir, file)
+        logger.info(f"""  Checking if file exists: "{fpath}".""")
+        fileExists = os.path.exists(fpath)
+        if fileExists:
+            logger.info(f"""    File exists.""")
+            chunkGenerator1 = pd.read_csv(fpath, chunksize=CHUNKSIZE)
+            chunkGenerator2 = pd.read_csv(fpath, chunksize=CHUNKSIZE)
+            logger.info("    Counting the number of chunks in the file.")
+            it1Total = sum([1 for _ in chunkGenerator1])
+            logger.info("    Counting the number of chunks in the file - done.")
+            for it1, dfChunk in enumerate(chunkGenerator2, start=1):
+                dfChunk = pd.DataFrame(dfChunk)  # For type hinting
+                logger.info(f"""  ..  Working on chunk {it1:,} of {it1Total}.""")
+                if (orderType in ['order_narrative', 'order_impression']):
+                    dfChunk['Line'] = ''
+                dfChunk = dfChunk[LIST_OF_COLUMNS_TO_INCLUDE]
+                savePath = os.path.join(notes_dir, '{}_order_metadata.csv'.format(cohort))
+                logger.info(f"""  ..  Saving chunk to "{savePath}".""")
+                dfChunk.to_csv(path_or_buf=savePath,
+                               index=False,
+                               header=HEADER,
+                               mode=MODE)
+                HEADER = False
+                MODE = "a"
+        else:
+            logger.info(f"""    Warning: File does not exist.""")  # Not sure if this merits a warning.
+
+    # Final removal of duplicates
+    logger.info("Performing final removal of duplicates.")
+    df = pd.read_csv(savePath).drop_duplicates()
+    df.to_csv(savePath, index=False)
+    logger.info("Performing final removal of duplicates - done.")
     return
 
 
-def create_encounters(notes_dir):
-    df = pd.DataFrame()
-    for file in ['{}_order_narrative_metadata.csv'.format(cohort), '{}_order_impression_metadata.csv'.format(cohort), '{}_order_result_comment_metadata.csv'.format(cohort), '{}_note_metadata.csv'.format(cohort)]:
-        for dfx in pd.read_csv(os.path.join(notes_dir, file), chunksize=100000):
-            df1 = dfx[['EncounterCSN']].drop_duplicates()
-            df = pd.concat([df, df1])
-            df.drop_duplicates(inplace=True)
-    df.to_csv(os.path.join(notes_dir, 'encounters.csv'), index=False)
+def create_encounters(notes_dir, logger: logging.Logger):
+    CHUNKSIZE = 100000
+    HEADER = True
+    MODE = "w"
+    fileList = ['{}_order_narrative_metadata.csv'.format(cohort),
+                '{}_order_impression_metadata.csv'.format(cohort),
+                '{}_order_result_comment_metadata.csv'.format(cohort),
+                '{}_note_metadata.csv'.format(cohort)]
+    it1Total = sum([1 for _ in fileList])
+    for it1, file in enumerate(fileList, start=1):
+        logger.info(f"""  Working on file {it1:,} of {it1Total:,}: "{file}".""")
+        chunkGenerator1 = pd.read_csv(os.path.join(notes_dir, file), chunksize=CHUNKSIZE)
+        chunkGenerator2 = pd.read_csv(os.path.join(notes_dir, file), chunksize=CHUNKSIZE)
+        logger.info("    Counting the number of chunks in the file.")
+        it2Total = sum([1 for _ in chunkGenerator1])
+        logger.info(f"    Counting the number of chunks in the file - done. There are {it2Total:,} chunks.")
+        for it2, dfChunk in enumerate(chunkGenerator2,  start=1):
+            dfChunk = pd.DataFrame(dfChunk)  # For type hinting
+            logger.info(f"""    Working on chunk {it2:,} of {it2Total:,}.""")
+            df = dfChunk[['EncounterCSN']].drop_duplicates()
+            savePath = os.path.join(notes_dir, 'encounters.csv')
+            logger.info(f"""    Saving chunk to "{choosePathToLog(Path(savePath), rootDirectory)}".""")
+            df.to_csv(path_or_buf=savePath,
+                      index=False,
+                      header=HEADER,
+                      mode=MODE)  # TODO This is an intermediate file that might be eligible for removal.
+            logger.info(f"""    Saving chunk to "{choosePathToLog(Path(savePath), rootDirectory)}" - done.""")
+            HEADER = False
+            MODE = "a"
+        logger.info(f"""  Working on file {it1:,} of {it1Total:,}: "{file}" - done.""")
+
+    # Final removal of duplicates
+    logger.info("Performing final removal of duplicates.")
+    df = pd.read_csv(savePath).drop_duplicates()
+    df.to_csv(savePath, index=False)
+    logger.info("Performing final removal of duplicates - done.")
     return
 
 
-def create_provider_metadata(notes_dir, cohort):
-    m = 'w'
-    h = True
-    df = pd.DataFrame()
-    for file1 in ['order_narrative', 'order_impression', 'order_result_comment', 'note']:
-        # for file in ['note']:
+def create_provider_metadata(notes_dir, cohort, logger: logging.Logger):
+    """
+    Creates the provider metadata table. It does so by reading through all the metadata files in chunks and keeping the unique rows.
+    """
+    savePath = os.path.join(notes_dir, 'provider_metadata.csv')
+    CHUNKSIZE = 100000
+    HEADER = True
+    MODE = "w"
+    listOfClinicalTextTypes = ['note',
+                               'order_impression',
+                               'order_narrative',
+                               'order_result_comment']
+    it1Total = len(listOfClinicalTextTypes)
+    for it1, file1 in enumerate(listOfClinicalTextTypes, start=1):
+        logger.info(f"""  Work on file {it1:,} of {it1Total:,}: "{file1}".""")
         file = cohort + '_' + file1 + '_metadata.csv'
-        if os.path.exists(os.path.join(notes_dir, file)):
-            for dfx in pd.read_csv(os.path.join(notes_dir, file), chunksize=100000):
+        fpath = os.path.join(notes_dir, file)
+        logger.info(f"""  Checking if file exists: "{fpath}".""")
+        fileExists = os.path.exists(fpath)
+        if fileExists:
+            logger.info(f"""    File exists.""")
+            chunkGenerator1 = pd.read_csv(fpath, chunksize=CHUNKSIZE)
+            chunkGenerator2 = pd.read_csv(fpath, chunksize=CHUNKSIZE)
+            logger.info("    Counting the number of chunks in the file.")
+            it2Total = sum([1 for _ in chunkGenerator1])
+            logger.info(f"    Counting the number of chunks in the file - done. There are {it2Total:,} chunks.")
+            for it2, dfChunk in enumerate(chunkGenerator2, start=1):
+                logger.info(f"""    Working on chunk {it2:,} of {it2Total:,}.""")
+                dfChunk = pd.DataFrame(dfChunk)  # For type hinting
                 if (file1 in ['order_narrative', 'order_impression', 'order_result_comment']):
-                    df1 = dfx[['OrderingProviderKey', 'OrderingProviderType', 'OrderingProviderSpecialty']]
+                    df1 = dfChunk[['OrderingProviderKey', 'OrderingProviderType', 'OrderingProviderSpecialty']]
                     df1 = df1.rename(columns={"OrderingProviderKey": "ProviderKey", "OrderingProviderType": "ProviderType", "OrderingProviderSpecialty": "ProviderSpecialty"})
-                    df2 = dfx[['AuthorizingProviderKey', 'AuthorizingProviderType', 'AuthorizingProviderSpecialty']]
+                    df2 = dfChunk[['AuthorizingProviderKey', 'AuthorizingProviderType', 'AuthorizingProviderSpecialty']]
                     df2 = df2.rename(columns={"AuthorizingProviderKey": "ProviderKey", "AuthorizingProviderType": "ProviderType", "AuthorizingProviderSpecialty": "ProviderSpecialty"})
                 elif (file1 in ['note']):
-                    df1 = dfx[['AuthoringProviderKey', 'AuthoringProviderType', 'AuthoringProviderSpecialty']]
+                    df1 = dfChunk[['AuthoringProviderKey', 'AuthoringProviderType', 'AuthoringProviderSpecialty']]
                     df1 = df1.rename(columns={"AuthoringProviderKey": "ProviderKey", "AuthoringProviderType": "ProviderType", "AuthoringProviderSpecialty": "ProviderSpecialty"})
-                    df2 = dfx[['CosignProviderKey', 'CosignProviderType', 'CosignProviderSpecialty']]
+                    df2 = dfChunk[['CosignProviderKey', 'CosignProviderType', 'CosignProviderSpecialty']]
                     df2 = df2.rename(columns={"CosignProviderKey": "ProviderKey", "CosignProviderType": "ProviderType", "CosignProviderSpecialty": "ProviderSpecialty"})
-                df1 = pd.concat([df1, df2])
-                df1.drop_duplicates(inplace=True)
-                df = pd.concat([df, df1])
-                df.drop_duplicates(inplace=True)
-            df.to_csv(os.path.join(notes_dir, 'provider_metadata.csv'), index=False, mode=m, header=h)
-            m = 'a'
-            h = False
+                    df = pd.concat([df1, df2])
+                    df = df.drop_duplicates()
+                    df.to_csv(path_or_buf=savePath,
+                              index=False,
+                              header=HEADER,
+                              mode=MODE)
+                    HEADER = False
+                    MODE = "a"
+        else:
+            logger.info(f"""    Warning: File does not exist.""")  # Not sure if this merits a warning.
+
+    # Final removal of duplicates
+    logger.info("Performing final removal of duplicates.")
+    df = pd.read_csv(savePath).drop_duplicates()
+    df.to_csv(savePath, index=False)
+    logger.info("Performing final removal of duplicates - done.")
     return
 
 
-def generate_map(deid_mode, in_dir, map_dir, concept, cohort):
+def generate_map(deid_mode, in_dir, map_dir, concept, cohort, logger: logging.Logger):
     """
     `concept` can be any of the following values:
         - patient
@@ -384,7 +518,7 @@ def generate_map(deid_mode, in_dir, map_dir, concept, cohort):
     elif (concept == 'encounter'):
         concept_cd = 'ENC'
         concept_id = 'deid_enc_id'
-        create_encounters(in_dir)
+        create_encounters(in_dir, logger=logger)
         file = os.path.join(in_dir, 'encounters.csv')
         concept_column = 'EncounterCSN'
     elif (concept == 'note'):
@@ -400,32 +534,50 @@ def generate_map(deid_mode, in_dir, map_dir, concept, cohort):
     elif (concept == 'order'):
         concept_cd = 'ORDER'
         concept_id = 'deid_order_id'
-        combine_order_metadata(in_dir, cohort)
+        combine_order_metadata(in_dir, cohort, logger=logger)
         file = os.path.join(in_dir, '{}_order_metadata.csv'.format(cohort))
         concept_column = 'OrderKey'
     elif (concept == 'provider'):
         concept_cd = 'PROV'
         concept_id = 'deid_provider_id'
-        create_provider_metadata(in_dir, cohort)
+        create_provider_metadata(in_dir, cohort, logger=logger)
         file = os.path.join(in_dir, 'provider_metadata.csv')
         concept_column = 'ProviderKey'
     else:
-        logging.error(f"""Nonexisting concept in `generate_map` method: "{concept}".""")
+        logger.error(f"""Nonexisting concept in `generate_map` method: "{concept}".""")
 
-    ids_final = pd.DataFrame()
-    for ids in pd.read_csv(file, chunksize=10000):
+    # Count the number of chunks in the file
+    CHUNKSIZE = 10000
+    chunkGenerator1 = pd.read_csv(file, chunksize=CHUNKSIZE)
+    chunkGenerator2 = pd.read_csv(file, chunksize=CHUNKSIZE)
+    logger.info("Counting the number of chunks in the file.")
+    it1Total = sum([1 for _ in chunkGenerator1])
+    logger.info(f"""Counting the number of chunks in the file - done. The are {it1Total:,} chunks.""")
+    INDEX_START = 1
+    HEADER = True
+    MODE = "w"
+    for it1, ids in enumerate(chunkGenerator2, start=1):
+        logger.info(f"""  Working on chunk {it1:,} of {it1Total:,}.""")
+        ids = pd.DataFrame(ids)  # For type hinting
         ids = ids[[concept_column]].drop_duplicates()
-        ids_final = pd.concat([ids_final, ids])
-        ids_final.drop_duplicates(inplace=True)
-    ids_map = ids_final.reset_index()
-    ids_map['deid_num'] = ids_map.index + 1
-    # assign deid value 0 for unknown input (e.g., provider key < 0)
-    ids_map[concept_id] = ids_map.apply(lambda row: (str(irb) + '_' + concept_cd + '_0') if (int(row[concept_column]) < 0) else (str(irb) + '_' + concept_cd + '_' + str(int(row['deid_num']))), axis=1)
-    if (deid_mode == 'deid' and concept == 'patient'):
-        ids_map['date_shift'] = ids_map.apply(lambda row: random.randint(-30, 30), axis=1)
-    out_file = 'map_{}.csv'.format(concept)
-    ids_map = ids_map.drop(['index'], axis=1)
-    ids_map.to_csv(os.path.join(map_dir, out_file), index=False)
+        ids.drop_duplicates(inplace=True)
+        index_end = len(ids) + INDEX_START
+        ids.index = range(INDEX_START, index_end)
+        ids_map = ids.reset_index()
+        ids_map['deid_num'] = ids_map.index
+        # Assign de-identification value of "0" for unknown input (e.g., provider key < 0)
+        ids_map[concept_id] = ids_map.apply(lambda row: (str(irb) + '_' + concept_cd + '_0') if (int(row[concept_column]) < 0) else (str(irb) + '_' + concept_cd + '_' + str(int(row['deid_num']))), axis=1)
+        if (deid_mode == 'deid' and concept == 'patient'):
+            ids_map['date_shift'] = ids_map.apply(lambda row: random.randint(-30, 30), axis=1)
+        out_file = 'map_{}.csv'.format(concept)
+        INDEX_START = max(ids_map["index"]) + 1
+        ids_map = ids_map.drop(['index'], axis=1)
+        savePath = Path(os.path.join(map_dir, out_file))
+        logger.info(f"""  Saving chunk to "{choosePathToLog(savePath, rootDirectory)}".""")
+        ids_map.to_csv(savePath, index=False, header=HEADER, mode=MODE)
+        logger.info(f"""  Saving chunk to "{choosePathToLog(savePath, rootDirectory)}" - done.""")
+        HEADER = False
+        MODE = "a"
     return
 
 
@@ -616,7 +768,7 @@ if __name__ == "__main__":
     logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
     logger.info(f"""Script arguments:
 
-    # Arguments
+    # Arguments: Script arguments
     `COHORT_NAME`: "{COHORT_NAME}"
     `COHORT_FILE`: "{COHORT_FILE}"
     `IRB_NUMBER`: "{IRB_NUMBER}"
@@ -674,21 +826,43 @@ if __name__ == "__main__":
         # copy .tsv files with free text
         copy_tsv(cohort, notes_dir, disclosure_dir)
     else:
-        # generate mappings
-        generate_map(deid_mode, data_dir, map_dir, 'patient', cohort)
-        generate_map(deid_mode, notes_dir, map_dir, 'encounter', cohort)
-        generate_map(deid_mode, notes_dir, map_dir, 'note', cohort)
-        generate_map(deid_mode, notes_dir, map_dir, 'note_link', cohort)
-        generate_map(deid_mode, notes_dir, map_dir, 'order', cohort)
-        generate_map(deid_mode, notes_dir, map_dir, 'provider', cohort)
+        # Generate mappings
+        logger.info("Generating de-identification maps for PHI variables.")
+        logger.info("  Generating map for encounter IDs.")
+        generate_map(deid_mode, notes_dir, map_dir, 'encounter', cohort, logger=logger)
+        logger.info("  Generating map for encounter IDs - done.")
+        logger.info("  Generating map for note IDs.")
+        generate_map(deid_mode, notes_dir, map_dir, 'note', cohort, logger=logger)
+        logger.info("  Generating map for note IDs - done.")
+        logger.info("""  Generating map for note linkage IDs.""")
+        generate_map(deid_mode, notes_dir, map_dir, 'note_link', cohort, logger=logger)
+        logger.info("  Generating map for note linkage IDs.")
+        logger.info("  Generating map for order IDs.")
+        generate_map(deid_mode, notes_dir, map_dir, 'order', cohort, logger=logger)
+        logger.info("  Generating map for order IDs - done.")
+        logger.info("  Generating map for patient IDs.")
+        generate_map(deid_mode, data_dir, map_dir, 'patient', cohort, logger=logger)
+        logger.info("  Generating map for patient IDs - done.")
+        logger.info("  Generating map for provider IDs.")
+        generate_map(deid_mode, notes_dir, map_dir, 'provider', cohort, logger=logger)
+        logger.info("  Generating map for provider IDs - done.")
+        logger.info("Generating de-identification maps for PHI variables - done.")
 
-        # deidentify metadata. We can create deidentified dataset or limited dataset.
-        deid_metadata(deid_mode, 'note', map_dir, notes_dir, disclosure_dir)
-        deid_metadata(deid_mode, 'order', map_dir, notes_dir, disclosure_dir)
+        # De-identify metadata.
+        logger.info("De-identifying metadata.")
+        for clinicalTextCategory in ["note", "order"]:
+            logger.info(f"""  De-identifying metadata for clinical text of category "{clinicalTextCategory}".""")
+            deid_metadata(deid_mode, clinicalTextCategory, map_dir, notes_dir, disclosure_dir)
+            logger.info(f"""  De-identifying metadata for clinical text of category "{clinicalTextCategory}" - done.""")
+        logger.info("De-identifying metadata - done.")
 
-        # prepare for text deidentification, i.e., deidentify ID in .tsv file(s)
+        # De-identify clinical text, i.e., de-identify ID in .tsv file(s)
+        logger.info("""De-identifying clinical text of category "note".""")
         deid_tsv_note(map_dir, notes_dir, logger)
+        logger.info("""De-identifying clinical text of category "note" - done.""")
+        logger.info("""De-identifying clinical text of category "order".""")
         deid_tsv_order(map_dir, notes_dir, logger)
+        logger.info("""De-identifying clinical text of category "order" - done.""")
 
     # Output location summary
     logger.info(f"""Script output is located in the following directory: "{runOutputDir.absolute().relative_to(rootDirectory)}".""")

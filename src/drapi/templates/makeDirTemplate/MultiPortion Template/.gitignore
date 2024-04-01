@@ -1,18 +1,25 @@
 # >>> [start] Things added by Herman >>>
+**/logs/*
 **/*.7z
 **/.DS_Store
+**/*.bat
+!**/launchIPython.bat
 **/*.csv
-**/logs/*
+**/*.out
+**/*.pdf
+**/*.tsv
+**/*.xlsx
+**/*.zip
 # <<< [end] Things added by Herman <<<
 
 # >>> [start] Default IDR files >>>
-settings.yaml
-types.yaml
 data/*
 !data/input/
 !data/output/
 documents/*
 HIPPA_disclosure/*
+settings.yaml
+types.yaml
 # <<< [end] Default IDR files <<<
 
 # Byte-compiled / optimized / DLL files

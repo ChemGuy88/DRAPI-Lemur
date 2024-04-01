@@ -2,7 +2,6 @@
 Makes de-identification maps, building on existing maps.
 
 # NOTE Does not expect data in nested directories (e.g., subfolders of "free_text"). Therefore it uses "Path.iterdir" instead of "Path.glob('*/**')".
-# NOTE Expects all files to be CSV files. This is because it uses "pd.read_csv".
 # NOTE Expects integer IDs, so no string IDs like Epic Patient IDs.
 """
 
@@ -21,7 +20,7 @@ from drapi.code.drapi.drapi import (ditchFloat,
                                     makeMap,
                                     makeSetComplement,
                                     successiveParents)
-from drapi.constants.phiVariables import (FILE_NAME_TO_VARIABLE_NAME_DICT,
+from drapi.code.drapi.constants.phiVariables import (FILE_NAME_TO_VARIABLE_NAME_DICT,
                                           VARIABLE_NAME_TO_FILE_NAME_DICT)
 # Local packages: Script parameters: General
 from common import (IRB_NUMBER,

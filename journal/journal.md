@@ -89,7 +89,7 @@ import io
 import sys
 import pandas as pd
 platform = sys.platform
-WINDOWS_ONLY_LIST = ["pywin32"]
+WINDOWS_ONLY_LIST = ["console_shortcut", "pywin32"]
 DARWIN_ONLY_LIST = []
 TEXT = """
 <TEXT>>
@@ -98,7 +98,7 @@ with io.StringIO() as ioText:
     ioText.write(TEXT)
     ioText.seek(0)
     table0 = pd.read_table(ioText, skip_blank_lines=True, sep="\s*\|\s*", engine="python")
-mask = ~table0.applymap(lambda el: str(el).replace("-", "") == "").any(axis=1)
+mask = ~table0.map(lambda el: str(el).replace("-", "") == "").any(axis=1)
 table = table0[mask]
 environment = table["Environment"].dropna()
 dependencies0 = table["Dependencies"]
@@ -128,7 +128,7 @@ text = """
 To create this environment in a Linux-like OS use
 
 ```bash
-conda create -n NEW_ENVIRONMENT_NAME autopep8 bs4 ca-certificates certifi colorama console_shortcut drapi-lemur flake8 ipython jinja2 matplotlib numpy openpyxl pandas pymssql pyodbc python=3.11 pyyaml requests selenium sqlalchemy sqlite xlrd xlwings -c conda-forge -c defaults
+conda create -n NEW_ENVIRONMENT_NAME autopep8 bs4 ca-certificates certifi colorama console_shortcut drapi-lemur flake8 ipython jinja2 matplotlib numpy openpyxl pandas pyarrow pymssql pyodbc python=3.11 pyyaml requests selenium sqlalchemy sqlite xlrd xlwings -c conda-forge -c defaults
 ```
 
 where `NEW_ENVIRONMENT_NAME` is the name of your new conda environment.
@@ -178,14 +178,14 @@ WHERE
 ### Note types
 
 There are four clinical note types.
-    1. Notes
-    2. Order Impressions
-    3. Order Narratives
-    4. Order Result Comments
+  1. Notes
+  2. Order Impressions
+  3. Order Narratives
+  4. Order Result Comments
 
 These four note types themselves are categorized into two types
-    1. Notes
-    2. Orders
+  1. Notes
+  2. Orders
 
 The identifier for the note texts corresponds to these types
 

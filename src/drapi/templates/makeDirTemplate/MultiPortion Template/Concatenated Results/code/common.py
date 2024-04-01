@@ -3,24 +3,19 @@ Variable constants common to this project
 """
 
 __all__ = ["COLUMNS_TO_DE_IDENTIFY",
-           "BO_PORTION_DIR_MAC",
-           "BO_PORTION_DIR_WIN",
            "MODIFIED_OMOP_PORTION_DIR_MAC",
            "MODIFIED_OMOP_PORTION_DIR_WIN",
-           "MODIFIED_I2B2_PORTION_DIR_MAC",
-           "MODIFIED_I2B2_PORTION_DIR_WIN",
            "NOTES_PORTION_DIR_MAC",
            "NOTES_PORTION_DIR_WIN",
            "OLD_MAPS_DIR_PATH",
            "OMOP_PORTION_DIR_MAC",
-           "OMOP_PORTION_DIR_WIN",
-           "SDOH_PORTION_DIR_MAC",
-           "SDOH_PORTION_DIR_WIN"]
+           "OMOP_PORTION_DIR_WIN"]
 
+import re
 from pathlib import Path
 # Local packages
-from drapi.constants.constants import DATA_TYPES_DICT
-from drapi.constants.phiVariables import (LIST_OF_PHI_VARIABLES_BO,
+from drapi.code.drapi.constants.constants import DATA_TYPES_DICT
+from drapi.code.drapi.constants.phiVariables import (LIST_OF_PHI_VARIABLES_BO,
                                           LIST_OF_PHI_VARIABLES_I2B2,
                                           LIST_OF_PHI_VARIABLES_NOTES,
                                           LIST_OF_PHI_VARIABLES_OMOP,
@@ -33,7 +28,7 @@ from drapi.code.drapi.drapi import flatExtend
 
 # Project parameters: Meta-variables
 STUDY_TYPE = "Limited Data Set (LDS)"  # Pick from "Non-Human", "Limited Data Set (LDS)", "Identified"
-IRB_NUMBER = None  # TODO
+IRB_NUMBER = "IRB202300703"  # TODO
 DATA_REQUEST_ROOT_DIRECTORY_DEPTH = 3  # TODO  # NOTE To prevent unexpected results, like moving, writing, or deleting the wrong files, set this to folder that is the immediate parent of concatenated result and the intermediate results folder.
 
 
@@ -41,17 +36,23 @@ DATA_REQUEST_ROOT_DIRECTORY_DEPTH = 3  # TODO  # NOTE To prevent unexpected resu
 # NOTE: Some variable names are not standardized. This section is used by the de-identification process when looking for the de-identification map. This way several variables can be de-identified with the same map. If you have variables with a custom, non-BO name, you should alias them, if necessary using the following format:
 # VAR_ALIASES_CUSTOM_VARS = {"Custom Variable 1": "BO Equivalent 1",
 #                            "Custom Variable 2": "BO Equivalent 2"}
-VAR_ALIASES_NOTES_ENCOUNTERS = {"EncounterCSN": "Encounter # (CSN)"}
+VAR_ALIASES_NOTES_ENCOUNTERS = {"EncounterCSN": "Encounter # (CSN)",
+                                "EncounterKey": "Encounter Key"}
+VAR_ALIASES_NOTES_NOTES = {"NoteID": "Note ID",
+                           "NoteKey": "Note Key",
+                           "LinkageNoteID": "Linkage Note ID"}
 VAR_ALIASES_NOTES_PATIENTS = {"MRN_GNV": "MRN (UF)",
                               "MRN_JAX": "MRN (Jax)",
                               "PatientKey": "Patient Key"}
-VAR_ALIASES_NOTES_PROVIDERS = {"AuthoringProviderKey": "ProviderKey",
-                               "AuthorizingProviderKey": "ProviderKey",
-                               "CosignProviderKey": "ProviderKey",
-                               "OrderingProviderKey": "ProviderKey"}
-VAR_ALIASES_SDOH_ENCOUNTERS = {"NOTE_ENCNTR_KEY": "LinkageNoteID",
-                               "NOTE_KEY": "NoteKey"}
+VAR_ALIASES_NOTES_PROVIDERS = {"AuthoringProviderKey": "Provider Key",
+                               "AuthorizingProviderKey": "Provider Key",
+                               "CosignProviderKey": "Provider Key",
+                               "OrderingProviderKey": "Provider Key",
+                               "ProviderKey": "Provider Key"}
+VAR_ALIASES_SDOH_ENCOUNTERS = {"NOTE_ENCNTR_KEY": "Linkage Note ID",
+                               "NOTE_KEY": "Note Key"}
 LIST_OF_ALIAS_DICTS = [VAR_ALIASES_NOTES_ENCOUNTERS,
+                       VAR_ALIASES_NOTES_NOTES,
                        VAR_ALIASES_NOTES_PATIENTS,
                        VAR_ALIASES_NOTES_PROVIDERS,
                        VAR_ALIASES_SDOH_ENCOUNTERS]
@@ -121,35 +122,24 @@ for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
     VARIABLE_SUFFIXES.update(variableSuffixDict)
 
 # Project parameters: Portion directories
-BO_PORTION_DIR_MAC = Path(r"../Intermediate Results/BO Portion/data/output/getData/...")  # TODO
-BO_PORTION_DIR_WIN = Path(r"..\Intermediate Results\BO Portion\data\output\getData\...")  # TODO
-
-
-I2B2_PORTION_DIR_MAC = Path(r"../Concatenated Results/data/output/i2b2ConvertIDs/...")  # TODO
-I2B2_PORTION_DIR_WIN = Path(r"..\Concatenated Results\data\output\i2b2ConvertIDs\...")  # TODO
-
 MODIFIED_OMOP_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
 MODIFIED_OMOP_PORTION_DIR_WIN = Path(r"data\output\convertColumns\...")  # TODO
 
-MODIFIED_I2B2_PORTION_DIR_MAC = Path(r"../Concatenated Results/data/output/i2b2ConvertIDs/...")  # TODO
-MODIFIED_I2B2_PORTION_DIR_WIN = Path(r"..\Concatenated Results\data\output\i2b2ConvertIDs\...")  # TODO
-
-NOTES_ROOT_DIRECTORY = Path(r"..\Intermediate Results\Notes Data Portion\data\output\2023-11-20 16-37-27")  # TODO
+NOTES_ROOT_DIRECTORY = Path(r"..\Notes\original_note_pull\data\Output")  # TODO
 NOTES_PORTION_DIR_MAC = NOTES_ROOT_DIRECTORY.joinpath("free_text")
 NOTES_PORTION_DIR_WIN = NOTES_ROOT_DIRECTORY.joinpath("free_text")
 
-OMOP_PORTION_DIR_MAC = Path(r"Intermediate Results/OMOP Portion/data/output/...")  # TODO
-OMOP_PORTION_DIR_WIN = Path(r"Intermediate Results\OMOP Portion\data\output\...")  # TODO
+OMOP_PORTION_DIR_MAC = Path(r"..\OMOP_Structured_Data\data\output\identified")  # TODO
+OMOP_PORTION_DIR_WIN = Path(r"..\OMOP_Structured_Data\data\output\identified")  # TODO
 
-SDOH_PORTION_DIR_MAC = Path(r"..\Intermediate Results\SDoH Portion")  # TODO
-SDOH_PORTION_DIR_WIN = Path(r"..\Intermediate Results\SDoH Portion")  # TODO
+OMOP_PORTION_2_DIR_MAC = Path(r"..\Intermediate Results\OMOP Portion\data\output\identified\2024-01-23 13-54-26")  # TODO
+OMOP_PORTION_2_DIR_WIN = Path(r"..\Intermediate Results\OMOP Portion\data\output\identified\2024-01-23 13-54-26")  # TODO
 
 # Project parameters: File criteria
-BO_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-I2B2_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
+NOTES_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv",
+                               lambda pathObj: True if re.search(pattern=r"metadata_\d+.csv",
+                                                         string=pathObj.name) else False]
 OMOP_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".csv"]
-SDOH_PORTION_FILE_CRITERIA = [lambda pathObj: pathObj.suffix.lower() == ".tsv"]
 
 
 # Project parameters: Maps
@@ -162,21 +152,13 @@ OLD_MAPS_DIR_PATH = {"EncounterCSN": [NOTES_ROOT_DIRECTORY.joinpath("mapping/map
 
 # Quality assurance
 if __name__ == "__main__":
-    ALL_VARS = [BO_PORTION_DIR_MAC,
-                BO_PORTION_DIR_WIN,
-                I2B2_PORTION_DIR_MAC,
-                I2B2_PORTION_DIR_WIN,
-                MODIFIED_OMOP_PORTION_DIR_MAC,
+    ALL_VARS = [MODIFIED_OMOP_PORTION_DIR_MAC,
                 MODIFIED_OMOP_PORTION_DIR_WIN,
-                MODIFIED_I2B2_PORTION_DIR_MAC,
-                MODIFIED_I2B2_PORTION_DIR_WIN,
                 NOTES_ROOT_DIRECTORY,
                 NOTES_PORTION_DIR_MAC,
                 NOTES_PORTION_DIR_WIN,
                 OMOP_PORTION_DIR_MAC,
-                OMOP_PORTION_DIR_WIN,
-                SDOH_PORTION_DIR_MAC,
-                SDOH_PORTION_DIR_WIN]
+                OMOP_PORTION_DIR_WIN]
 
     for li in OLD_MAPS_DIR_PATH.values():
         ALL_VARS.extend(li)
