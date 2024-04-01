@@ -11,7 +11,7 @@ from sqlalchemy import create_engine
 from drapi.code.drapi.drapi import (makeChunks,
                                     readDataFile,
                                     replace_sql_query)
-from getData_inner import getData_inner
+from drapi.code.drapi.getData.getData_inner import getData_inner
 
 
 def getData_outer(conStr: str,
@@ -117,19 +117,19 @@ def getData_outer(conStr: str,
     else:
         raise Exception(f"""Unexpected value for ``: {type(filterVariablePythonDataType)}.""")
 
-    IDsChunk0 = makeChunks(filterVariableValues, filterVariableChunkSize)
-    IDsChunk1 = makeChunks(filterVariableValues, filterVariableChunkSize)
-    numChunks1 = sum([1 for _ in IDsChunk0])
+    chunkGenerator1 = makeChunks(filterVariableValues, filterVariableChunkSize)
+    chunkGenerator2 = makeChunks(filterVariableValues, filterVariableChunkSize)
+    numChunks1 = sum([1 for _ in chunkGenerator1])
     padlen1 = len(str(numChunks1))
-    for it1, IDsChunk in enumerate(IDsChunk1, start=1):
+    for it1, dfChunk in enumerate(chunkGenerator2, start=1):
         itstring1 = str(it1).zfill(padlen1)
-        logger.info(f"""    Working on filter chunk {it1:,} of {numChunks1:,} with `filterVariableChunkSize` "{filterVariableChunkSize:,}".""")
+        logger.info(f"""    Working on filter chunk {itstring1} of {numChunks1} with `filterVariableChunkSize` "{filterVariableChunkSize:,}".""")
 
         # Fill query template: lists to strings
         if filterVariablePythonDataType == "int":
-            filterVariableValuesAsString = ",".join([f"{el}" for el in IDsChunk])
+            filterVariableValuesAsString = ",".join([f"{el}" for el in dfChunk])
         elif filterVariablePythonDataType == "str":
-            filterVariableValuesAsString = ",".join([f"'{el}'" for el in IDsChunk])
+            filterVariableValuesAsString = ",".join([f"'{el}'" for el in dfChunk])
 
         query = replace_sql_query(query=query0,
                                   old="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)) as "Admit BMI",""",
