@@ -50,7 +50,13 @@ def OFID2MRN(OFIDseries: pd.Series) -> pd.DataFrame:
     return MRNseries
 
 
-def mapOneFloridaIDs(IDTypeValues: pd.Series, IDType: Literal["PATID", "Patient Key", "MRN (UF)", "MRN (Jax)", "MRN (Pathology)"]) -> pd.Series:
+def mapOneFloridaIDs(IDTypeValues: pd.Series,
+                     IDType: Literal["PATID",
+                                     "Patient Key",
+                                     "MRN (UF)",
+                                     "MRN (Jax)",
+                                     "MRN (Pathology)"],
+                     returnQueryOnly: bool) -> pd.Series:
     """
     Queries the ID map containing all of the following variables, any of which can be used as a query filter using the `IDType` parameter. The values to query by are used in the `IDTypeValues` parameter.
         | Variable Definition           | Standard or Common Column Name    |
@@ -81,6 +87,11 @@ def mapOneFloridaIDs(IDTypeValues: pd.Series, IDType: Literal["PATID", "Patient 
                               old="{PYTHON_VARIABLE: IDTypeSQL}",
                               new=IDTypeSQL)
 
-    MRNseries = pd.read_sql(query, con=conStr)
+    if returnQueryOnly:
+        return query
+    else:
+        pass
 
-    return MRNseries
+    dfResults = pd.read_sql(query, con=conStr)
+
+    return dfResults
