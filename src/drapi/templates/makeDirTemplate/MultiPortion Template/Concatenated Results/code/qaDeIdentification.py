@@ -11,13 +11,11 @@ from typing_extensions import List, Union
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.code.drapi.drapi import (getTimestamp,
+from drapi.code.drapi.drapi import (choosePathToLog,
+                                    getMapType,
+                                    getTimestamp,
                                     makeDirPath,
-                                    readDataFile,
                                     successiveParents)
-# Super-local
-from commonFunctions import (choosePathToLog,
-                             getMapType)
 
 
 # Functions
@@ -81,7 +79,6 @@ def combineMaps(path: Path,
                 runOutputDir: Path,
                 MESSAGE_MODULO_CHUNKS: int,
                 rootPath: Path,
-                SCRIPT_TEST_MODE: bool,
                 logger: logging.Logger) -> List[Path]:
     """
     Assumes `PATH` is the "Maps by Portion" folder with the following structure
@@ -95,7 +92,7 @@ def combineMaps(path: Path,
           - CSV File 1
           - CSV File 2
           - etc.
-      - Portion 2 
+      - Portion 2
         - Variable 1
           - CSV File 1
           - CSV File 2
@@ -434,7 +431,6 @@ if __name__ == "__main__":
                                                  runOutputDir=runOutputDir,
                                                  MESSAGE_MODULO_CHUNKS=MESSAGE_MODULO_CHUNKS,
                                                  rootPath=rootDirectory,
-                                                 SCRIPT_TEST_MODE=SCRIPT_TEST_MODE,
                                                  logger=logger)
         dfresult = qaListOfFilesAndDirectories(LIST_OF_DIRECTORIES=[],
                                                LIST_OF_FILES=listOfPathsForCombinedMaps,
@@ -445,7 +441,7 @@ if __name__ == "__main__":
         pass
     else:
         dfresult = dfresult.sort_values(by=["Directory",
-                                                "File Name"])
+                                            "File Name"])
         savePath = runOutputDir.joinpath("Map Type Results.CSV")
         dfresult.to_csv(savePath)
         dfString = dfresult.to_string()

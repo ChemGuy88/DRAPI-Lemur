@@ -1,65 +1,23 @@
-import os
+"""
+Functions used in the mapping or de-identification of values, namely "convertColumnsHash.py" in the "Concatenated Results" template/module.
+"""
+
 import random
 import string
-from pathlib import Path
 from typing_extensions import (Callable,
                                Collection,
-                               Literal,
                                Tuple,
                                Union)
 # Third-party packages
 import numpy as np
 import pandas as pd
-# Local packages
-from drapi.code.drapi.drapi import isNumber
-
-
-def choosePathToLog(path: Path, rootPath: Path) -> Path:
-    """
-    Decides if a path is a subpath of `rootPath`. If it is, display it reltaive to `rootPath`. If it is not, display it as an absolute path.
-    """
-    commonPath = os.path.commonpath([path.absolute(), rootPath.absolute()])
-
-    lenCommonPath = len(commonPath)
-    lenRootPath = len(str(rootPath.absolute()))
-    if lenCommonPath < lenRootPath:
-        pathToDisplay = path
-    elif lenCommonPath >= lenRootPath:
-        pathToDisplay = path.absolute().relative_to(rootPath)
-    else:
-        raise Exception("An unexpected error occurred.")
-
-    return pathToDisplay
-
-
-def getMapType(df: pd.DataFrame) -> Literal["1:1", "1:m", "m:1", "m:m"]:
-    """
-    h/t to https://stackoverflow.com/questions/59091196
-    """
-    df = df.drop_duplicates()
-    dfShape0 = df.shape
-    assert dfShape0[1] == 2, "Maps are supposed to have only two columns."
-    col1Name, col2Name = df.columns
-
-    first_max = df.groupby(col2Name).count().max().loc[col1Name]
-    second_max = df.groupby(col1Name).count().max().loc[col2Name]
-    if first_max == 1:
-        if second_max == 1:
-            return "1:1"
-        else:
-            return "1:m"
-    else:
-        if second_max == 1:
-            return "m:1"
-        else:
-            return "m:m"
 
 
 def encryptValue1(value: Union[float, int, str],
                   secret: Union[int, Collection[int]]):
     """
     Additive encryption.
-    Example: 
+    Example:
     ```
     encryptValue1(value='123456789', secret=1)
     # 123456790
@@ -80,7 +38,7 @@ def encryptValue1(value: Union[float, int, str],
 
 def encryptValue2(value: Union[str, int],
                   secret: str):
-    """
+    r"""
     Encrypt with character-wise XOR operation of both operands, with the second operand rotating over the set of character-wise values in `secretkey`.
     Example:
     ```
@@ -106,7 +64,7 @@ def encryptValue3(value: Union[int],
                   secret: int):
     """
     Encrypt with whole-value XOR operation. Requires both operands to be integers.
-    Example: 
+    Example:
     ```
     encryptValue1(value=123456789, secret=111111111)
     # 1326016938

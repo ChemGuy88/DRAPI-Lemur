@@ -11,19 +11,19 @@ from typing import List
 # Third-party packages
 import pandas as pd
 # Local packages
-from drapi.code.drapi.drapi import (getTimestamp,
+from drapi.code.drapi.drapi import (choosePathToLog,
+                                    getTimestamp,
                                     makeDirPath,
                                     makeMap,
                                     readDataFile,
                                     successiveParents)
+from drapi.code.drapi.deIdentificationFunctions import functionFromSettings
 # Super-local
 from common import (IRB_NUMBER,
                     NOTES_PORTION_FILE_CRITERIA,
                     OMOP_PORTION_FILE_CRITERIA,
                     VARIABLE_ALIASES,
                     VARIABLE_SUFFIXES)
-from commonFunctions import (choosePathToLog,
-                             functionFromSettings)
 
 
 # Functions
@@ -72,7 +72,7 @@ def convertColumnsHash(listOfPortionDirs: list,
         mapsColumnNames[varName] = map_.columns[-1]
 
     # QA: Test de-identification functions
-    logger.info(f"""QA: Testing de-identification functions.""")
+    logger.info("""QA: Testing de-identification functions.""")
     for variableName, func in DE_IDENTIFICATION_FUNCTIONS.items():
         logger.info(f"""  {variableName}: {func(1)}.""")
 
@@ -122,7 +122,7 @@ def convertColumnsHash(listOfPortionDirs: list,
                     # >>> TEST BLOCK >>>  # TODO Remove
                     if SCRIPT_TEST_MODE:
                         if it1 > 1:
-                            logger.info(f"""  ..  `SCRIPT_TEST_MODE` engaged. BREAKING.""")
+                            logger.info("""  ..  `SCRIPT_TEST_MODE` engaged. BREAKING.""")
                             break
                     # <<< TEST BLOCK <<<
                     dfChunk = pd.DataFrame(dfChunk0)
@@ -204,12 +204,13 @@ if __name__ == "__main__":
     parser.add_argument("--VARIABLE_NAME_TO_ENCRYPT",
                         type=str,
                         help="")
+    helptext = r"""1: Additive encryption. E.g., `encryptValue1(value='123456789', secret=1)  # 123456790`.
+2: Encrypt with character-wise XOR operation of both operands, with the second operand rotating over the set of character-wise values in `secretkey`. E.g., `encryptValue1(value='123456789', secret='password')  # 'AS@GBYE\I'
+3: Encrypt with whole-value XOR operation. Requires both operands to be integers. E.g., `encryptValue1(value=123456789, secret=111111111)  # 1326016938`"""
     parser.add_argument("--ENCRYPTION_TYPE",
                         type=int,
                         choices=[1, 2, 3],
-                        help="""1: Additive encryption. E.g., `encryptValue1(value='123456789', secret=1)  # 123456790`.
-2: Encrypt with character-wise XOR operation of both operands, with the second operand rotating over the set of character-wise values in `secretkey`. E.g., `encryptValue1(value='123456789', secret='password')  # 'AS@GBYE\I'
-3: Encrypt with whole-value XOR operation. Requires both operands to be integers. E.g., `encryptValue1(value=123456789, secret=111111111)  # 1326016938`""")
+                        help=helptext)
     parser.add_argument("--ENCRYPTION_SECRET",
                         type=lambda stringValue: int(stringValue) if stringValue.isnumeric() else stringValue,
                         help="We expect an integer or stringValue. If the stringValue is purely numbers, it will be converted to an integer object. If you don't pass an argument then a secret value will be generated for you at random.")
@@ -464,9 +465,9 @@ if __name__ == "__main__":
         mappingSettings[variableName] = {"Encryption Type": encryptionType,
                                          "Encryption Secret (Input)": encryptionSecret0,
                                          "Encryption Secret (Final)": encryptionSecret}
-    
+
     # QA: Test de-identification functions
-    logger.info(f"""QA: Testing de-identification functions.""")
+    logger.info("""QA: Testing de-identification functions.""")
     for variableName, func in DE_IDENTIFICATION_FUNCTIONS.items():
         logger.info(f"""  {variableName}: {func(1)}.""")
 

@@ -187,6 +187,47 @@ def getCommonDirectoryParent(primaryPath: Path, secondaryPath: Path) -> Path:
     return pathResult
 
 
+def choosePathToLog(path: Path, rootPath: Path) -> Path:
+    """
+    Decides if a path is a subpath of `rootPath`. If it is, display it reltaive to `rootPath`. If it is not, display it as an absolute path.
+    """
+    commonPath = os.path.commonpath([path.absolute(), rootPath.absolute()])
+
+    lenCommonPath = len(commonPath)
+    lenRootPath = len(str(rootPath.absolute()))
+    if lenCommonPath < lenRootPath:
+        pathToDisplay = path
+    elif lenCommonPath >= lenRootPath:
+        pathToDisplay = path.absolute().relative_to(rootPath)
+    else:
+        raise Exception("An unexpected error occurred.")
+
+    return pathToDisplay
+
+
+def getMapType(df: pd.DataFrame) -> Literal["1:1", "1:m", "m:1", "m:m"]:
+    """
+    h/t to https://stackoverflow.com/questions/59091196
+    """
+    df = df.drop_duplicates()
+    dfShape0 = df.shape
+    assert dfShape0[1] == 2, "Maps are supposed to have only two columns."
+    col1Name, col2Name = df.columns
+
+    first_max = df.groupby(col2Name).count().max().loc[col1Name]
+    second_max = df.groupby(col1Name).count().max().loc[col2Name]
+    if first_max == 1:
+        if second_max == 1:
+            return "1:1"
+        else:
+            return "1:m"
+    else:
+        if second_max == 1:
+            return "m:1"
+        else:
+            return "m:m"
+
+
 def getFilesToRelease(filesToRelease: List[Path], fileCriteria: List[Callable]):
     """
     Applies the functions in the iterable `fileCriteria` to each Path object in `filesToRelease`.
