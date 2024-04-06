@@ -1,188 +1,190 @@
 """
-Adds two dummy columns to the notes text TSV files.
+Script for modifying clinical text TSV files so they can be handled by the SDOH pipeline.
 """
 
 import argparse
 import logging
-import os
 import pprint
 from pathlib import Path
-from typing import Union
 # Third-party packages
-import pandas as pd
-# Local packages
-from drapi.code.drapi.drapi import getTimestamp, successiveParents, makeDirPath
-
-# Arguments
-TSV_FILE_PATH1 = r"..\..\Intermediate Results\Notes Portion\data\output\freeText\2023-12-13 23-25-11\free_text\SDOHOPC_order_impression\order_impression_1.tsv"
-TSV_FILE_PATH2 = r"..\..\Intermediate Results\Notes Portion\data\output\freeText\2023-12-13 23-25-11\free_text\SDOHOPC_order_narrative\order_narrative_1.tsv"
-TSV_FILE_PATH3 = r"..\..\Intermediate Results\Notes Portion\data\output\freeText\2023-12-13 23-25-11\free_text\SDOHOPC_order_result_comment\order_result_comment_1.tsv"
-
-# Arguments: Meta-variables
-PROJECT_DIR_DEPTH = 2
-DATA_REQUEST_DIR_DEPTH = 4
-IRB_DIR_DEPTH = 4
-IDR_DATA_REQUEST_DIR_DEPTH = 6
-
-ROOT_DIRECTORY = "IRB_DIRECTORY"  # TODO One of the following:
-                                                 # ["IDR_DATA_REQUEST_DIRECTORY",    # noqa
-                                                 #  "IRB_DIRECTORY",                 # noqa
-                                                 #  "DATA_REQUEST_DIRECTORY",        # noqa
-                                                 #  "PROJECT_OR_PORTION_DIRECTORY"]  # noqa
-
-LOG_LEVEL = "INFO"
-
-# Arguments: SQL connection settings
-SERVER = "DWSRSRCH01.shands.ufl.edu"
-DATABASE = "DWS_PROD"
-USERDOMAIN = "UFAD"
-USERNAME = os.environ["USER"]
-UID = None
-PWD = os.environ["HFA_UFADPWD"]
-
-# Variables: Path construction: General
-runTimestamp = getTimestamp()
-thisFilePath = Path(__file__)
-thisFileStem = thisFilePath.stem
-projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
-dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_DIR_DEPTH)
-IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
-IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
-dataDir = projectDir.joinpath("data")
-if dataDir:
-    inputDataDir = dataDir.joinpath("input")
-    outputDataDir = dataDir.joinpath("output")
-    if outputDataDir:
-        runOutputDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
-logsDir = projectDir.joinpath("logs")
-if logsDir:
-    runLogsDir = logsDir.joinpath(thisFileStem)
-sqlDir = projectDir.joinpath("sql")
-
-if ROOT_DIRECTORY == "PROJECT_OR_PORTION_DIRECTORY":
-    rootDirectory = projectDir
-elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
-    rootDirectory = dataRequestDir
-elif ROOT_DIRECTORY == "IRB_DIRECTORY":
-    rootDirectory = IRBDir
-elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
-    rootDirectory = IDRDataRequestDir
-else:
-    raise Exception("An unexpected error occurred.")
-
-# Variables: Path construction: Project-specific
 pass
-
-# Variables: SQL Parameters
-if UID:
-    uid = UID[:]
-else:
-    uid = fr"{USERDOMAIN}\{USERNAME}"
-conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
-
-# Variables: Other
-pass
-
-# Directory creation: General
-makeDirPath(runOutputDir)
-makeDirPath(runLogsDir)
-
-# Logging block
-logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
-logFormat = logging.Formatter(f"""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
-
-logger = logging.getLogger(__name__)
-
-fileHandler = logging.FileHandler(logpath)
-fileHandler.setLevel(9)
-fileHandler.setFormatter(logFormat)
-
-streamHandler = logging.StreamHandler()
-streamHandler.setLevel(LOG_LEVEL)
-streamHandler.setFormatter(logFormat)
-
-logger.addHandler(fileHandler)
-logger.addHandler(streamHandler)
-
-logger.setLevel(9)
-
-# Functions
-
-def modifyTSV(fpath: Union[str, Path]):
-    """
-    Modifies notes text TSV files in preparation for analysis in the SDOH pipeline.
-    Modifications:
-        - Adds two dummy columns
-        - Re-orders the columns
-        - Renames the `OrderKey` column to "ordr_proc_key"
-    """
-    # Read file
-    df = pd.read_csv(fpath, delimiter="\t")
-
-    # Set dummy values
-    df["CNTCT_NUM"] = 0
-    df["NOTE_KEY"] = 123456789
-
-    # Re-order columns
-    df = df[["LinkageNoteID",
-             "NOTE_KEY",
-             "CNTCT_NUM",
-             "note_text"]]
-    
-    # Rename columns
-    df = df.rename(columns={"LinkageNoteID": "NOTE_ENCNTR_KEY"})
-
-    # Save modified TSV file
-    fname = fpath.name
-    savePath = runOutputDir.joinpath(fname)
-    df.to_csv(savePath, index=False, sep="\t")
+# First-party packages
+from drapi.code.drapi.drapi import (choosePathToLog,
+                                    getTimestamp,
+                                    makeDirPath,
+                                    successiveParents)
+from drapi.code.drapi.modifyTSV import modifyTSV
 
 
 if __name__ == "__main__":
-    logger.info(f"""Begin running "{thisFilePath}".""")
-    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory.absolute()}".""")
+    # >>> `Argparse` arguments >>>
+    parser = argparse.ArgumentParser()
 
-    # Parse arguments
-    parser = argparse.ArgumentParser(description="Configure")
-
-    parser.add_argument("--verbosity",
-                        help="""Increase output verbosity. See "logging" module's log level for valid values.""",
-                        type=int,
-                        default=10)
-
+    # Arguments: Main
     parser.add_argument("fpath",
                         help="The path(s) to the TSV file(s).",
                         type=str,
                         nargs="+")
-
-    args = parser.parse_args()
-
-    fpathli = args.fpath
-    verbosity = args.verbosity
-
-    argsDict = vars(args)
-
-    # Log arguments
-    argumentsText = pprint.pformat(argsDict)
-    logger.info(f"""Script arguments:
-
-    # Arguments: Command-line arguments
-    {argumentsText}
+    parser.add_argument("runFrom",
+                        help="The directory to use as the anchor. There are two choices: `here` and `home`. Choosing `here` will use the present working directory as the anchor. Choosing `home` will use the DRAPI-Lemur install location as the anchor. The anchor is the point of reference for path construction. See the meta-parameters.",
+                        choices=["here",
+                                 "home"])
 
     # Arguments: General
+    parser.add_argument("--CHUNKSIZE",
+                        default=50000,
+                        type=int,
+                        help="The number of rows to read at a time from the CSV using Pandas `chunksize`")
+    parser.add_argument("--MESSAGE_MODULO_CHUNKS",
+                        default=50,
+                        type=int,
+                        help="How often to print a log message, i.e., print a message every x number of chunks, where x is `MESSAGE_MODULO_CHUNKS`")
+    parser.add_argument("--MESSAGE_MODULO_FILES",
+                        default=100,
+                        type=int,
+                        help="How often to print a log message, i.e., print a message every x number of chunks, where x is `MESSAGE_MODULO_FILES`")
+
+    # Arguments: Meta-parameters
+    parser.add_argument("--PROJECT_DIR_DEPTH",
+                        default=2,
+                        type=int,
+                        help="")
+    parser.add_argument("--DATA_REQUEST_DIR_DEPTH",
+                        default=4,
+                        type=int,
+                        help="")
+    parser.add_argument("--IRB_DIR_DEPTH",
+                        default=3,
+                        type=int,
+                        help="")
+    parser.add_argument("--IDR_DATA_REQUEST_DIR_DEPTH",
+                        default=6,
+                        type=int,
+                        help="")
+    parser.add_argument("--ROOT_DIRECTORY",
+                        default="IRB_DIRECTORY",
+                        type=str,
+                        choices=["DATA_REQUEST_DIRECTORY",
+                                 "IDR_DATA_REQUEST_DIRECTORY",
+                                 "IRB_DIRECTORY",
+                                 "PROJECT_OR_PORTION_DIRECTORY"],
+                        help="")
+    parser.add_argument("--LOG_LEVEL",
+                        default=10,
+                        type=int,
+                        help="""Increase output verbosity. See "logging" module's log level for valid values.""")
+
+
+    argNamespace = parser.parse_args()
+
+    # Parsed arguments: Main
+    FPATHLI = argNamespace.fpath
+    RUN_FROM = argNamespace.runFrom
+
+    # Parsed arguments: General
+    CHUNKSIZE = argNamespace.CHUNKSIZE
+    MESSAGE_MODULO_CHUNKS = argNamespace.MESSAGE_MODULO_CHUNKS
+    MESSAGE_MODULO_FILES = argNamespace.MESSAGE_MODULO_FILES
+
+    # Parsed arguments: Meta-parameters
+    PROJECT_DIR_DEPTH = argNamespace.PROJECT_DIR_DEPTH
+    DATA_REQUEST_DIR_DEPTH = argNamespace.DATA_REQUEST_DIR_DEPTH
+    IRB_DIR_DEPTH = argNamespace.IRB_DIR_DEPTH
+    IDR_DATA_REQUEST_DIR_DEPTH = argNamespace.IDR_DATA_REQUEST_DIR_DEPTH
+
+    ROOT_DIRECTORY = argNamespace.ROOT_DIRECTORY
+    LOG_LEVEL = argNamespace.LOG_LEVEL
+    # <<< `Argparse` arguments <<<
+
+    # Argument parsing: Additional checks
+    pass
+
+    # Variables: Path construction: General
+    runTimestamp = getTimestamp()
+    if RUN_FROM == "here":
+        thisFilePath = Path(".")
+    elif RUN_FROM == "home":
+        thisFilePath = Path(__file__)
+    thisFileStem = thisFilePath.stem
+    projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
+    dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_DIR_DEPTH)
+    IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
+    IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
+    dataDir = projectDir.joinpath("data")
+    if dataDir:
+        inputDataDir = dataDir.joinpath("input")
+        outputDataDir = dataDir.joinpath("output")
+        if outputDataDir:
+            runOutputDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
+    logsDir = projectDir.joinpath("logs")
+    if logsDir:
+        runLogsDir = logsDir.joinpath(thisFileStem)
+    sqlDir = projectDir.joinpath("sql")
+
+    if ROOT_DIRECTORY == "PROJECT_OR_PORTION_DIRECTORY":
+        rootDirectory = projectDir
+    elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
+        rootDirectory = dataRequestDir
+    elif ROOT_DIRECTORY == "IRB_DIRECTORY":
+        rootDirectory = IRBDir
+    elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
+        rootDirectory = IDRDataRequestDir
+    else:
+        raise Exception("An unexpected error occurred.")
+
+    # Variables: Path construction: Project-specific
+    pass
+
+    # Variables: Other
+    pass
+
+    # Directory creation: General
+    makeDirPath(runOutputDir)
+    makeDirPath(runLogsDir)
+
+    # Logging block
+    logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
+    logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+
+    logger = logging.getLogger(__name__)
+
+    fileHandler = logging.FileHandler(logpath)
+    fileHandler.setLevel(9)
+    fileHandler.setFormatter(logFormat)
+
+    streamHandler = logging.StreamHandler()
+    streamHandler.setLevel(LOG_LEVEL)
+    streamHandler.setFormatter(logFormat)
+
+    logger.addHandler(fileHandler)
+    logger.addHandler(streamHandler)
+
+    logger.setLevel(9)
+
+    logger.info(f"""Begin running "{thisFilePath}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
+    logger.info(f"""Script arguments:
+
+    # Arguments: Meta
     `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
     `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}" --------------> "{IRBDir}"
     `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}" -> "{IDRDataRequestDir}"
-
-    `LOG_LEVEL` = "{LOG_LEVEL}"
     """)
+    argList = argNamespace._get_args() + argNamespace._get_kwargs()
+    argListString = pprint.pformat(argList)  # TODO Remove secrets from list to print, e.g., passwords.
+    logger.info(f"""Script arguments:\n{argListString}""")
 
-    # Execute commands
-    logger.setLevel(verbosity)
-    for fpath in fpathli:
-        fpath = Path(fpath)
-        logger.info(f"""  Working on file "{fpath.absolute().relative_to(rootDirectory)}".""")
-        # modifyTSV(fpath)
+    # Begin module body
 
-    # End script
+    itTotal = len(FPATHLI)
+    for it, fpath0 in enumerate(FPATHLI, start=1):
+        fpath = Path(fpath0)
+        logger.info(f"""  Working on file {it:,} of {itTotal:,}: "{choosePathToLog(path=fpath, rootPath=rootDirectory)}".""")
+        modifyTSV(fpath=fpath,
+                  toDirectory=runOutputDir)
+
+    # Output location summary
+    logger.info(f"""Script output is located in the following directory: "{choosePathToLog(path=runOutputDir, rootPath=rootDirectory)}".""")
+
+    # End module body
     logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
