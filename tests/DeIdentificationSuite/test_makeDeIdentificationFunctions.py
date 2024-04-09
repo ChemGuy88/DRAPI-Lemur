@@ -1,3 +1,7 @@
+"""
+This test module checks to see if we can dynamically define de-identification functions.
+"""
+
 import json
 # Local imports
 from drapi.code.drapi.constants.phiVariables import (VARIABLE_SUFFIXES_BO,
@@ -42,15 +46,19 @@ for di in mappingArguments:
                                      "Encryption Secret (Input)": encryptionSecret0,
                                      "Encryption Secret (Final)": encryptionSecret}
     print(VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"])
-    print(encryptionSecret)
-    print(variableFunction)
-    print(DE_IDENTIFICATION_FUNCTIONS[variableName](1))
+    print(f"""`variableName`: "{variableName}".""")
+    print(f"""  `encryptionSecret`: "{encryptionSecret}".""")
+    print(f"""  `variableFunction`: "{variableFunction}".""")
+    print(f"""  `variableFunction(1)`: "{variableFunction(1)}".""")
     print()
 
 print()
-for variableName, func in DE_IDENTIFICATION_FUNCTIONS.items():
-    print(f"""  {variableName}: {func(1)}""")
-    print(func)
+for variableName, variableFunction in DE_IDENTIFICATION_FUNCTIONS.items():
+    encryptionSecret = mappingSettings[variableName]["Encryption Secret (Final)"]
+    print(f"""`variableName`: "{variableName}".""")
+    print(f"""  `encryptionSecret`: "{encryptionSecret}".""")
+    print(f"""  `variableFunction`: "{variableFunction}".""")
+    print(f"""  `variableFunction(1)`: "{variableFunction(1)}".""")
     print()
 
 
