@@ -35,15 +35,23 @@ for di in mappingArguments:
     encryptionType, encryptionSecret0 = list(di.values())[0]
     encryptionSecret, variableFunction = functionFromSettings(ENCRYPTION_TYPE=encryptionType,
                                                               ENCRYPTION_SECRET=encryptionSecret0,
+                                                              suffix=VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"],
                                                               IRB_NUMBER=IRB_NUMBER)
-    print(VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"])
-    print(variableFunction.__name__)
-    DE_IDENTIFICATION_FUNCTIONS[variableName] = lambda value: variableFunction(value=value,
-                                                                               suffix=VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"],
-                                                                               secret=encryptionSecret)
+    DE_IDENTIFICATION_FUNCTIONS[variableName] = variableFunction
     mappingSettings[variableName] = {"Encryption Type": encryptionType,
                                      "Encryption Secret (Input)": encryptionSecret0,
                                      "Encryption Secret (Final)": encryptionSecret}
+    print(VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"])
+    print(encryptionSecret)
+    print(variableFunction)
+    print(DE_IDENTIFICATION_FUNCTIONS[variableName](1))
+    print()
 
+print()
 for variableName, func in DE_IDENTIFICATION_FUNCTIONS.items():
     print(f"""  {variableName}: {func(1)}""")
+    print(func)
+    print()
+
+
+def func0(cookie): return print(cookie)

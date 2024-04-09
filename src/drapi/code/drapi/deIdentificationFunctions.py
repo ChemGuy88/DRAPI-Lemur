@@ -33,6 +33,7 @@ def encryptValue1(value: Union[float, int, str],
         newValue = value + secret
     else:
         newValue = value + secret
+    print(f"    `encryptValue1`: {secret}")
     return newValue
 
 
@@ -57,10 +58,11 @@ def encryptValue2(value: Union[str, int],
         newValue = "".join([chr(el) for el in resultList])
     else:
         raise Exception("`value` must be of type `int` or `str`.")
+    print(f"    `encryptValue2`: {secret}")
     return newValue
 
 
-def encryptValue3(value: Union[int],
+def encryptValue3(value: Union[int, str],
                   secret: int):
     """
     Encrypt with whole-value XOR operation. Requires both operands to be integers.
@@ -74,6 +76,7 @@ def encryptValue3(value: Union[int],
         newValue = value ^ secret
     else:
         raise Exception(f"""`value` must be of type `int`. Received type "{type(value)}".""")
+    print(f"    `encryptValue3`: {secret}")
     return newValue
 
 
@@ -82,6 +85,7 @@ def deIdentificationFunction(encryptionFunction,
                              suffix,
                              value):
     """
+    This function creates a label from an encryption value.
     """
     if pd.isna(value):
         deIdentifiedValue = ""
@@ -93,18 +97,19 @@ def deIdentificationFunction(encryptionFunction,
 
 def functionFromSettings(ENCRYPTION_TYPE: int,
                          ENCRYPTION_SECRET: Union[int, str],
-                         IRB_NUMBER: str) -> Tuple[Union[int, str], Callable]:
+                         IRB_NUMBER: str,
+                         suffix) -> Tuple[Union[int, str], Callable]:
     """
     """
     ENCRYPTION_TYPE = int(ENCRYPTION_TYPE)
     ENCRYPTION_SECRET = str(ENCRYPTION_SECRET)
     # Set Parameter: Encryption function: Core
     if ENCRYPTION_TYPE == 1:
-        encryptionFunction = encryptValue1
+        encryptionFunction0 = encryptValue1
     elif ENCRYPTION_TYPE == 2:
-        encryptionFunction = encryptValue2
+        encryptionFunction0 = encryptValue2
     elif ENCRYPTION_TYPE == 3:
-        encryptionFunction = encryptValue3
+        encryptionFunction0 = encryptValue3
     else:
         raise Exception(f"""Argument `ENCRYPTION_TYPE` must be one of {{1, 2, 3}}, instead got "{ENCRYPTION_TYPE}".""")
     # Set Parameter: Encryption secret
@@ -123,7 +128,7 @@ def functionFromSettings(ENCRYPTION_TYPE: int,
         encryptionSecret = ENCRYPTION_SECRET
 
     # Set parameter: Encryption function: Wrapper
-    def variableFunction(value, suffix: str, secret):
+    def variableFunction(value: Union[str, int]):
         """
         This is a wrapper function for `deIdentificationFunction`
         """
@@ -133,10 +138,13 @@ def functionFromSettings(ENCRYPTION_TYPE: int,
             value = int(value)
         else:
             value = value
-        deIdentifiedValue = deIdentificationFunction(value=value,
-                                                     suffix=suffix,
-                                                     encryptionFunction=lambda value1: encryptionFunction(value=value1,
-                                                                                                          secret=secret),
-                                                     irbNumber=IRB_NUMBER)
+        print(f"  `variableFunction`: suffix: {suffix}")
+        print(f"  `variableFunction`: secret: {encryptionSecret}")
+
+        if pd.isna(value):
+            deIdentifiedValue = ""
+        else:
+            newValue = encryptionFunction0(value, encryptionSecret)
+            deIdentifiedValue = f"{IRB_NUMBER}_{suffix}_{newValue}"
         return deIdentifiedValue
     return (encryptionSecret, variableFunction)
