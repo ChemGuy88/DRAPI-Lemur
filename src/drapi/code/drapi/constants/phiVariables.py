@@ -5,7 +5,7 @@ Useful definitions used throughout the IDR.
 from drapi.code.drapi.drapi import flatExtend
 
 __all__ = ["LIST_OF_PHI_VARIABLES_BO",
-           "LIST_OF_PHI_VARIABLES_NOTES",
+           "LIST_OF_PHI_VARIABLES_CLINICAL_TEXT",
            "LIST_OF_PHI_VARIABLES_OMOP",
            "VARIABLE_NAME_TO_FILE_NAME_DICT",
            "FILE_NAME_TO_VARIABLE_NAME_DICT"]
@@ -40,7 +40,7 @@ LIST_OF_PHI_DATES_BO = ["Date of Diagnosis",
                         "Surgery Date Summary",
                         "Surgery Discharge Date Summary"]
 
-LIST_OF_PHI_DATES_NOTES = ["ContactDate",
+LIST_OF_PHI_DATES_CLINICAL_TEXT = ["ContactDate",
                            "CreatedDatetime",
                            "EncounterDate",
                            "OrderPlacedDatetime",
@@ -119,7 +119,7 @@ LIST_OF_PHI_VARIABLES_BO = ["Acct Number - Enter DateTime Comb",
 
 LIST_OF_PHI_VARIABLES_I2B2 = ["LOCATION_CD"]
 
-LIST_OF_PHI_VARIABLES_NOTES = ["AuthoringProviderKey",
+LIST_OF_PHI_VARIABLES_CLINICAL_TEXT = ["AuthoringProviderKey",
                                "AuthorizingProviderKey",
                                "CosignProviderKey",
                                "EncounterCSN",
@@ -164,7 +164,7 @@ LIST_OF_PHI_VARIABLES_OMOP = ["care_site_id",
 
 LIST_OF_PHI_VARIABLES = flatExtend([LIST_OF_PHI_VARIABLES_BO,
                                     LIST_OF_PHI_VARIABLES_I2B2,
-                                    LIST_OF_PHI_VARIABLES_NOTES,
+                                    LIST_OF_PHI_VARIABLES_CLINICAL_TEXT,
                                     LIST_OF_PHI_VARIABLES_OMOP])
 
 # Variable suffixes
@@ -252,7 +252,7 @@ VARIABLE_SUFFIXES_BO = {"Authoring Provider Key": {"columnSuffix": "provider",
 VARIABLE_SUFFIXES_I2B2 = {"LOCATION_CD": {"columnSuffix": "location",
                                           "deIdIDSuffix": "LOC"}}
 
-VARIABLE_SUFFIXES_NOTES = {"AuthoringProviderKey": {"columnSuffix": "provider",
+VARIABLE_SUFFIXES_CLINICAL_TEXT = {"AuthoringProviderKey": {"columnSuffix": "provider",
                                                     "deIdIDSuffix": "PROV"},
                            "AuthorizingProviderKey": {"columnSuffix": "provider",
                                                       "deIdIDSuffix": "PROV"},
@@ -316,10 +316,10 @@ FILE_NAME_TO_VARIABLE_NAME_DICT = {fileName: varName for varName, fileName in VA
 
 # QA
 for key in VARIABLE_SUFFIXES_BO.keys():
-    checkBO = key not in list(VARIABLE_SUFFIXES_NOTES.keys()) + list(VARIABLE_SUFFIXES_OMOP.keys())
-for key in VARIABLE_SUFFIXES_NOTES.keys():
-    checkNotes = key not in list(VARIABLE_SUFFIXES_BO.keys()) + list(VARIABLE_SUFFIXES_OMOP.keys())
+    checkBO = key not in list(VARIABLE_SUFFIXES_CLINICAL_TEXT.keys()) + list(VARIABLE_SUFFIXES_OMOP.keys())
+for key in VARIABLE_SUFFIXES_CLINICAL_TEXT.keys():
+    checkClinicalText = key not in list(VARIABLE_SUFFIXES_BO.keys()) + list(VARIABLE_SUFFIXES_OMOP.keys())
 for key in VARIABLE_SUFFIXES_OMOP.keys():
-    checkOMOP = key not in list(VARIABLE_SUFFIXES_BO.keys()) + list(VARIABLE_SUFFIXES_NOTES.keys())
+    checkOMOP = key not in list(VARIABLE_SUFFIXES_BO.keys()) + list(VARIABLE_SUFFIXES_CLINICAL_TEXT.keys())
 
-assert all([checkBO, checkNotes, checkOMOP]), "Some variables are present in more than one variable suffix dictionary. This may lead to unintended consequences."
+assert all([checkBO, checkClinicalText, checkOMOP]), "Some variables are present in more than one variable suffix dictionary. This may lead to unintended consequences."
