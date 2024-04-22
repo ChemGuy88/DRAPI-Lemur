@@ -6,6 +6,7 @@ import datetime as dt
 import logging
 import os
 import re
+import sys
 from array import array
 from collections.abc import Collection
 from datetime import datetime
@@ -15,9 +16,9 @@ from dateutil.parser import parse
 from itertools import islice
 from logging import Logger
 from pathlib import Path
+from time import sleep
 from typing import Callable, List, Tuple, Union
 from typing_extensions import Literal
-import sys
 # Third-party packages
 import numpy as np
 import pandas as pd
@@ -244,7 +245,7 @@ def getFilesToRelease(filesToRelease: List[Path], fileCriteria: List[Callable]):
             pass
 
 
-def getLastIDNum(df, columnName="deid_num"):
+def getLastIDNum(df: pd.DataFrame, columnName="deid_num"):
     """
     Gets the last ID number in a de-identification map.
     """
@@ -269,6 +270,18 @@ def isNumber(string):
             return False
         else:
             raise Exception(error)
+
+
+def getSerialNumber(string: str):
+    """
+    Extracts the serial number of a file name using regular expressions.
+    """
+    reObj = re.search("[0-9]+", string)
+    if reObj:
+        result = reObj.group()
+    else:
+        result = "0"
+    return int(result)
 
 
 def fileName2variableName(pathObj):
