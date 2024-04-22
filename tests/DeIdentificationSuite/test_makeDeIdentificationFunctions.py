@@ -3,35 +3,50 @@ This test module checks to see if we can dynamically define de-identification fu
 """
 
 import json
+# Third-party imports
+import pandas as pd
 # Local imports
 from drapi.code.drapi.constants.phiVariables import (VARIABLE_SUFFIXES_BO,
                                                      VARIABLE_SUFFIXES_I2B2,
-                                                     VARIABLE_SUFFIXES_NOTES,
+                                                     VARIABLE_SUFFIXES_CLINICAL_TEXT,
                                                      VARIABLE_SUFFIXES_OMOP)
 from drapi.code.drapi.deIdentificationFunctions import functionFromSettings
 
-IRB_NUMBER = "PROTOCOL-123456789"
+IRB_NUMBER = "PROTOCOL123456789"
+
+DE_IDENTIFICATION_TEST_VALUES = [-1,
+                                 0,
+                                 1,
+                                 pd.NA]
+
+
+LIST_OF_VARIABLE_SUFFIX_PORTIONS = [VARIABLE_SUFFIXES_BO,
+                                    VARIABLE_SUFFIXES_CLINICAL_TEXT,
+                                    VARIABLE_SUFFIXES_I2B2,
+                                    VARIABLE_SUFFIXES_OMOP]
 VARIABLE_SUFFIXES = {}
-LIST_OF_VARIABLE_SUFFIX_PORTIONS = [VARIABLE_SUFFIXES_BO, VARIABLE_SUFFIXES_I2B2, VARIABLE_SUFFIXES_NOTES, VARIABLE_SUFFIXES_OMOP]
 for di in LIST_OF_VARIABLE_SUFFIX_PORTIONS:
     VARIABLE_SUFFIXES.update(di)
 
 
-string = """{'Encounter # (CSN)': [1, 'random'],
-             'Encounter Key': [1, 'random'],
-             'Linkage Note ID': [1, 'random'],
-             'MRN (Jax)': [1, 'random'],
-             'MRN (UF)': [1, 'random'],
-             'Note ID': [1, 'random'],
-             'Note Key': [1, 'random'],
-             'Patient Key': [1, 'random'],
-             'Provider Key': [1, 'random']}"""
-string = string.replace("'", '"')
+string = """{"Encounter # (CSN)": [1, "random"],
+             "Encounter Key": [1, "random"],
+             "Linkage Note ID": [1, "random"],
+             "MRN (Jax)": [1, "random"],
+             "MRN (UF)": [1, "random"],
+             "Note ID": [1, "random"],
+             "Note Key": [1, "random"],
+             "Order ID": [1, "random"],
+             "Order Key": [1, "random"],
+             "Patient Key": [1, "random"],
+             "Provider Key": [1, "random"],
+             "person_id": [1, "random"],
+             "provider_id": [1, "random"],
+             "visit_occurrence_id": [1, "random"]}"""
+dictionaryOfMappingArguments = json.loads(string)
+dictionaryOfMappingArguments = dict(dictionaryOfMappingArguments)  # For type hinting
 
-DICTIONARY_OF_MAPPING_ARGUMENTS = json.loads(string)
-
-mappingArguments = [{variableName: tu} for variableName, tu in DICTIONARY_OF_MAPPING_ARGUMENTS.items()]
-
+mappingArguments = [{variableName: tu} for variableName, tu in dictionaryOfMappingArguments.items()]
 DE_IDENTIFICATION_FUNCTIONS = {}
 mappingSettings = {}
 for di in mappingArguments:
@@ -45,11 +60,12 @@ for di in mappingArguments:
     mappingSettings[variableName] = {"Encryption Type": encryptionType,
                                      "Encryption Secret (Input)": encryptionSecret0,
                                      "Encryption Secret (Final)": encryptionSecret}
-    print(VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"])
     print(f"""`variableName`: "{variableName}".""")
+    print(f"""  `deIdIDSuffix`: {VARIABLE_SUFFIXES[variableName]["deIdIDSuffix"]}.""")
     print(f"""  `encryptionSecret`: "{encryptionSecret}".""")
     print(f"""  `variableFunction`: "{variableFunction}".""")
-    print(f"""  `variableFunction(1)`: "{variableFunction(1)}".""")
+    for value in DE_IDENTIFICATION_TEST_VALUES:
+        print(f"""  `variableFunction({value})`: "{variableFunction(value)}".""")
     print()
 
 print()
@@ -58,8 +74,7 @@ for variableName, variableFunction in DE_IDENTIFICATION_FUNCTIONS.items():
     print(f"""`variableName`: "{variableName}".""")
     print(f"""  `encryptionSecret`: "{encryptionSecret}".""")
     print(f"""  `variableFunction`: "{variableFunction}".""")
-    print(f"""  `variableFunction(1)`: "{variableFunction(1)}".""")
+    for value in DE_IDENTIFICATION_TEST_VALUES:
+        print(f"""  `variableFunction({value})`: "{variableFunction(value)}".""")
     print()
 
-
-def func0(cookie): return print(cookie)
