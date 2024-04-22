@@ -26,6 +26,10 @@ mapDtypes = {0: int,
              1: int,
              2: str}
 
+# De-identification prefixes
+DE_IDENTIFICATION_PREFIXES = {"classic": "deid",
+                              "DRAPI-Lemur": "De-identified"}
+
 # Define data types. NOTE that all the `String` variables contain numbers with leading zeros that get converted to integers in the current process. Either we convert these variables to `string` or we change the process.
 DATA_TYPES_BO = {"Acct Number - Enter DateTime Comb": "String",
                  "Acct Number - Exit DateTime Comb": "String",
