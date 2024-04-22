@@ -33,11 +33,10 @@ def encryptValue1(value: Union[float, int, str],
         newValue = value + secret
     else:
         newValue = value + secret
-    print(f"    `encryptValue1`: {secret}")
     return newValue
 
 
-def encryptValue2(value: Union[str, int],
+def encryptValue2(value: Union[int, str],
                   secret: str):
     r"""
     Encrypt with character-wise XOR operation of both operands, with the second operand rotating over the set of character-wise values in `secretkey`.
@@ -58,7 +57,6 @@ def encryptValue2(value: Union[str, int],
         newValue = "".join([chr(el) for el in resultList])
     else:
         raise Exception("`value` must be of type `int` or `str`.")
-    print(f"    `encryptValue2`: {secret}")
     return newValue
 
 
@@ -76,7 +74,6 @@ def encryptValue3(value: Union[int, str],
         newValue = value ^ secret
     else:
         raise Exception(f"""`value` must be of type `int`. Received type "{type(value)}".""")
-    print(f"    `encryptValue3`: {secret}")
     return newValue
 
 
@@ -128,23 +125,25 @@ def functionFromSettings(ENCRYPTION_TYPE: int,
         encryptionSecret = ENCRYPTION_SECRET
 
     # Set parameter: Encryption function: Wrapper
-    def variableFunction(value: Union[str, int]):
+    def variableFunction(value: Union[int, str]):
         """
         This is a wrapper function for `deIdentificationFunction`
         """
-        if pd.isna(value):
-            value = value
-        elif isinstance(value, float):
-            value = int(value)
-        else:
-            value = value
-        print(f"  `variableFunction`: suffix: {suffix}")
-        print(f"  `variableFunction`: secret: {encryptionSecret}")
-
+        # Pre-process values
         if pd.isna(value):
             deIdentifiedValue = ""
         else:
-            newValue = encryptionFunction0(value, encryptionSecret)
+            if value < 0:
+                newValue = 0
+            else:
+                if isinstance(value, float):
+                    value1 = int(value)
+                else:
+                    value1 = value
+                newValue = encryptionFunction0(value1, encryptionSecret)
+
             deIdentifiedValue = f"{IRB_NUMBER}_{suffix}_{newValue}"
+
         return deIdentifiedValue
+
     return (encryptionSecret, variableFunction)
