@@ -2,6 +2,17 @@
 
 This is a lab journal with notes about the IDR
 
+## Compiling Documentation for Data Releases
+
+You can use **pandoc** to convert **markdown** documents to PDF, however I have had little success with this. An alternative that works for me is using Google Chrome to print an HTML file to PDF using the below command.
+
+```bash
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
+                                                               --print-to-pdf="README.PDF" \
+                                                               --no-pdf-header-footer \
+                                                               "README.HTML"
+```
+
 ## Publishing a Package Automatically with CI/CD
 
 ```shell
@@ -89,8 +100,9 @@ import io
 import sys
 import pandas as pd
 platform = sys.platform
-WINDOWS_ONLY_LIST = ["console_shortcut", "pywin32"]
 DARWIN_ONLY_LIST = []
+LINUX_ONLY_LIST = []
+WINDOWS_ONLY_LIST = ["console_shortcut", "pywin32"]
 TEXT = """
 <TEXT>>
 """
