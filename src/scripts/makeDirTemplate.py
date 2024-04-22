@@ -8,7 +8,6 @@ New Directory
 │   └── output
 ├── logs
 ├── sql
-├── .env
 ├── .gitignore
 └── README.md
 
@@ -21,7 +20,7 @@ import os
 import sys
 import shutil
 from pathlib import Path
-# Local imports
+# First-party imports
 from drapi.templates.makeDirTemplate import PATH as makeDirTemplatePath
 
 
@@ -105,5 +104,9 @@ if __name__ == "__main__":
     templateChoice = args.templateChoice
     destinationPath = args.destinationPath
 
-    copyTemplateDirectory(templateChoice=templateChoice,
-                          destinationPath=destinationPath)
+    try:
+        copyTemplateDirectory(templateChoice=templateChoice,
+                              destinationPath=destinationPath)
+    except Exception as err:
+        shutil.rmtree(destinationPath)
+        raise err
