@@ -8,7 +8,7 @@ from pathlib import Path
 # Third-party packages
 import yaml
 # Custom packages
-from drapi.drapi import successiveParents
+from drapi.code.drapi.drapi import successiveParents
 
 
 def interpretPath(pathAsString: str) -> str:
@@ -17,6 +17,8 @@ def interpretPath(pathAsString: str) -> str:
     """
     operatingSystem = sys.platform
     if operatingSystem == "darwin":
+        newPathAsString = pathAsString.replace("\\", "/")
+    elif operatingSystem == "linux":
         newPathAsString = pathAsString.replace("\\", "/")
     elif operatingSystem == "win32":
         newPathAsString = pathAsString.replace("/", "\\")
