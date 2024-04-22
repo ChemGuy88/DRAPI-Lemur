@@ -1,31 +1,3 @@
-# README file for IRB000000000
+# README
 
-# Request Date: MM/DD/YYYY
-
-# PI: 
- - ...
-
-# Request Type:
- - Line-level
-
-# Final Applied Inclusion Criteria:
- - ...
-
-# Final Applied Exclusion Criteria:
- - None
-
-# Data Elements for Release:
- - 
-
-# Steps to Generate Data Release:
- - ...
-
-# Release to:
- - ...
-
-# Release Files:
- - ...
-
-# Other Notes:
-
-____________________________________________________________
+This is the README for the **BO** portion of this data request. **BO** is short for **SAP Business Objects**. The **BO** portion is sometimes also called the **SQL** or **Line-Level** portion. The purpose of this portion is typically to download data from BO, either directly from the BO graphical user interface or indirectly by using its back-end SQL queries. Custom SQL queries are also usually included in this portion.

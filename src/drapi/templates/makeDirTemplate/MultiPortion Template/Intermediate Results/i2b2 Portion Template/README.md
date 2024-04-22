@@ -1,31 +1,3 @@
-# README file for IRB000000000
+# README
 
-# Request Date: MM/DD/YYYY
-
-# PI: 
- - ...
-
-# Request Type:
- - Line-level
-
-# Final Applied Inclusion Criteria:
- - ...
-
-# Final Applied Exclusion Criteria:
- - None
-
-# Data Elements for Release:
- - 
-
-# Steps to Generate Data Release:
- - ...
-
-# Release to:
- - ...
-
-# Release Files:
- - ...
-
-# Other Notes:
-
-____________________________________________________________
+This is the README for the **i2b2** portion of this data request.
