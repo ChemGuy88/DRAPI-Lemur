@@ -10,11 +10,11 @@ from typing_extensions import Literal
 # Third-party libraries
 import pandas as pd
 # Local libraries
-from drapi.drapi import replace_sql_query
-from drapi.drapi import successiveParents
+from drapi.code.drapi.drapi import (replace_sql_query,
+                                    successiveParents)
 
 # Arguments
-MODULE_ROOT_DIRECTORY_PATH = successiveParents(Path(__file__), 4)
+MODULE_ROOT_DIRECTORY_PATH, _ = successiveParents(Path(__file__), 4)
 
 # Arguments: SQL connection settings
 SERVER = "EDW.shands.ufl.edu"
