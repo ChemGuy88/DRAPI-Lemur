@@ -19,7 +19,7 @@ def getData_outer(conStr: str,
                 filterVariableChunkSize: int,
                 filterVariableData: Union[pd.DataFrame, pd.Series],
                 filterVariableFilePath: Union[Path, str],
-                filterVariablePythonDataType: type,
+                filterVariablePythonDataType: str,
                 filterVariableSqlQueryTemplatePlaceholder: str,
                 outputName: str,
                 queryChunkSize: int,
@@ -29,7 +29,7 @@ def getData_outer(conStr: str,
     """
     Executes a SQL query with a filter.
     """
-    # >>> Determine filter variable data sourcing type: Direct or indirect sourcing >>>
+    # >>> Determine filter variable data sourcing type: Direct or indirect sourcing >>> NOTE This block is a little rough around the edges. TODO Needs testing.
     # Note -> Direct sourcing
     # Note -> Direct sourcing: Case 1: `filterVariableData` is defined and is a Series
     # Note -> Direct sourcing: Case 2: `filterVariableData` is defined and is a DataFrame and is of width 1
@@ -43,11 +43,13 @@ def getData_outer(conStr: str,
         sourcing = "direct - False"
         sourcingCase = None
     elif isinstance(filterVariableData, (pd.DataFrame)):
+        # If-block 1
         if filterVariableData.shape[1] == 1:
             sourcing = "direct"
             sourcingCase = 2
         else:
             sourcingCase = None
+        # If-block 2
         if isinstance(filterVariableColumnName,  (str, int)):
             sourcing = "direct"
             sourcingCase = 3
@@ -59,11 +61,11 @@ def getData_outer(conStr: str,
         sourcingCase = 1
     else:
         message = f"""The variable `filterVariableData` is of an unexpected data type: "{filterVariableData}"."""
-        logger.fatal(message)
+        logger.critical(message)
         raise Exception(message)
 
     # Determine filter variable data sourcing type: Direct or indirect sourcing: Indirect sourcing
-    if sourcing:
+    if sourcing == "direct":
         pass
     else:
         if isinstance(filterVariableFilePath, type(None)) or isinstance(filterVariableColumnName, type(None)):
@@ -74,7 +76,7 @@ def getData_outer(conStr: str,
             sourcingCase = 1
         else:
             message = f"""One of the following variables is of an unexpected data type: `filterVariableData` -> "{type(filterVariableData)}"; `filterVariableColumnName` -> "{type(filterVariableColumnName)}"."""
-            logger.fatal(message)
+            logger.critical(message)
             raise Exception(message)
     # <<< Determine filter variable data sourcing type: Direct or indirect sourcing <<<
 
@@ -88,15 +90,15 @@ def getData_outer(conStr: str,
             filterVariableDataSeries = filterVariableData[filterVariableColumnName]
         else:
             message = "An unexpected error occurred when determining the direct sourcing case for the filter variable data. Check the values for `filterVariableData` and `filterVariableColumnName`."
-            logger.fatal(message)
+            logger.critical(message)
             raise Exception(message)
     elif sourcing == "indirect":
-            dataFrame = readDataFile(fname=filterVariableFilePath)
+            dataFrame = readDataFile(fname=Path(filterVariableFilePath))
             filterVariableDataSeries = dataFrame[filterVariableColumnName]
             del dataFrame
     else:
         message = f"""An unexpected error occurred when determinig the filter variable data sourcing type. Check the values for `filterVariableColumnName`, `filterVariableData`, and `filterVariableColumnName`.\nDebugging values:\n`sourcing`: "{sourcing}"\n`sourcingCase`: "{sourcingCase}" """
-        logger.fatal(message)
+        logger.critical(message)
         raise Exception(message)
     # <<< Select filter variable data <<<
         

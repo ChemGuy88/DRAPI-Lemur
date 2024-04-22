@@ -72,7 +72,7 @@ def getData_inner(conStr: str,
     queryGenerator0 = pd.read_sql(sql=query, con=connection1, chunksize=queryChunkSize)
     chunks2 = [1 for _ in queryGenerator0]
     numChunks2 = sum(chunks2)
-    logger.info(f"""  ..  Counting the number of query result chunks that are expected with `queryChunkSize` "{queryChunkSize:,}" - Done.""")
+    logger.info(f"""  ..  Counting the number of query result chunks that are expected with `queryChunkSize` "{queryChunkSize:,}" - Done. there are {numChunks2:,} chunks.""")
 
     logger.info("""  ..  Creating query generator.""")
     queryGenerator1 = pd.read_sql(sql=query, con=connection2, chunksize=queryChunkSize)
@@ -82,7 +82,7 @@ def getData_inner(conStr: str,
     logger.info("""  ..  Iterating over query generator.""")
     for it2, queryChunk in enumerate(queryGenerator1, start=1):
         itstring2 = str(it2).zfill(padlen2)
-        logger.info(f"""  ..  ..  Executing query chunk {itstring2} of {numChunks2}.""")
+        logger.info(f"""  ..  ..  Executing query chunk {it2:,} of {numChunks2}.""")
         result = queryChunk
         logger.info("""  ..  ..  Finished query chunk.""")
 
