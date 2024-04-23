@@ -41,11 +41,11 @@ LIST_OF_PHI_DATES_BO = ["Date of Diagnosis",
                         "Surgery Discharge Date Summary"]
 
 LIST_OF_PHI_DATES_CLINICAL_TEXT = ["ContactDate",
-                           "CreatedDatetime",
-                           "EncounterDate",
-                           "OrderPlacedDatetime",
-                           "OrderResultDatetime",
-                           "ServiceDatetime"]
+                                   "CreatedDatetime",
+                                   "EncounterDate",
+                                   "OrderPlacedDatetime",
+                                   "OrderResultDatetime",
+                                   "ServiceDatetime"]
 
 LIST_OF_PHI_DATES_OMOP = ["birth_datetime",
                           "condition_end_date",
@@ -120,21 +120,21 @@ LIST_OF_PHI_VARIABLES_BO = ["Acct Number - Enter DateTime Comb",
 LIST_OF_PHI_VARIABLES_I2B2 = ["LOCATION_CD"]
 
 LIST_OF_PHI_VARIABLES_CLINICAL_TEXT = ["AuthoringProviderKey",
-                               "AuthorizingProviderKey",
-                               "CosignProviderKey",
-                               "EncounterCSN",
-                               "EncounterKey",
-                               "LinkageNoteID",
-                               "MRN_GNV",
-                               "MRN_JAX",
-                               "NoteID",
-                               "NoteKey",
-                               "OrderID",
-                               "OrderKey",
-                               "OrderingProviderKey",
-                               "PatientKey",
-                               "Patient Key",
-                               "ProviderKey"]
+                                       "AuthorizingProviderKey",
+                                       "CosignProviderKey",
+                                       "EncounterCSN",
+                                       "EncounterKey",
+                                       "LinkageNoteID",
+                                       "MRN_GNV",
+                                       "MRN_JAX",
+                                       "NoteID",
+                                       "NoteKey",
+                                       "OrderID",
+                                       "OrderKey",
+                                       "OrderingProviderKey",
+                                       "PatientKey",
+                                       "Patient Key",
+                                       "ProviderKey"]
 
 # The list defined `LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE` is provided for reference. Each variable on its own is not PHI, but in combination with others they are PHI.
 LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL = ["year_of_birth",
@@ -167,7 +167,7 @@ LIST_OF_PHI_VARIABLES = flatExtend([LIST_OF_PHI_VARIABLES_BO,
                                     LIST_OF_PHI_VARIABLES_CLINICAL_TEXT,
                                     LIST_OF_PHI_VARIABLES_OMOP])
 
-# Variable suffixes
+# Variable suffixes: By portion
 VARIABLE_SUFFIXES_BO = {"Authoring Provider Key": {"columnSuffix": "provider",
                                                    "deIdIDSuffix": "PROV"},
                         "Authorizing Provider Key": {"columnSuffix": "provider",
@@ -249,39 +249,39 @@ VARIABLE_SUFFIXES_BO = {"Authoring Provider Key": {"columnSuffix": "provider",
                         "To Station": {"columnSuffix": "station",
                                        "deIdIDSuffix": "STN"}}
 
+VARIABLE_SUFFIXES_CLINICAL_TEXT = {"AuthoringProviderKey": {"columnSuffix": "provider",
+                                                            "deIdIDSuffix": "PROV"},
+                                   "AuthorizingProviderKey": {"columnSuffix": "provider",
+                                                              "deIdIDSuffix": "PROV"},
+                                   "CosignProviderKey": {"columnSuffix": "provider",
+                                                         "deIdIDSuffix": "PROV"},
+                                   "EncounterCSN": {"columnSuffix": "encounter",
+                                                    "deIdIDSuffix": "ENC"},
+                                   "EncounterKey": {"columnSuffix": "encounter",
+                                                    "deIdIDSuffix": "ENC"},
+                                   "LinkageNoteID": {"columnSuffix": "link_note",
+                                                     "deIdIDSuffix": "LINK_NOTE"},
+                                   "MRN_GNV": {"columnSuffix": "patient",
+                                               "deIdIDSuffix": "PAT"},
+                                   "MRN_JAX": {"columnSuffix": "patient",
+                                               "deIdIDSuffix": "PAT"},
+                                   "NoteID": {"columnSuffix": "note",
+                                              "deIdIDSuffix": "NOTE"},
+                                   "NoteKey": {"columnSuffix": "note",
+                                               "deIdIDSuffix": "NOTE"},
+                                   "OrderID": {"columnSuffix": "order",
+                                               "deIdIDSuffix": "ORD"},
+                                   "OrderKey": {"columnSuffix": "order",
+                                                "deIdIDSuffix": "ORD"},
+                                   "OrderingProviderKey": {"columnSuffix": "order",
+                                                           "deIdIDSuffix": "ORD"},
+                                   "PatientKey": {"columnSuffix": "patient",
+                                                  "deIdIDSuffix": "PAT"},
+                                   "ProviderKey": {"columnSuffix": "provider",
+                                                   "deIdIDSuffix": "PROV"}}
+
 VARIABLE_SUFFIXES_I2B2 = {"LOCATION_CD": {"columnSuffix": "location",
                                           "deIdIDSuffix": "LOC"}}
-
-VARIABLE_SUFFIXES_CLINICAL_TEXT = {"AuthoringProviderKey": {"columnSuffix": "provider",
-                                                    "deIdIDSuffix": "PROV"},
-                           "AuthorizingProviderKey": {"columnSuffix": "provider",
-                                                      "deIdIDSuffix": "PROV"},
-                           "CosignProviderKey": {"columnSuffix": "provider",
-                                                 "deIdIDSuffix": "PROV"},
-                           "EncounterCSN": {"columnSuffix": "encounter",
-                                            "deIdIDSuffix": "ENC"},
-                           "EncounterKey": {"columnSuffix": "encounter",
-                                            "deIdIDSuffix": "ENC"},
-                           "LinkageNoteID": {"columnSuffix": "link_note",
-                                             "deIdIDSuffix": "LINK_NOTE"},
-                           "MRN_GNV": {"columnSuffix": "patient",
-                                       "deIdIDSuffix": "PAT"},
-                           "MRN_JAX": {"columnSuffix": "patient",
-                                       "deIdIDSuffix": "PAT"},
-                           "NoteID": {"columnSuffix": "note",
-                                      "deIdIDSuffix": "NOTE"},
-                           "NoteKey": {"columnSuffix": "note",
-                                       "deIdIDSuffix": "NOTE"},
-                           "OrderID": {"columnSuffix": "order",
-                                       "deIdIDSuffix": "ORD"},
-                           "OrderKey": {"columnSuffix": "order",
-                                        "deIdIDSuffix": "ORD"},
-                           "OrderingProviderKey": {"columnSuffix": "order",
-                                                   "deIdIDSuffix": "ORD"},
-                           "PatientKey": {"columnSuffix": "patient",
-                                          "deIdIDSuffix": "PAT"},
-                           "ProviderKey": {"columnSuffix": "provider",
-                                           "deIdIDSuffix": "PROV"}}
 
 VARIABLE_SUFFIXES_OMOP = {"care_site_id": {"columnSuffix": "location",
                                            "deIdIDSuffix": "LOC"},
@@ -305,6 +305,14 @@ VARIABLE_SUFFIXES_OMOP = {"care_site_id": {"columnSuffix": "location",
                                           "deIdIDSuffix": "PROV"},
                           "visit_occurrence_id": {"columnSuffix": "encounter",
                                                   "deIdIDSuffix": "ENC"}}
+# Variable suffixes: All
+VARIABLE_SUFFIXES_LIST = [VARIABLE_SUFFIXES_BO,
+                          VARIABLE_SUFFIXES_CLINICAL_TEXT,
+                          VARIABLE_SUFFIXES_I2B2,
+                          VARIABLE_SUFFIXES_OMOP]
+VARIABLE_SUFFIXES = dict()
+for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
+    VARIABLE_SUFFIXES.update(variableSuffixDict)
 
 # Variable name to file name map. This is necessary because some variable names have characters which are not allowed in file names, e.g., "/".
 VARIABLE_NAME_TO_FILE_NAME_DICT = {varName: varName for varName in LIST_OF_PHI_VARIABLES}
