@@ -14,18 +14,15 @@ from drapi.code.drapi.drapi import (getTimestamp,
                                     successiveParents)
 
 # Arguments
-LIST_OF_DIRECTORIES = ["../Test For Archive/Folder 1/Portion 1",  # Notes Metadata
-                       "../Test For Archive/Folder 1/Portion 2",  # Notes Text
-                       "../Test For Archive/Folder 2/Portion 3"]  # OMOP
-LIST_OF_DIRECTORIES = ["test/data/output/convertColumnsHash/convertColumnsHash/2024-03-04 18-00-22/Portions/Notes Metadata",  # Notes Metadata
-                       "test/data/output/convertColumnsHash/convertColumnsHash/2024-03-04 18-00-22/Portions/Notes Text",  # Notes Text
-                       "test2/Concatenated Results/data/output/deleteColumns/deleteColumns/2024-03-08 00-14-59"]  # OMOP
-LIST_OF_DIRECTORIES_NEW_NAMES = ["Notes Metadata",
-                                 "Notes Text",
+LIST_OF_DIRECTORIES = ["../../Concatenated Results/disclosure/Portion Symlinks/Clinical Text",  # Clinical Text
+                       "../../Concatenated Results/disclosure/Portion Symlinks/Clinical Text Metadata",  # Clinical Text Metadata
+                       "../../Concatenated Results/disclosure/Portion Symlinks/OMOP"]  # OMOP
+LIST_OF_DIRECTORIES_NEW_NAMES = ["Clinical Text",
+                                 "Clinical Text Metadata",
                                  "OMOP"]
 LIST_OF_FILES = []
 TIMESTAMP = getTimestamp()
-DESTINATION_FOLDER = fr"/data/herman/mnt/idr1/IRB202300703/{TIMESTAMP}"
+DESTINATION_FOLDER = fr"disclosure/{TIMESTAMP}"
 
 OVERWRITE_IF_EXISTS_FOLDER = False
 OVERWRITE_IF_EXISTS_FILE = False
@@ -224,7 +221,7 @@ if __name__ == "__main__":
             logger.info("""The archive folder already exists and will be removed before writing.""")
             os.remove(archivePath)
         else:
-            pass
+            destinationRootFolder.mkdir(parents=True)
 
         # Define list of files to archive, and their paths
         if LIST_OF_DIRECTORIES_NEW_NAMES:

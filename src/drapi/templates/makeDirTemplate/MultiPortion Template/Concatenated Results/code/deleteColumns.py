@@ -20,12 +20,12 @@ from drapi.code.drapi.drapi import (flatExtend,
 from drapi.code.drapi.constants.phiVariables import (LIST_OF_PHI_VARIABLES_OMOP_UNINFORMATIVE,
                                           LIST_OF_PHI_VARIABLES_OMOP_BIRTHDATE_CONDITIONAL)
 # Project parameters: General
-from common import (STUDY_TYPE,
-                    DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
+from .common import (STUDY_TYPE,
+                     DATA_REQUEST_ROOT_DIRECTORY_DEPTH)
 # Project parameters: Portion paths and criteria
-from common import (MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
-                    NOTES_PORTION_DIR_MAC, NOTES_PORTION_DIR_WIN,
-                    OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN)
+from .common import (MODIFIED_OMOP_PORTION_DIR_MAC, MODIFIED_OMOP_PORTION_DIR_WIN,
+                     CLINICAL_TEXT_PORTION_DIR_MAC, CLINICAL_TEXT_PORTION_DIR_WIN,
+                     OMOP_PORTION_DIR_MAC, OMOP_PORTION_DIR_WIN)
 
 # Arguments: Use concatenated files
 USE_CONCATENATED_FILES = True  # TODO
@@ -34,8 +34,8 @@ USE_CONCATENATED_FILES = True  # TODO
 USE_MODIFIED_OMOP_DATA_SET = True
 
 # Arguments: File location definition: By concatenation
-CONCATENATED_PORTIONS_DIR_MAC = Path("../Concatenated Results/data/output/convertColumnsHash/2024-03-04 18-00-22/Portions/OMOP")  # TODO
-CONCATENATED_PORTIONS_DIR_WIN = Path("../Concatenated Results/data/output/convertColumnsHash/2024-03-04 18-00-22/Portions/OMOP")  # TODO
+CONCATENATED_PORTIONS_DIR_MAC = Path("../../Concatenated Results/data/output/convertColumnsHash/.../Portions/OMOP")  # TODO
+CONCATENATED_PORTIONS_DIR_WIN = Path("../../Concatenated Results/data/output/convertColumnsHash/.../Portions/OMOP")  # TODO
 
 # Arguments: Portion Paths and conditions
 if USE_MODIFIED_OMOP_DATA_SET:
@@ -52,10 +52,10 @@ if USE_CONCATENATED_FILES:
     MAC_PATHS = [CONCATENATED_PORTIONS_DIR_MAC]
     WIN_PATHS = [CONCATENATED_PORTIONS_DIR_WIN]
 else:
-    MAC_PATHS = [NOTES_PORTION_DIR_MAC,
+    MAC_PATHS = [CLINICAL_TEXT_PORTION_DIR_MAC,
                  OMOPPortionDirMac]
     WIN_PATHS = [OMOPPortionDirWin,
-                 NOTES_PORTION_DIR_WIN]
+                 CLINICAL_TEXT_PORTION_DIR_WIN]
 
 # Arguments: Definition of criteria for file release
 # NOTE (Developer's Note) The files to release and the file criteiria both act as criteria to release. The argument structure here is not very clear and it will take some time to create a generalizeable template. However, it seems that `LIST_OF_PORTION_CONDITIONS` is the only output of this arguments section, i.e., the only require input for the script. Also note that each portion has its own criteria, but they are not used in the template.
