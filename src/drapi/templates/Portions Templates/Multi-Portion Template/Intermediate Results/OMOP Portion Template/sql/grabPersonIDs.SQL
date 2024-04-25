@@ -5,4 +5,4 @@ SELECT
 FROM
 	[DWS_OMOP_PROD].[dbo].[PERSON]
 WHERE
-	person_source_value IN (XXXXX)
+	person_source_value IN ({PYTHON_VARIABLE: Patient Key})
