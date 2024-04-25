@@ -6,7 +6,7 @@ __all__ = ["idealistMap2dict",
            "patientKey2MRNs"]
 
 from pathlib import Path
-from drapi.drapi import replace_sql_query
+from drapi.code.drapi.drapi import replace_sql_query
 import os
 import pandas as pd
 import sqlalchemy as sa

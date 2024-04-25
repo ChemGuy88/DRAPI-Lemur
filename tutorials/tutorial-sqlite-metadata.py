@@ -11,7 +11,7 @@ import sys
 # Third-party packages
 import sqlite3
 # Local imports
-from drapi.drapi import sqlite2df, getTimestamp
+from drapi.code.drapi.drapi import sqlite2df, getTimestamp
 
 # Arguments
 DATABSE_PATH_MAC = Path("/Volumes/FTP/IDR/ANES/IRB201600223 - aka R01/Deiden_db/deiden_2021-05-01_0.db")

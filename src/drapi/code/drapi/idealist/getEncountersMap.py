@@ -6,7 +6,7 @@ Outline
     - For each file, append the encounter de-identification maps to the master map.
 """
 
-""" NOTE See DNR folder for latest version
+# NOTE See DNR folder for latest version
 # Private variables ("dunders")
 __all__ = ["encounterMapDf"]
 
@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 import sqlite3
 # Local imports
-from drapi.drapi import sqlite2df, getTimestamp, replace_sql_query, makeChunks
+from drapi.code.drapi.drapi import sqlite2df, getTimestamp, replace_sql_query, makeChunks
 
 # Arguments
 QUERY_PATH = Path("sql/encounterNumber2patientKey.SQL")
@@ -171,4 +171,3 @@ if __name__ == "__main__":
 
     # Script end
     logging.info(f"""Finished running "{thisFilePath}".""")
-"""
