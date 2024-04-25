@@ -1,9 +1,10 @@
 """
-Get "Person ID" from "Patient Key"
+Get "Person ID" from "Patient Key" using `getData`.
 """
 
 import logging
 import os
+import shutil
 from pathlib import Path
 # Third-party packages
 import pandas as pd
@@ -11,10 +12,11 @@ import pandas as pd
 from drapi.code.drapi.drapi import (getTimestamp,
                                     makeDirPath,
                                     successiveParents)
+from drapi.code.drapi.getData.getData import getData
 
 # Arguments
-PATIENT_KEYS_CSV_FILE_PATH = Path("data/input/Cohort - Patient Key.CSV")  # TODO
-PATIENT_KEYS_CSV_FILE_HEADER = "Patient Key"  # TODO
+PATIENT_KEYS_CSV_FILE_PATH = ""  # TODO
+PATIENT_KEYS_CSV_FILE_HEADER = ""  # TODO
 
 # Arguments: Meta-variables
 PROJECT_DIR_DEPTH = 2
@@ -49,7 +51,10 @@ IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUE
 dataDir = projectDir.joinpath("data")
 if dataDir:
     inputDataDir = dataDir.joinpath("input")
+    intermediateDataDir = dataDir.joinpath("intermediate")
     outputDataDir = dataDir.joinpath("output")
+    if intermediateDataDir:
+        runIntermediateDataDir = intermediateDataDir.joinpath(thisFileStem, runTimestamp)
     if outputDataDir:
         runOutputDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
 logsDir = projectDir.joinpath("logs")
@@ -82,6 +87,7 @@ conStr = f"mssql+pymssql://{uid}:{PWD}@{SERVER}/{DATABASE}"
 pass
 
 # Directory creation: General
+makeDirPath(runIntermediateDataDir)
 makeDirPath(runOutputDir)
 makeDirPath(runLogsDir)
 
@@ -134,25 +140,48 @@ if __name__ == "__main__":
 
     # Script
     # Get patient keys
-    patientKeysInput = pd.read_csv(PATIENT_KEYS_CSV_FILE_PATH, dtype={0: int}).drop_duplicates()
-    listAsString = ",".join([str(x) for x in patientKeysInput.values.flatten()])
+    data = pd.read_csv(PATIENT_KEYS_CSV_FILE_PATH)
 
     # Get input file header
-    assert patientKeysInput.shape[1] == 1, "Expected file input should be just one column containing patient keys."
+    nColumns = data.shape[1]
     if PATIENT_KEYS_CSV_FILE_HEADER:
         inputFileHeader = PATIENT_KEYS_CSV_FILE_HEADER
     else:
-        inputFileHeader = patientKeysInput.columns[0]
+        if nColumns == 1:
+            inputFileHeader = data.columns[0]
+        else:
+            message = f"""The input data has more than one column and you did not specify the column to use. Please set a value for `PATIENT_KEYS_CSV_FILE_HEADER`."""
+            logger.critical(message)
+            raise Exception(message)
+
+    patientKeysInput = data[inputFileHeader].astype(int).drop_duplicates().sort_values()
 
     # Query person IDs
     logger.info("""Querying database for person IDs.""")
-    with open(personID_SQLQueryFilePath, "r") as file:
-        text = file.read()
-    query = text.replace("XXXXX", listAsString)
-    queryResults = pd.read_sql(query, con=conStr)
+    queryResultsDir = runIntermediateDataDir.joinpath("Query Results")
+    queryResultsDir.mkdir()
+    getData(sqlFilePath=personID_SQLQueryFilePath,
+            connectionString=conStr,
+            filterVariablePythonDataType="int",
+            filterVariableSqlQueryTemplatePlaceholder="{PYTHON_VARIABLE: Patient Key}",
+            logger=logger,
+            outputFileName="Person ID",
+            runOutputDir=queryResultsDir,
+            filterVariableColumnName=PATIENT_KEYS_CSV_FILE_HEADER,
+            filterVariableFilePath=PATIENT_KEYS_CSV_FILE_PATH)
     logger.info("""Querying database for person IDs - done.""")
 
+    # Load query results
+    queryResults = pd.DataFrame()
+    resultsList = sorted(queryResultsDir.iterdir())
+    it1Total = len(resultsList)
+    for it1, fpath in enumerate(resultsList, start=1):
+        logger.info(f"""  Loading query result {it1:,} of {it1Total:,}.""")
+        df = pd.read_csv(fpath)
+        queryResults = pd.concat([queryResults, df])
+
     # Compare number of Person IDs returned with Patient Keys queried
+    patientKeysInput = pd.DataFrame(patientKeysInput)
     patientKeysInput = patientKeysInput.rename(columns={inputFileHeader: "Patient Key"})
     patientKeysInput["Patient Key"] = patientKeysInput["Patient Key"].astype(int)
     queryResults["Patient Key"] = queryResults["Patient Key"].astype(int)
@@ -180,15 +209,18 @@ if __name__ == "__main__":
             personIDsFound2[column] = li
 
     # Save results: Person IDs found
-    personIDsFoundExportPath = runOutputDir.joinpath("personIDsFound.csv")
+    personIDsFoundExportPath = runOutputDir.joinpath("Person IDs - QA.csv")
     personIDsFound2.to_csv(personIDsFoundExportPath)
-    logger.info(f"""The map of patient keys to person IDs, and those missing or found, was saved to "{personIDsFoundExportPath}".""")
+    logger.info(f"""The map of patient keys to person IDs, and those missing or found, was saved to "{personIDsFoundExportPath.absolute().relative_to(rootDirectory)}".""")
 
     # Save results: person IDs
     personIDs = personIDsFound["person_id"].drop_duplicates().dropna().sort_values().astype(int)
-    personIDsExportPath = runOutputDir.joinpath("personIDs.csv")
+    personIDsExportPath = runOutputDir.joinpath("Person IDs.csv")
     personIDs.to_csv(personIDsExportPath, index=False)
     logger.info(f"""Person IDs were saved to "{personIDsExportPath.relative_to(projectDir)}".""")
+
+    # Remove intermediate files
+    shutil.rmtree(runIntermediateDataDir)
 
     # End script
     logger.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")
