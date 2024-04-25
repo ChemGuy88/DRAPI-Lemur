@@ -137,7 +137,6 @@ celerybeat.pid
 
 # Environments
 .env
-!drapiPackage/templates/makeDirTemplate/**/.env
 .venv
 env/
 venv/

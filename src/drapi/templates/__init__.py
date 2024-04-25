@@ -1,5 +1,5 @@
 """
-__init__ file for "makeDirTemplate" data module
+__init__ file for "templates" data module
 """
 
 from pathlib import Path

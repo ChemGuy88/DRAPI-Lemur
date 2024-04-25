@@ -21,7 +21,7 @@ import sys
 import shutil
 from pathlib import Path
 # First-party imports
-from drapi.templates.makeDirTemplate import PATH as makeDirTemplatePath
+from drapi.templates import PATH as templatesPath
 
 
 def win2nixPath(string: str) -> str:
@@ -41,22 +41,22 @@ def win2nixPath(string: str) -> str:
     return newString
 
 
-ROOT_PATH = makeDirTemplatePath.__str__()
+ROOT_PATH = templatesPath.joinpath("Portions Templates").__str__()
 # NOTE `optionsDict` expects `"path"` values to be in Windows format because it's later used by `win2nixPath`
 optionsDict = {"BO": {"number": 2,
-                      "path": r"\MultiPortion Template\Intermediate Results\BO Portion Template"},
+                      "path": r"\Multi-Portion Template\Intermediate Results\BO Portion Template"},
                "De-identification Suite": {"number": 1,
-                                           "path": r"\MultiPortion Template\Concatenated Results"},
+                                           "path": r"\Multi-Portion Template\Concatenated Results"},
                "General Script": {"number": 3,
-                                  "path": r"\MultiPortion Template\Intermediate Results\General Script Template"},
+                                  "path": r"\Multi-Portion Template\Intermediate Results\General Script Template"},
                "i2b2": {"number": 4,
-                        "path": r"\MultiPortion Template\Intermediate Results\i2b2 Portion Template"},
+                        "path": r"\Multi-Portion Template\Intermediate Results\i2b2 Portion Template"},
                "Multi-Portion Template": {"number": 0,
-                                          "path": r"\MultiPortion Template"},
+                                          "path": r"\Multi-Portion Template"},
                "Notes": {"number": 5,
-                         "path": r"\MultiPortion Template\Intermediate Results\Notes Portion Template"},
+                         "path": r"\Multi-Portion Template\Intermediate Results\Notes Portion Template"},
                "OMOP": {"number": 6,
-                        "path": r"\MultiPortion Template\Intermediate Results\OMOP Portion Template"}}
+                        "path": r"\Multi-Portion Template\Intermediate Results\OMOP Portion Template"}}
 
 optionsDict2 = {values["number"]: {"name": name,
                                    "path": ROOT_PATH + win2nixPath(values["path"])} for name, values in optionsDict.items()}
