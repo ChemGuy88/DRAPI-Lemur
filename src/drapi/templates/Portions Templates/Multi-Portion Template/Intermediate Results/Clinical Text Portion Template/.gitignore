@@ -3,6 +3,7 @@
 **/*.7z
 **/.DS_Store
 **/*.bat
+!**/launchIPython.bat
 **/*.csv
 **/*.out
 **/*.pdf
