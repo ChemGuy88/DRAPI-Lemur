@@ -3,7 +3,6 @@
 **/*.7z
 **/.DS_Store
 **/*.bat
-!**/launchIPython.bat
 **/*.csv
 **/*.out
 **/*.pdf
@@ -136,7 +135,7 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-!.env
+.env
 .venv
 env/
 venv/
