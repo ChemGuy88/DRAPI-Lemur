@@ -31,8 +31,8 @@ ID_TYPE = ""                                        # Pick from "EncounterCSN", 
 NOTE_VERSION = ""                                   # Pick from "all", or "last"
 DE_IDENTIFICATION_MODE = ""                         # Pick from "deid", "lds", or "phi"
 LOG_LEVEL = ""                                      # See the "logging" module for valid values for the `loglevel` parameter.
-SQL_ENCOUNTER_EFFECTIVE_DATE_START = ''   # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
-SQL_ENCOUNTER_EFFECTIVE_DATE_END = ''     # The end of date range of encounters to collect. Format: YYYY-MM-DD
+SQL_ENCOUNTER_EFFECTIVE_DATE_START = ""   # The beginning of date range of encounters to collect. Format: YYYY-MM-DD
+SQL_ENCOUNTER_EFFECTIVE_DATE_END = ""     # The end of date range of encounters to collect. Format: YYYY-MM-DD
 
 # Arguments: SQL connection settings
 USE_WINDOWS_AUTHENTICATION = None                   # Boolean or `None`. By default this is determined based on the operating system, but can be forced by the user.

@@ -17,10 +17,10 @@ import sqlalchemy as sa
 import yaml
 # Super-local libraries
 import deidentify
-from drapi.drapi import (makeDirPath,
-                         getTimestamp)
-from drapi.omop.configProcessing import (editConfig,
-                                         interpretPath)
+from drapi.code.drapi.drapi import (makeDirPath,
+                                    getTimestamp)
+from drapi.code.drapi.omop.configProcessing import (editConfig,
+                                                    interpretPath)
 
 # Arguments
 LOG_LEVEL = "INFO"  # Lowest level available is "9"
@@ -36,8 +36,8 @@ if False:
 
 # Variables
 timestamp = getTimestamp()
-config_file0 = os.path.join("Config1.yml")
-config_file = os.path.join("Data", "Output", "Config2.yml")
+config_file0 = os.path.join("Config1.YAML")
+config_file = os.path.join("Data", "Output", "Config2.YAML")
 editConfig(config_file0, config_file, timestamp)
 base_dir = Path(__file__).parent.parent
 
