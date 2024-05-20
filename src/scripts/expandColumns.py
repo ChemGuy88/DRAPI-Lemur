@@ -26,11 +26,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Arguments: Main
-    # paths
-    # columnToSplit,
-    # nameOfNewColumns,
-    # locationOfNewColumns,
-    # splittingPattern,
     parser.add_argument("--PATHS",
                         nargs="+",
                         required=True,
@@ -39,16 +34,21 @@ if __name__ == "__main__":
                         required=True,
                         help="The label of the column to split.")
     parser.add_argument("--NAME_OF_NEW_COLUMNS",
-                        nargs="2+",
+                        nargs="+",
                         required=True,
                         help="A list of column names to give to the new columns.")
     parser.add_argument("--LOCATION_OF_NEW_COLUMNS",
-                        nargs="2+",
+                        nargs="+",
+                        type=int,
                         required=True,
                         help="A list of index locations of the new columns.")
     parser.add_argument("--SPLITTING_PATTERN",
                         required=True,
                         help="The regular expression pattern to use to split the column.")
+    parser.add_argument("--SEPARATOR",
+                        default="\t",
+                        type=str,
+                        help="The separator.")
 
     # Arguments: Meta-parameters
     parser.add_argument("--LOG_LEVEL",
@@ -64,6 +64,8 @@ if __name__ == "__main__":
     NAME_OF_NEW_COLUMNS = argNamespace.NAME_OF_NEW_COLUMNS
     LOCATION_OF_NEW_COLUMNS = argNamespace.LOCATION_OF_NEW_COLUMNS
     SPLITTING_PATTERN = argNamespace.SPLITTING_PATTERN
+
+    SEPARATOR = argNamespace.SEPARATOR
 
     # Parsed arguments: Meta-parameters
     LOG_LEVEL = argNamespace.LOG_LEVEL
@@ -125,19 +127,23 @@ if __name__ == "__main__":
     # Begin module body
     PARGS = []
     li = sorted(PATHS)
-    for fpath in li:
+    for fpathString in li:
+        fpath = Path(fpathString)
         runOutputPath = runOutputDir.joinpath(fpath.name)
-        argsClone = (fpath,
+        argsClone = (runOutputPath,
+                     fpath,
                      COLUMN_TO_SPLIT,
                      NAME_OF_NEW_COLUMNS,
                      LOCATION_OF_NEW_COLUMNS,
                      SPLITTING_PATTERN,
-                     runOutputPath,
-                     logger)
+                     logger,
+                     SEPARATOR)
         PARGS.append(argsClone)
 
     with pp._ProcessPool() as pool:
         results = pool.starmap(expandColumnWrapper, PARGS)
+
+    logger.info(f"""Results are in "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}.""")
 
     # End module body
     logger.info(f"""Finished running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")

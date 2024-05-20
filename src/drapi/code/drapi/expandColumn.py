@@ -22,7 +22,12 @@ def expandColumn(tableOrPath: Union[pd.DataFrame, Path, str],
     """
     """
     _ = logger
-    if isinstance(tableOrPath, (str, Path)):
+
+    if isinstance(tableOrPath, (str)):
+        fpath = Path(tableOrPath)
+        table = readDataFile(fname=fpath)
+        table = pd.DataFrame(table)  # For type hinting
+    elif isinstance(tableOrPath, Path):
         table = readDataFile(fname=tableOrPath)
         table = pd.DataFrame(table)  # For type hinting
     else:
@@ -43,14 +48,28 @@ def expandColumn(tableOrPath: Union[pd.DataFrame, Path, str],
     for it, (columnName, location) in enumerate(zip(nameOfNewColumns, locationOfNewColumns)):
         series = series0.apply(lambda tu: tu[it])
         table.insert(loc=location,
-                        column=columnName,
-                        value=series)
-        
+                     column=columnName,
+                     value=series)
+
     return table
 
+
 def expandColumnWrapper(runOutputPath: Path,
-                        **kwargs):
+                        tableOrPath: Union[pd.DataFrame, Path, str],
+                        columnToSplit: Union[int, str],
+                        nameOfNewColumns: List[Union[int, str]],
+                        locationOfNewColumns: List[int],
+                        splittingPattern: str,
+                        logger: logging.Logger,
+                        separator: str = ",") -> None:
     """
     """
-    newTable = expandColumn(**kwargs)
-    newTable.to_csv(runOutputPath)
+    newTable = expandColumn(tableOrPath=tableOrPath,
+                            columnToSplit=columnToSplit,
+                            nameOfNewColumns=nameOfNewColumns,
+                            locationOfNewColumns=locationOfNewColumns,
+                            splittingPattern=splittingPattern,
+                            logger=logger)
+    newTable.to_csv(runOutputPath,
+                    index=False,
+                    sep=separator)
