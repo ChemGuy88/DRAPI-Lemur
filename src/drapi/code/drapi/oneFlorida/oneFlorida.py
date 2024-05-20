@@ -9,6 +9,7 @@ from typing_extensions import Literal
 import pandas as pd
 # Local packages
 from drapi.code.drapi.drapi import replace_sql_query, successiveParents
+from drapi.code.drapi.oneFlorida import ID_TYPE_DICT
 
 
 # Arguments: SQL connection settings
@@ -77,11 +78,7 @@ def mapOneFloridaIDs(IDTypeValues: pd.Series,
                               old="{PYTHON_VARIABLE: IDTypeValues}",
                               new=listAsString)
     IDTypeInput = IDType.lower()
-    IDTypeDict = {"oneflorida patient id": "a.PATID",
-                  "patient key": "a.PATNT_KEY",
-                  "mrn (uf)": "b.IDENT_ID",
-                  "mrn (jax)": "c.IDENT_ID",
-                  "mrn (pathology)": "d.IDENT_ID"}
+    IDTypeDict = ID_TYPE_DICT.copy()
     IDTypeSQL = IDTypeDict[IDTypeInput]
     query = replace_sql_query(query=query,
                               old="{PYTHON_VARIABLE: IDTypeSQL}",
