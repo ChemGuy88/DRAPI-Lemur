@@ -14,11 +14,12 @@ from pathlib import Path
 # Third-party packages
 pass
 # Local packages
+from drapi import __version__ as drapiVersion
 from drapi.code.drapi.constants.variableAliases import VARIABLE_ALIASES
 from drapi.code.drapi.constants.constants import DATA_TYPES_DICT
-from drapi.code.drapi.drapi import (getTimestamp,
-                                    makeDirPath,
-                                    successiveParents)
+from drapi.code.drapi.drapi import (choosePathToLog,
+                                    getTimestamp,
+                                    makeDirPath)
 from drapi.code.drapi.parseAliasArguments import parseAliasArguments
 from drapi.code.drapi.qa.deidentification import (combineMaps,
                                                   qaListOfFilesAndDirectories)
@@ -40,7 +41,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-c",
                         "--COMBINE_MAPS",
-                        help="""This is the path to the directory that contains the portions and their respective variables, typically "Metadata/Maps by Portion". When this option is used all maps are combined by variable name and the analysis is performed on the resulting tables. Input is a string that is converted to a Path object.""",
+                        help="""When used with `COMBINE_MAPS_MODE=1`, this is the list of paths to the portion de-identification metadata directories (e.g. "Metadata/Maps by Portion/<PORTION_NAME>"). When this option is used all maps are combined by variable name and the analysis is performed on the resulting tables. Input is a string that is converted to a Path object.\nWhen used with `COMBINE_MAPS_MODE=2`... .""",
                         nargs="*",
                         type=Path)
     parser.add_argument("-m",
@@ -55,6 +56,13 @@ if __name__ == "__main__":
     parser.add_argument("--DEFAULT_ALIASES",
                         help="""Indicates whether to include the default IDR aliases for variables.""",
                         action="store_true")
+    parser.add_argument("--PANDAS_ENGINE",
+                        help="""The pandas engine to use when reading data files.""",
+                        default="pyarrow",
+                        choices=["c",
+                                 "none",
+                                 "python",
+                                 "pyarrow"])
 
     parser.add_argument("-t",
                         "--SCRIPT_TEST_MODE",
@@ -136,25 +144,13 @@ if __name__ == "__main__":
 
     CUSTOM_ALIASES = argNamespace.CUSTOM_ALIASES
     DEFAULT_ALIASES = argNamespace.DEFAULT_ALIASES
+    PANDAS_ENGINE = argNamespace.PANDAS_ENGINE
 
     SCRIPT_TEST_MODE = argNamespace.SCRIPT_TEST_MODE
 
     # Parsed arguments: Meta-variables
-    PROJECT_DIR_DEPTH = argNamespace.PROJECT_DIR_DEPTH
-    DATA_REQUEST_DIR_DEPTH = argNamespace.DATA_REQUEST_DIR_DEPTH
-    IRB_DIR_DEPTH = argNamespace.IRB_DIR_DEPTH
-    IDR_DATA_REQUEST_DIR_DEPTH = argNamespace.IDR_DATA_REQUEST_DIR_DEPTH
-
-    ROOT_DIRECTORY = argNamespace.ROOT_DIRECTORY
     LOG_LEVEL = argNamespace.LOG_LEVEL
 
-    # Parsed arguments: SQL connection settings
-    SERVER = argNamespace.SERVER
-    DATABASE = argNamespace.DATABASE
-    USER_DOMAIN = argNamespace.USER_DOMAIN
-    USERNAME = argNamespace.USERNAME
-    USER_ID = argNamespace.USER_ID
-    USER_PWD = argNamespace.USER_PWD
     # <<< `Argparse` arguments <<<
 
     # >>> Custom argument parsing >>>
@@ -170,16 +166,18 @@ if __name__ == "__main__":
     variableAliases = parseAliasArguments(customAliases=CUSTOM_ALIASES,
                                           useDefaultAliases=DEFAULT_ALIASES,
                                           defaultAliases=VARIABLE_ALIASES)
+    
+    # Custom argument parsing: `PANDAS_ENGINE`
+    if PANDAS_ENGINE.lower() == "none":
+        PANDAS_ENGINE = None
     # <<< Custom argument parsing <<<
 
     # Variables: Path construction: General
     runTimestamp = getTimestamp()
     thisFilePath = Path(__file__)
     thisFileStem = thisFilePath.stem
-    projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
-    dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_DIR_DEPTH)
-    IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
-    IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
+    currentWorkingDir = Path(os.getcwd()).absolute()
+    projectDir = currentWorkingDir
     dataDir = projectDir.joinpath("data")
     if dataDir:
         inputDataDir = dataDir.joinpath("input")
@@ -194,30 +192,8 @@ if __name__ == "__main__":
         runLogsDir = logsDir.joinpath(thisFileStem)
     sqlDir = projectDir.joinpath("sql")
 
-    if ROOT_DIRECTORY == "PROJECT_OR_PORTION_DIRECTORY":
-        rootDirectory = projectDir
-    elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
-        rootDirectory = dataRequestDir
-    elif ROOT_DIRECTORY == "IRB_DIRECTORY":
-        rootDirectory = IRBDir
-    elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
-        rootDirectory = IDRDataRequestDir
-    else:
-        raise Exception("An unexpected error occurred.")
-
     # Variables: Path construction: Project-specific
     pass
-
-    # Variables: SQL Parameters
-    if USER_ID:
-        uid = USER_ID[:]
-    else:
-        uid = fr"{USER_DOMAIN}\{USERNAME}"
-    if USER_PWD:
-        userPwd = USER_PWD
-    else:
-        userPWD = os.environ["HFA_UFADPWD"]
-    conStr = f"mssql+pymssql://{uid}:{userPWD}@{SERVER}/{DATABASE}"
 
     # Variables: Other
     pass
@@ -246,25 +222,10 @@ if __name__ == "__main__":
 
     logger.setLevel(9)
 
-    logger.info(f"""Begin running "{thisFilePath}".""")
-    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
-    logger.info(f"""Script arguments:
+    logger.info(f"""Begin running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
+    logger.info(f"""DRAPI-Lemur version is "{drapiVersion}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to the current working directory: "{choosePathToLog(path=projectDir, rootPath=projectDir)}".""")
 
-    # Arguments: General
-    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
-    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}" --------------> "{IRBDir}"
-    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}" -> "{IDRDataRequestDir}"
-
-    `LOG_LEVEL` = "{LOG_LEVEL}"
-
-    # Arguments: SQL connection settings
-    `SERVER` = "{SERVER}"
-    `DATABASE` = "{DATABASE}"
-    `USER_DOMAIN` = "{USER_DOMAIN}"
-    `USERNAME` = "{USERNAME}"
-    `USER_ID` = "{USER_ID}"
-    `USER_PWD` = censored
-    """)
     argList = argNamespace._get_args() + argNamespace._get_kwargs()
     argListString = pprint.pformat(argList)
     logger.info(f"""Script arguments:\n{argListString}""")
@@ -282,8 +243,10 @@ if __name__ == "__main__":
                                                  dataTypesDict=DATA_TYPES_DICT,
                                                  runIntermediateDir=runIntermediateDir,
                                                  runOutputDir=runOutputDir,
-                                                 rootPath=rootDirectory,
-                                                 logger=logger)
+                                                 rootPath=projectDir,
+                                                 rootDirectory=projectDir,
+                                                 logger=logger,
+                                                 pandasEngine=PANDAS_ENGINE)
         dfresult = qaListOfFilesAndDirectories(LIST_OF_DIRECTORIES=[],
                                                LIST_OF_FILES=listOfPathsForCombinedMaps,
                                                SCRIPT_TEST_MODE=SCRIPT_TEST_MODE,
@@ -306,4 +269,4 @@ if __name__ == "__main__":
         shutil.rmtree(runIntermediateDir)
 
     # <<< End module body <<<
-    logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Finished running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
