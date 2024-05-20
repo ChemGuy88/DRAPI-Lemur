@@ -15,7 +15,6 @@ from drapi import __version__ as drapiVersion
 from drapi.code.drapi.drapi import (choosePathToLog,
                                     getTimestamp,
                                     makeDirPath)
-from drapi.code.drapi.constants.phiVariables import VARIABLE_SUFFIXES_BO
 # Super-local imports
 from drapi.code.drapi.getData.getData import getData
 
@@ -49,16 +48,31 @@ if __name__ == "__main__":
                         type=str,
                         required=True,
                         help="The name of the query results.")
+    
+    parser.add_argument("--LEFT_VARIABLE_NAME_ALIAS",
+                        type=str,
+                        help="The column header for the left map's de-identification.")
+    parser.add_argument("--RIGHT_VARIABLE_NAME_ALIAS",
+                        type=str,
+                        help="The column header for the right map's de-identification.")
+    parser.add_argument("--STANDARDIZE_COLUMN_NAMES",
+                        action="store_true",
+                        help="Whether to rename variable aliases to standard variable names.")
+    
+    parser.add_argument("--DROP_NA_HOW",
+                        default="all",
+                        choices=["all",
+                                 "any"],
+                        help="How to drop NAs from the final results.")
 
     parser.add_argument("--FIRST_TIME",
-                        action="store_true",
-                        type=bool)
+                        action="store_true")
     parser.add_argument("--OLD_RUN_PATH",
                         type=str,
                         help="The path to the data previously downloaded from another session of this program.")
 
     # Arguments: Main
-    parser.add_argument("SCRIPT_TEST_MODE",
+    parser.add_argument("--SCRIPT_TEST_MODE",
                         type=lambda stringValue: True if stringValue.lower() == "true" else False if stringValue.lower() == "false" else None,
                         help=""" Choose one of {{True, False}}""")
 
@@ -119,9 +133,6 @@ if __name__ == "__main__":
     argNamespace = parser.parse_args()
 
     # Parsed arguments: Main
-    DICTIONARY_OF_ARGUMENTS = argNamespace.DICTIONARY_OF_ARGUMENTS
-    ARGUMENTS = argNamespace.ARGUMENTS
-
     LEFT_DEIDENTIFICATION_MAP_PATH = argNamespace.LEFT_DEIDENTIFICATION_MAP_PATH
     LEFT_VARIABLE_NAME = argNamespace.LEFT_VARIABLE_NAME
     RIGHT_DEIDENTIFICATION_MAP_PATH = argNamespace.RIGHT_DEIDENTIFICATION_MAP_PATH
@@ -129,6 +140,12 @@ if __name__ == "__main__":
     SQL_FILE_PATH = argNamespace.SQL_FILE_PATH
     SQL_FILE_PLACEHOLDER = argNamespace.SQL_FILE_PLACEHOLDER
     OUTPUT_FILE_NAME = argNamespace.OUTPUT_FILE_NAME
+
+    LEFT_VARIABLE_NAME_ALIAS = argNamespace.LEFT_VARIABLE_NAME_ALIAS
+    RIGHT_VARIABLE_NAME_ALIAS = argNamespace.RIGHT_VARIABLE_NAME_ALIAS
+    STANDARDIZE_COLUMN_NAMES = argNamespace.STANDARDIZE_COLUMN_NAMES
+
+    DROP_NA_HOW = argNamespace.DROP_NA_HOW
 
     FIRST_TIME = argNamespace.FIRST_TIME
     OLD_RUN_PATH = argNamespace.OLD_RUN_PATH
@@ -141,12 +158,6 @@ if __name__ == "__main__":
     MESSAGE_MODULO_FILES = argNamespace.MESSAGE_MODULO_FILES
 
     # Parsed arguments: Meta-parameters
-    PROJECT_DIR_DEPTH = argNamespace.PROJECT_DIR_DEPTH
-    DATA_REQUEST_DIR_DEPTH = argNamespace.DATA_REQUEST_DIR_DEPTH
-    IRB_DIR_DEPTH = argNamespace.IRB_DIR_DEPTH
-    IDR_DATA_REQUEST_DIR_DEPTH = argNamespace.IDR_DATA_REQUEST_DIR_DEPTH
-
-    ROOT_DIRECTORY = argNamespace.ROOT_DIRECTORY
     LOG_LEVEL = argNamespace.LOG_LEVEL
 
     # Parsed arguments: SQL connection settings
@@ -158,18 +169,22 @@ if __name__ == "__main__":
     USER_PWD = argNamespace.USER_PWD
     # <<< `Argparse` arguments <<<
 
+    # >>> Custom parsing >>>
+    if LEFT_VARIABLE_NAME_ALIAS:
+        leftVariableDeidentificationName = LEFT_VARIABLE_NAME_ALIAS
+    else:
+        leftVariableDeidentificationName = LEFT_VARIABLE_NAME
+    if RIGHT_VARIABLE_NAME_ALIAS:
+        rightVariableDeidentificationName = RIGHT_VARIABLE_NAME_ALIAS
+    else:
+        rightVariableDeidentificationName = RIGHT_VARIABLE_NAME
+    # <<< Custom parsing <<<
+
     # >>> Argument checks >>>
     # NOTE TODO Look into handling this natively with `argparse` by using `subcommands`. See "https://stackoverflow.com/questions/30457162/argparse-with-different-modes"
     if FIRST_TIME and OLD_RUN_PATH:
         message = "It is ambiguous if you provide both `FIRST_TIME` and `OLD_RUN_PATH`. Please only choose one."
         parser.error(message=message)
-
-    if isinstance(SCRIPT_TEST_MODE, bool):
-        pass
-    else:
-        message = """`SCRIPT_TEST_MODE` Must be one of "True" or "False"."""
-        parser.error(message=message)
-
     # <<< Argument checks <<<
 
     # Variables: Path construction: General
@@ -259,7 +274,7 @@ if __name__ == "__main__":
         getData(sqlFilePath=SQL_FILE_PATH,
                 connectionString=connectionString,
                 filterVariableChunkSize=10000,
-                filterVariableColumnName=LEFT_VARIABLE_NAME,
+                filterVariableColumnName=leftVariableDeidentificationName,
                 filterVariableData=leftdf,
                 filterVariableFilePath=None,
                 filterVariablePythonDataType="int",
@@ -288,24 +303,40 @@ if __name__ == "__main__":
     pass
 
     # Join maps
-    joinedMaps = leftdf.set_index(LEFT_VARIABLE_NAME).join(other=left2rightdf.set_index(LEFT_VARIABLE_NAME),
+    joinedMaps = leftdf.set_index(leftVariableDeidentificationName).join(other=left2rightdf.set_index(LEFT_VARIABLE_NAME),
                                                         how="outer")
-    joinedMaps = joinedMaps.reset_index()
-    joinedMaps = joinedMaps.set_index(RIGHT_VARIABLE_NAME).join(other=rightdf.set_index(RIGHT_VARIABLE_NAME),
+    joinedMaps = joinedMaps.reset_index(names=leftVariableDeidentificationName)
+    # joinedMaps.index.name = leftVariableDeidentificationName
+
+    joinedMaps = joinedMaps.set_index(RIGHT_VARIABLE_NAME).join(other=rightdf.set_index(rightVariableDeidentificationName),
                                                   how="outer")
-    joinedMaps = joinedMaps.reset_index()
+    joinedMaps = joinedMaps.reset_index(names=RIGHT_VARIABLE_NAME)
+
+    # Standardize column names
+    if STANDARDIZE_COLUMN_NAMES:
+        joinedMaps = joinedMaps.rename(columns={leftVariableDeidentificationName: LEFT_VARIABLE_NAME,
+                                                rightVariableDeidentificationName: RIGHT_VARIABLE_NAME,
+                                                f"De-identified {leftVariableDeidentificationName}": f"De-identified {LEFT_VARIABLE_NAME}",
+                                                f"De-identified {rightVariableDeidentificationName}": f"De-identified {RIGHT_VARIABLE_NAME}"})
+    else:
+        pass
 
     # Select data to output
     COLUMNS_TO_EXPORT = [f"De-identified {LEFT_VARIABLE_NAME}",
-                         f"De-identififed {RIGHT_VARIABLE_NAME}"]
+                         f"De-identified {RIGHT_VARIABLE_NAME}"]
+    logger.info(joinedMaps.columns)
+    logger.info(joinedMaps.head().T)
     finalMap = joinedMaps[COLUMNS_TO_EXPORT]
+
+    mapSize0 = finalMap.shape[0]
+    finalMap = finalMap.dropna(how=DROP_NA_HOW)
     finalMap = finalMap.sort_values(by=COLUMNS_TO_EXPORT)
     exportPath = runOutputDir.joinpath(f"{LEFT_VARIABLE_NAME} to {RIGHT_VARIABLE_NAME}.CSV")
     finalMap.to_csv(exportPath, index=False)
 
     # QA
-    mapSize = finalMap.dropna().shape[0]
-    logger.info(f"""Final map shape after dropping any NAs: {mapSize:,}.""")
+    mapSize1 = finalMap.shape[0]
+    logger.info(f"""Final map shape before and after dropping "{DROP_NA_HOW}" NAs: {mapSize0:,} -> {mapSize1:,}.""")
 
     # Output location summary
     logger.info(f"""Results are in "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}.""")
