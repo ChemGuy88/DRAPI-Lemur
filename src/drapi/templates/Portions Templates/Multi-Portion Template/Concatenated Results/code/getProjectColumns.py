@@ -47,15 +47,15 @@ else:
 
 PORTIONS_OUTPUT_DIR_PATH_MAC = {"BO": BO_PORTION_DIR_MAC,  # TODO
                                 "i2b2": I2B2_PORTION_DIR_MAC,
-                                "Notes": NOTES_PORTION_DIR_MAC,
+                                "Clinical Text": NOTES_PORTION_DIR_MAC,
                                 "OMOP": OMOP_PORTION_DIR_MAC}
 PORTIONS_OUTPUT_DIR_PATH_WIN = {"BO": BO_PORTION_DIR_WIN,  # TODO
                                 "i2b2": I2B2_PORTION_DIR_WIN,
-                                "Notes": NOTES_PORTION_DIR_WIN,
+                                "Clinical Text": NOTES_PORTION_DIR_WIN,
                                 "OMOP": OMOP_PORTION_DIR_WIN}
 PORTION_FILE_CRITERIA_DICT = {"BO": BO_PORTION_FILE_CRITERIA,
                               "i2b2": I2B2_PORTION_FILE_CRITERIA,
-                              "Notes": NOTES_PORTION_FILE_CRITERIA,
+                              "Clinical Text": NOTES_PORTION_FILE_CRITERIA,
                               "OMOP": OMOP_PORTION_FILE_CRITERIA}
 
 COMPARISON_SET = LIST_OF_PHI_DATES_BO + LIST_OF_PHI_DATES_NOTES + LIST_OF_PHI_DATES_OMOP

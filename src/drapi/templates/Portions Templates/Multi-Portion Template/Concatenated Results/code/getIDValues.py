@@ -50,12 +50,12 @@ else:
     OMOPPortionDirMac = OMOP_PORTION_DIR_MAC
     OMOPPortionDirWin = OMOP_PORTION_DIR_WIN
 
-PORTION_PATHS_MAC = {"Notes": NOTES_PORTION_DIR_MAC,
+PORTION_PATHS_MAC = {"Clinical Text": NOTES_PORTION_DIR_MAC,
                      "OMOP": OMOPPortionDirMac}
-PORTION_PATHS_WIN = {"Notes": NOTES_PORTION_DIR_WIN,
+PORTION_PATHS_WIN = {"Clinical Text": NOTES_PORTION_DIR_WIN,
                      "OMOP": OMOPPortionDirWin}
 
-DICT_OF_PORTION_CONDITIONS = {"Notes": NOTES_PORTION_FILE_CRITERIA,
+DICT_OF_PORTION_CONDITIONS = {"Clinical Text": NOTES_PORTION_FILE_CRITERIA,
                               "OMOP": OMOP_PORTION_FILE_CRITERIA}
 
 # Arguments: Meta-variables

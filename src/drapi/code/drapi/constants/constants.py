@@ -1,7 +1,7 @@
 """
 Useful definitions used throughout IDR
 
-See the Notes portion for current IDR mapping standards: /Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Bian/IRB202202436/Intermediate Results/Notes Portion/Data/Output/mapping
+See the Clinical Text Portion for current IDR mapping standards: /Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Bian/IRB202202436/Intermediate Results/Clinical Text Portion/Data/Output/mapping
 See Noah's data request for my attempt at using these standards: /Volumes/FILES/SHARE/DSS/IDR Data Requests/ACTIVE RDRs/Bian/IRB202202436/Concatenated Results/Code/makeMap.py
 """
 from drapi.code.drapi.constants.phiVariables import LIST_OF_PHI_VARIABLES
@@ -115,7 +115,7 @@ DATA_TYPES_DICT.update(DATA_TYPES_NOTES)
 DATA_TYPES_DICT.update(DATA_TYPES_OMOP)
 
 DATA_TYPES_BY_PORTION = {"BO": DATA_TYPES_BO,
-                         "Notes": DATA_TYPES_NOTES,
+                         "Clinical Text": DATA_TYPES_NOTES,
                          "OMOP": DATA_TYPES_OMOP}
 
 # Convert DRAPI data types to SQL data types

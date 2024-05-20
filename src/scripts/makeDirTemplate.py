@@ -53,8 +53,8 @@ optionsDict = {"BO": {"number": 2,
                         "path": r"\Multi-Portion Template\Intermediate Results\i2b2 Portion Template"},
                "Multi-Portion Template": {"number": 0,
                                           "path": r"\Multi-Portion Template"},
-               "Notes": {"number": 5,
-                         "path": r"\Multi-Portion Template\Intermediate Results\Notes Portion Template"},
+               "Clinical Text": {"number": 5,
+                         "path": r"\Multi-Portion Template\Intermediate Results\Clinical Text Portion Template"},
                "OMOP": {"number": 6,
                         "path": r"\Multi-Portion Template\Intermediate Results\OMOP Portion Template"}}
 

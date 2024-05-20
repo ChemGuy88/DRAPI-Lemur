@@ -105,7 +105,7 @@ if __name__ == "__main__":
     # Script
     # Generate PHI variables
     _ = pd
-    portionTypes = ["BO", "Notes", "OMOP", "Zip Codes"]
+    portionTypes = ["BO", "Clinical Text", "OMOP", "Zip Codes"]
 
     # End script
     logging.info(f"""Finished running "{thisFilePath.relative_to(projectDir)}".""")

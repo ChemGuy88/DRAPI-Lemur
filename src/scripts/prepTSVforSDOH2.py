@@ -15,10 +15,10 @@ from drapi.code.drapi.drapi import (getTimestamp,
 from drapi.code.drapi.modifyTSV import wrapModify
 
 # Arguments
-CLINICAL_TEXT_DIR_1 = "../../../Data Request 2 - 2023-07-29/Intermediate Results/Notes Portion/data/output/freeText/2024-04-03 12-38-35/free_text/FlaDia_note"
-CLINICAL_TEXT_DIR_2 = "../../../Data Request 2 - 2023-07-29/Intermediate Results/Notes Portion/data/output/freeText/2024-04-03 12-38-35/free_text/FlaDia_order_impression"
-CLINICAL_TEXT_DIR_3 = "../../../Data Request 2 - 2023-07-29/Intermediate Results/Notes Portion/data/output/freeText/2024-04-03 12-38-35/free_text/FlaDia_order_narrative"
-CLINICAL_TEXT_DIR_4 = "../../../Data Request 2 - 2023-07-29/Intermediate Results/Notes Portion/data/output/freeText/2024-04-03 12-38-35/free_text/FlaDia_order_result_comment"
+CLINICAL_TEXT_DIR_1 = "../../../Data Request 2 - 2023-07-29/Intermediate Results/Clinical Text Portion/data/output/freeText/2024-04-03 12-38-35/free_text/FlaDia_note"
+CLINICAL_TEXT_DIR_2 = "../../../Data Request 2 - 2023-07-29/Intermediate Results/Clinical Text Portion/data/output/freeText/2024-04-03 12-38-35/free_text/FlaDia_order_impression"
+CLINICAL_TEXT_DIR_3 = "../../../Data Request 2 - 2023-07-29/Intermediate Results/Clinical Text Portion/data/output/freeText/2024-04-03 12-38-35/free_text/FlaDia_order_narrative"
+CLINICAL_TEXT_DIR_4 = "../../../Data Request 2 - 2023-07-29/Intermediate Results/Clinical Text Portion/data/output/freeText/2024-04-03 12-38-35/free_text/FlaDia_order_result_comment"
 ALL_CLINICAL_TEXT_DIRECTORIES = [CLINICAL_TEXT_DIR_1,
                                  CLINICAL_TEXT_DIR_2,
                                  CLINICAL_TEXT_DIR_3,

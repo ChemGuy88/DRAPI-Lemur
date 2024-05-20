@@ -49,17 +49,17 @@ File paths are relative to the common parent directory, whose absolute path is "
 | OMOP Person ID map                   | "IRB000000000/Concatenated Results/data/output/makePersonIDMap/.../person_id map.csv" | convertColumns.py             |
 | Original OMOP data set               | "IRB000000000/Intermediate Results/OMOP Portion/data/output/..."                      | convertColumns.py             |
 | Modified OMOP files                  | "IRB000000000/Concatenated Results/data/output/convertColumns/..."                    | getIDValues.py                |
-| Notes metadata data set              | "IRB000000000/Intermediate Results/Notes Portion/data/output/free_text"               | getIDValues.py                |
-| Notes portion de-identification maps | "IRB000000000/Intermediate Results/Notes Portion/data/output/mapping"                 | makeMapsFromOthers.py         |
+| Clinical text metadata data set              | "IRB000000000/Intermediate Results/Clinical Text Portion/data/output/free_text"               | getIDValues.py                |
+| Clinical Text Portion de-identification maps | "IRB000000000/Intermediate Results/Clinical Text Portion/data/output/mapping"                 | makeMapsFromOthers.py         |
 | ID Sets (map intermediate files)     | "IRB000000000/Concatenated Results/data/output/getIDValues/..."                       | makeMapsFromOthers.py         |
-| Notes portion de-identification maps | "IRB000000000/Intermediate Results/Notes Portion/data/output/mapping"                 | concatenateMaps.py            |
+| Clinical Text Portion de-identification maps | "IRB000000000/Intermediate Results/Clinical Text Portion/data/output/mapping"                 | concatenateMaps.py            |
 | De-identification maps               | "IRB000000000/Concatenated Results/data/output/makeMapsFromOthers/..."                | concatenateMaps.py            |
 | De-identification maps               | "IRB000000000/Concatenated Results/data/output/makeMapsFromOthers/..."                | deIdentify.py                 |
 | Modified OMOP files                  | "IRB000000000/Concatenated Results/data/output/convertColumns/..."                    | deIdentify.py                 |
-| Notes metadata data set              | "IRB000000000/Intermediate Results/Notes Portion/data/output/free_text"               | deIdentify.py                 |
+| Clinical text metadata data set              | "IRB000000000/Intermediate Results/Clinical Text Portion/data/output/free_text"               | deIdentify.py                 |
 | De-identified data set               | "IRB000000000/Concatenated Results/data/output/deIdentify/..."                        | deleteColumns.py              |
 | Reduced de-identified data set       | "IRB000000000/Concatenated Results/data/output/deleteColumns/..."                     | gatherFiles.py                |
-| De-identified notes data set         | "IRB000000000/Intermediate Results/De-identified Notes/..."                           | gatherFiles.py                |
+| De-identified notes data set         | "IRB000000000/Intermediate Results/De-identified Clinical Text/..."                           | gatherFiles.py                |
 | Final results                        |                                                                                       | Honest broker                 |
 
 ____________________________________________________________

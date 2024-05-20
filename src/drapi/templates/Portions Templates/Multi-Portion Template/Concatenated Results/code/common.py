@@ -104,7 +104,7 @@ for variableSuffixDict in VARIABLE_SUFFIXES_LIST:
 MODIFIED_OMOP_PORTION_DIR_MAC = Path("data/output/convertColumns/...")  # TODO
 MODIFIED_OMOP_PORTION_DIR_WIN = Path(r"data\output\convertColumns\...")  # TODO
 
-CLINICAL_TEXT_ROOT_DIRECTORY = Path("../../Intermediate Results/Notes Portion/data/output/freeText/...")  # TODO
+CLINICAL_TEXT_ROOT_DIRECTORY = Path("../../Intermediate Results/Clinical Text Portion/data/output/freeText/...")  # TODO
 CLINICAL_TEXT_PORTION_DIR_MAC = CLINICAL_TEXT_ROOT_DIRECTORY.joinpath("free_text")
 CLINICAL_TEXT_PORTION_DIR_WIN = CLINICAL_TEXT_ROOT_DIRECTORY.joinpath("free_text")
 
