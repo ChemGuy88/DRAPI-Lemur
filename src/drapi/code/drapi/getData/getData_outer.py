@@ -125,7 +125,7 @@ def getData_outer(conStr: str,
     padlen1 = len(str(numChunks1))
     for it1, dfChunk in enumerate(chunkGenerator2, start=1):
         itstring1 = str(it1).zfill(padlen1)
-        logger.info(f"""    Working on filter chunk {itstring1} of {numChunks1} with `filterVariableChunkSize` "{filterVariableChunkSize:,}".""")
+        logger.info(f"""    Working on filter chunk {it1:,} of {numChunks1:,} with `filterVariableChunkSize` "{filterVariableChunkSize:,}".""")
 
         # Fill query template: lists to strings
         if filterVariablePythonDataType == "int":
@@ -135,14 +135,17 @@ def getData_outer(conStr: str,
 
         query = replace_sql_query(query=query0,
                                   old="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)) as "Admit BMI",""",
-                                  new="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/NULLIF(((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)), 0) as "Admit BMI",""")
+                                  new="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/NULLIF(((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)), 0) as "Admit BMI",""",
+                                  logger=logger)
         query = replace_sql_query(query=query,
                                   old=",(cast(wt.last_wt_oz as decimal(10,2))*0.0283495)/((cast(ht.last_ht_in as decimal(10,2))*0.0254)*(cast(ht.last_ht_in as decimal(10,2)))*0.0254) as bmi_manual_calc",
-                                  new=",(cast(wt.last_wt_oz as decimal(10,2))*0.0283495)/NULLIF(((cast(ht.last_ht_in as decimal(10,2))*0.0254)*(cast(ht.last_ht_in as decimal(10,2)))*0.0254), 0) as bmi_manual_calc")
+                                  new=",(cast(wt.last_wt_oz as decimal(10,2))*0.0283495)/NULLIF(((cast(ht.last_ht_in as decimal(10,2))*0.0254)*(cast(ht.last_ht_in as decimal(10,2)))*0.0254), 0) as bmi_manual_calc",
+                                  logger=logger)
 
         query = replace_sql_query(query=query,
                                   old=filterVariableSqlQueryTemplatePlaceholder,
-                                  new=filterVariableValuesAsString)
+                                  new=filterVariableValuesAsString,
+                                  logger=logger)
 
         getData_inner(conStr=conStr,
                       logger=logger,

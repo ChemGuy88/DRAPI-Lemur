@@ -442,14 +442,11 @@ def loglevel2int(loglevel: Union[int, str]) -> int:
     return loglevel
 
 
-def replace_sql_query(query: str, old: str, new: str, loglevel: Union[int, str] = "INFO") -> str:
+def replace_sql_query(query: str, old: str, new: str, logger: logging.Logger) -> str:
     """
     Replaces text in a SQL query only if it's not commented out. I.e., this function applies string.replace() only if the string doesn't begin with "--".
     TODO Don't replace text after "--".
     """
-    loglevel_asnumber = loglevel2int(loglevel)
-    logger.setLevel(loglevel_asnumber + 10)
-
     pattern = r"^\w*--"
     li = query.split("\n")
     result = []
