@@ -16,13 +16,13 @@ The entirety of your data request, that is, your data set(s), are contained in t
 
 # Data Quality
 
-It's typical for IDR analysts to perform quality checks on data before its release. For your request we identified several data quality issues. Below is a description of the issues and their approximate effect on your analysis (**severity**) based on our recommended course of action for you (**mitigation**).
+It's typical for IDR analysts to perform quality checks on data before its release. If your data request had any data quality issues they will be listed below with a description, and their approximate effect on your analysis (**impact**) based on our recommended course of action for you (**mitigation**).
 
-### asdf
+### `ISSUE TITLE`
 
 |                 |      |
 | --------------- | ---- |
-| **Severity**    | asdf |
+| **Impact**      | asdf |
 | **Description** | asdf |
 | **Mitigation**  | asdf |
 
