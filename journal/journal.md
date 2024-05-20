@@ -2,6 +2,15 @@
 
 This is a lab journal with notes about the IDR
 
+## Inferring a project start date from file creation dates.
+
+```bash
+find . -type f -exec ls -l --time-style=long-iso {} + | sort -k6 > asdf.txt
+```
+
+H/t to [SO](https://stackoverflow.com/a/30109008/5478086)
+
+
 ## Compiling Documentation for Data Releases
 
 You can use **pandoc** to convert **markdown** documents to PDF, however I have had little success with this. An alternative that works for me is using Google Chrome to print an HTML file to PDF using the below command.
