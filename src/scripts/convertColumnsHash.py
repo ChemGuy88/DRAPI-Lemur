@@ -12,9 +12,10 @@ from pathlib import Path
 import pandas as pd
 import pathos.pools as pp
 # First-party packages
-from drapi.code.drapi.drapi import (getTimestamp,
-                                    makeDirPath,
-                                    successiveParents)
+from drapi import __version__ as drapiVersion
+from drapi.code.drapi.drapi import (choosePathToLog,
+                                    getTimestamp,
+                                    makeDirPath)
 from drapi.code.drapi.convertColumns.hash import convertColumnsHash
 from drapi.code.drapi.deIdentificationFunctions import functionFromSettings
 from drapi.code.drapi.parseAliasArguments import parseAliasArguments
@@ -26,18 +27,23 @@ if __name__ == "__main__":
     # >>> `Argparse` arguments >>>
     parser = argparse.ArgumentParser()
     # Arguments: Main
-    parser.add_argument("IRB_NUMBER",
+    parser.add_argument("--IRB_NUMBER",
                         type=str,
-                        help="""The IRB number, usually in the form "<PROTOCOL_ABBREVIATION><SERIAL_NUMBER>, where <PROTOCOL_ABBREVIATION> is something like "IRB", "NH", "WIRB", and <SERIAL_NUMBER> is a 9-digit number where the first four digits is the four-digit year, e.g., "2024".""")
-    parser.add_argument("SCRIPT_TEST_MODE",
+                        required=True,
+                        help="""The IRB number, usually in the form "<PROTOCOL_ABBREVIATION><SERIAL_NUMBER>, where <PROTOCOL_ABBREVIATION> is something like "IRB", "NH", "WIRB", and <SERIAL_NUMBER> is a 9-digit number where the first four digits is the four-digit year, e.g., "2024".""",
+                        metavar="irbNumber")
+    parser.add_argument("--SCRIPT_TEST_MODE",
                         type=lambda stringValue: True if stringValue.lower() == "true" else False if stringValue.lower() == "false" else None,
-                        help=""" Choose one of {{True, False}}""")
+                        required=True,
+                        help=""" Choose one of {{True, False}}""",
+                        metavar="scriptTestMode")
 
 
     # Arguments: Main: Multiple variable option: Dictionary format
     parser.add_argument("--DICTIONARY_OF_MAPPING_ARGUMENTS",
                         type=json.loads,
-                        help="""The input must be of this format: {variableName: {"Encryption Type": encryptionType, "Encryption Secret": encryptionSecret}}""")
+                        help="""The input must be of this format: {variableName: {"Encryption Type": encryptionType, "Encryption Secret": encryptionSecret}}""",
+                        metavar="dictionaryOfMappingArguments")
 
     # Arguments: Main: Multiple variable option: String format
     # NOTE TODO Not implemented yet. This should allow the user to input a space-delimitted list of arguments, easier than the dictionary option
@@ -50,13 +56,15 @@ if __name__ == "__main__":
     parser.add_argument("PATHS",
                         nargs="+",
                         type=str,
-                        help="")
+                        help="paths")
     parser.add_argument("--PORTION_NAME",
                         type=str,
-                        help="""The name of the set or subset of data, usually one of "BO", "Clinical Text", "Clinical Text Metadata", "Line-level", "OMOP", "SDOH".""")
+                        help="""The name of the set or subset of data, usually one of "BO", "Clinical Text", "Clinical Text Metadata", "Line-level", "OMOP", "SDOH".""",
+                        metavar="portionName")
     parser.add_argument("--BY",
                         choices=["dir", "file", "file-dir"],
-                        help="""Whether the `PATHS` values passed are for directories or files. If you are passing directories but wish their contents to be processed in parallel, use the option "file-dir".""")
+                        help="""Whether the `PATHS` values passed are for directories or files. If you are passing directories but wish their contents to be processed in parallel, use the option "file-dir".""",
+                        metavar="by")
     
 
     # Arguments: Main: Single variable option
@@ -64,22 +72,27 @@ if __name__ == "__main__":
                         type=str,
                         help="")
     helptext = r"""1: Additive encryption. E.g., `encryptValue1(value='123456789', secret=1)  # 123456790`.
-2: Encrypt with character-wise XOR operation of both operands, with the second operand rotating over the set of character-wise values in `secretkey`. E.g., `encryptValue1(value='123456789', secret='password')  # 'AS@GBYE\I'
+2: Encrypt with character-wise XOR operation of both operands, with the second operand rotating over the set of character-wise values in `secret`. E.g., `encryptValue1(value='123456789', secret='password')  # 'AS@GBYE\I'
 3: Encrypt with whole-value XOR operation. Requires both operands to be integers. E.g., `encryptValue1(value=123456789, secret=111111111)  # 1326016938`"""
     parser.add_argument("--ENCRYPTION_TYPE",
                         type=int,
                         choices=[1, 2, 3],
-                        help=helptext)
+                        help=helptext,
+                        metavar="encryptionType")
     parser.add_argument("--ENCRYPTION_SECRET",
                         type=lambda stringValue: int(stringValue) if stringValue.isnumeric() else stringValue,
-                        help="We expect an integer or stringValue. If the stringValue is purely numbers, it will be converted to an integer object. If you don't pass an argument then a secret value will be generated for you at random.")
+                        help="We expect an integer or stringValue. If the stringValue is purely numbers, it will be converted to an integer object. If you don't pass an argument then a secret value will be generated for you at random.",
+                        metavar="encryptionSecret")
 
     parser.add_argument("--CUSTOM_ALIASES",
                         help="""A JSON-formatted string of the form {`ALIAS`: `VARIABLE_NAME`}, where `VARIABLE_NAME` is the BO version of a variable name, and `ALIAS` is an alias of the variable name. An example is {"EncounterCSN": "Encounter # (CSN)"}.""",
-                        type=json.loads)
-    parser.add_argument("--DEFAULT_ALIASES",
+                        type=json.loads,
+                        metavar="customAliases")
+    parser.add_argument("--USE_DEFAULT_ALIASES",
+                        type=lambda stringValue: True if stringValue.lower() == "true" else False if stringValue.lower() == "false" else None,
+                        required=True,
                         help="""Indicates whether to include the default IDR aliases for variables.""",
-                        action="store_true")
+                        metavar="useDefaultAliases")
 
     # Arguments: General
     parser.add_argument("--CHUNKSIZE",
@@ -96,30 +109,6 @@ if __name__ == "__main__":
                         help="How often to print a log message, i.e., print a message every x number of chunks, where x is `MESSAGE_MODULO_FILES`")
 
     # Arguments: Meta-parameters
-    parser.add_argument("--PROJECT_DIR_DEPTH",
-                        default=2,
-                        type=int,
-                        help="")
-    parser.add_argument("--DATA_REQUEST_DIR_DEPTH",
-                        default=4,
-                        type=int,
-                        help="")
-    parser.add_argument("--IRB_DIR_DEPTH",
-                        default=3,
-                        type=int,
-                        help="")
-    parser.add_argument("--IDR_DATA_REQUEST_DIR_DEPTH",
-                        default=6,
-                        type=int,
-                        help="")
-    parser.add_argument("--ROOT_DIRECTORY",
-                        default="IRB_DIRECTORY",
-                        type=str,
-                        choices=["DATA_REQUEST_DIRECTORY",
-                                 "IDR_DATA_REQUEST_DIRECTORY",
-                                 "IRB_DIRECTORY",
-                                 "PROJECT_OR_PORTION_DIRECTORY"],
-                        help="")
     parser.add_argument("--LOG_LEVEL",
                         default=10,
                         type=int,
@@ -176,7 +165,7 @@ if __name__ == "__main__":
     PORTION_NAME = argNamespace.PORTION_NAME
 
     CUSTOM_ALIASES = argNamespace.CUSTOM_ALIASES
-    DEFAULT_ALIASES = argNamespace.DEFAULT_ALIASES
+    USE_DEFAULT_ALIASES = argNamespace.USE_DEFAULT_ALIASES
 
     # TODO Proper definition
     listOfPortionDirs, listOfPortionNames, LIST_OF_PORTION_CONDITIONS = None, None, None
@@ -184,8 +173,9 @@ if __name__ == "__main__":
     SCRIPT_TEST_MODE = argNamespace.SCRIPT_TEST_MODE
 
     # Custom argument parsing: aliases
+    assert isinstance(USE_DEFAULT_ALIASES, bool)
     variableAliases = parseAliasArguments(customAliases=CUSTOM_ALIASES,
-                                          useDefaultAliases=DEFAULT_ALIASES,
+                                          useDefaultAliases=USE_DEFAULT_ALIASES,
                                           defaultAliases=VARIABLE_ALIASES)
     # Parsed arguments: General
     CHUNKSIZE = argNamespace.CHUNKSIZE
@@ -193,12 +183,6 @@ if __name__ == "__main__":
     MESSAGE_MODULO_FILES = argNamespace.MESSAGE_MODULO_FILES
 
     # Parsed arguments: Meta-parameters
-    PROJECT_DIR_DEPTH = argNamespace.PROJECT_DIR_DEPTH
-    DATA_REQUEST_DIR_DEPTH = argNamespace.DATA_REQUEST_DIR_DEPTH
-    IRB_DIR_DEPTH = argNamespace.IRB_DIR_DEPTH
-    IDR_DATA_REQUEST_DIR_DEPTH = argNamespace.IDR_DATA_REQUEST_DIR_DEPTH
-
-    ROOT_DIRECTORY = argNamespace.ROOT_DIRECTORY
     LOG_LEVEL = argNamespace.LOG_LEVEL
 
     # Parsed arguments: SQL connection settings
@@ -223,10 +207,8 @@ if __name__ == "__main__":
     runTimestamp = getTimestamp()
     thisFilePath = Path(__file__)
     thisFileStem = thisFilePath.stem
-    projectDir, _ = successiveParents(thisFilePath.absolute(), PROJECT_DIR_DEPTH)
-    dataRequestDir, _ = successiveParents(thisFilePath.absolute(), DATA_REQUEST_DIR_DEPTH)
-    IRBDir, _ = successiveParents(thisFilePath.absolute(), IRB_DIR_DEPTH)
-    IDRDataRequestDir, _ = successiveParents(thisFilePath.absolute(), IDR_DATA_REQUEST_DIR_DEPTH)
+    currentWorkingDir = Path(os.getcwd()).absolute()
+    projectDir = currentWorkingDir
     dataDir = projectDir.joinpath("data")
     if dataDir:
         inputDataDir = dataDir.joinpath("input")
@@ -238,30 +220,8 @@ if __name__ == "__main__":
         runLogsDir = logsDir.joinpath(thisFileStem)
     sqlDir = projectDir.joinpath("sql")
 
-    if ROOT_DIRECTORY == "PROJECT_OR_PORTION_DIRECTORY":
-        rootDirectory = projectDir
-    elif ROOT_DIRECTORY == "DATA_REQUEST_DIRECTORY":
-        rootDirectory = dataRequestDir
-    elif ROOT_DIRECTORY == "IRB_DIRECTORY":
-        rootDirectory = IRBDir
-    elif ROOT_DIRECTORY == "IDR_DATA_REQUEST_DIRECTORY":
-        rootDirectory = IDRDataRequestDir
-    else:
-        raise Exception("An unexpected error occurred.")
-
     # Variables: Path construction: Project-specific
     pass
-
-    # Variables: SQL Parameters
-    if USER_ID:
-        uid = USER_ID[:]
-    else:
-        uid = fr"{USER_DOMAIN}\{USERNAME}"
-    if USER_PWD:
-        userPwd = USER_PWD
-    else:
-        userPWD = os.environ["HFA_UFADPWD"]
-    conStr = f"mssql+pymssql://{uid}:{userPWD}@{SERVER}/{DATABASE}"
 
     # Variables: Other
     pass
@@ -289,16 +249,10 @@ if __name__ == "__main__":
 
     logger.setLevel(9)
 
-    logger.info(f"""Begin running "{thisFilePath}".""")
-    logger.info(f"""All other paths will be reported in debugging relative to `{ROOT_DIRECTORY}`: "{rootDirectory}".""")
-    logger.info(f"""Script arguments:
+    logger.info(f"""Begin running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
+    logger.info(f"""DRAPI-Lemur version is "{drapiVersion}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to the current working directory: "{choosePathToLog(path=projectDir, rootPath=projectDir)}".""")
 
-    # Arguments: Meta
-    `PROJECT_DIR_DEPTH`: "{PROJECT_DIR_DEPTH}" ----------> "{projectDir}"
-    `IRB_DIR_DEPTH`: "{IRB_DIR_DEPTH}" --------------> "{IRBDir}"
-    `IDR_DATA_REQUEST_DIR_DEPTH`: "{IDR_DATA_REQUEST_DIR_DEPTH}" -> "{IDRDataRequestDir}"
-
-    """)
     argList = argNamespace._get_args() + argNamespace._get_kwargs()
     argListString = pprint.pformat(argList)  # TODO Remove secrets from list to print, e.g., passwords.
     logger.info(f"""Script arguments:\n{argListString}""")
@@ -347,11 +301,11 @@ if __name__ == "__main__":
                          IRB_NUMBER,
                          VARIABLE_SUFFIXES,
                          # Arguments used in preparation AND passed to other functions: Common to both cases
-                         VARIABLE_ALIASES,
+                         variableAliases,
                          deIdentificationFunctions,
                          logger,
                          # Arguments passed to other functions: Common to both cases
-                         rootDirectory,
+                         projectDir,
                          runOutputDir,
                          CHUNKSIZE,
                          MESSAGE_MODULO_CHUNKS,
@@ -373,11 +327,11 @@ if __name__ == "__main__":
                          IRB_NUMBER,
                          VARIABLE_SUFFIXES,
                          # Arguments used in preparation AND passed to other functions: Common to both cases
-                         VARIABLE_ALIASES,
+                         variableAliases,
                          deIdentificationFunctions,
                          logger,
                          # Arguments passed to other functions: Common to both cases
-                         rootDirectory,
+                         projectDir,
                          runOutputDir,
                          CHUNKSIZE,
                          MESSAGE_MODULO_CHUNKS,
@@ -402,11 +356,11 @@ if __name__ == "__main__":
                          IRB_NUMBER,
                          VARIABLE_SUFFIXES,
                          # Arguments used in preparation AND passed to other functions: Common to both cases
-                         VARIABLE_ALIASES,
+                         variableAliases,
                          deIdentificationFunctions,
                          logger,
                          # Arguments passed to other functions: Common to both cases
-                         rootDirectory,
+                         projectDir,
                          runOutputDir,
                          CHUNKSIZE,
                          MESSAGE_MODULO_CHUNKS,
@@ -437,4 +391,4 @@ if __name__ == "__main__":
         results = pool.starmap(convertColumnsHash, PARGS)
 
     # End module body
-    logger.info(f"""Finished running "{thisFilePath.absolute().relative_to(rootDirectory)}".""")
+    logger.info(f"""Finished running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
