@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 from typing_extensions import (Dict,
                                List,
+                               Literal,
                                Tuple,
                                Union)
 # Third-party packages
@@ -62,7 +63,8 @@ def qaListOfFilesAndDirectories(LIST_OF_FILES: List[Union[str, Path]],
     # Work on files first
     dfresult1 = iterateOverFiles(listOfFiles=listOfFiles1,
                                  SCRIPT_TEST_MODE=SCRIPT_TEST_MODE,
-                                 directoryName=None)
+                                 directoryName=None,
+                                 logger=logger)
 
     # Work on directories
     resultsli = []
@@ -71,7 +73,8 @@ def qaListOfFilesAndDirectories(LIST_OF_FILES: List[Union[str, Path]],
         listOfFiles2 = sorted(list(dpath.iterdir()))
         dfresult2 = iterateOverFiles(listOfFiles=listOfFiles2,
                                      SCRIPT_TEST_MODE=SCRIPT_TEST_MODE,
-                                     directoryName=dpath.name)
+                                     directoryName=dpath.name,
+                                     logger=logger)
         resultsli.append(dfresult2)
 
     dfresult = pd.concat([dfresult1] + resultsli, axis=0)
@@ -172,22 +175,9 @@ def conformDataTypes(dataFrame: pd.DataFrame,
             else:
                 raise Exception("This should not happen")
             # Standardize Python data type # TODO We don't need this if the input data is clean, i.e., all values are of the same data type, e.g., there are no headers in the rows.
-            if False:
-                if variableDataType == str:
-                    df[variableName] = df[variableName].astype(variableDataType)
-                elif variableDataType == "Int64":
-                    if is_numeric_dtype(df[variableName]):
-                        df[variableName] = df[variableName].astype(variableDataType)
-                    elif is_object_dtype(df[variableName]):
-                        df[variableName] = df[variableName].astype(float).astype(variableDataType)
-                    else:
-                        raise Exception(f"""Encountered unexpected Pandas data type: "{df[variableName].dtypes}".""")
-                else:
-                    raise Exception(f"""Encountered unexpected data type: "{variableDataType}".""")
-            elif True:
-                dt1 = df[variableName].dtype
-                logger.info(f"""    Converting data type from "{dt1}" to "{variableDataType}".""")
-                df[variableName] = df[variableName].astype(variableDataType)
+            dt1 = df[variableName].dtype
+            logger.info(f"""    Converting data type from "{dt1}" to "{variableDataType}".""")
+            df[variableName] = df[variableName].astype(variableDataType)
             result = True
         else:
             result = False
@@ -206,9 +196,12 @@ def combineMaps(listOfDirectories: List[str],
                 runOutputDir: Path,
                 rootPath: Path,
                 rootDirectory: Path,
-                logger: logging.Logger) -> List[Path]:
+                logger: logging.Logger,
+                pandasEngine: Literal["c",
+                                      "python",
+                                      "pyarrow"]) -> List[Path]:
     """
-    for `mode` = 1, assumes `listOfDirectories` is a tree with depth of 3, e.g. the "Maps by Portion" folder with the following structure:
+    for `mode` = 1, assumes `listOfDirectories` are trees with a depth of 2, e.g. the "Portion" directories contained in the "Maps by Portion" directories:
     - Maps by Portion
         - Portion 1
             - Variable 1
@@ -231,6 +224,7 @@ def combineMaps(listOfDirectories: List[str],
                 - etc.
             - etc.
         - etc.
+
     For `mode` = 2, assumes `listOfDirectories` is a tree with depth of 2.
     """
     listOfDirectories1 = sorted(list(listOfDirectories))
@@ -264,17 +258,17 @@ def combineMaps(listOfDirectories: List[str],
     savePathDir = runOutputDir.joinpath("Combined Maps", "By Variable")
     savePathDir.mkdir(parents=True)
     listOfPathsForCombinedMaps = []
-    header = True
     for it2, variableName in enumerate(listOfVariableNames, start=1):
         logger.info(f"""  Working on variable {it2:,} of {it2Total:,}: "{variableName}".""")
         mask = dfAllPaths["Variable Name"] == variableName
         listOfPaths = dfAllPaths["File Path"][mask].to_list()
         it3Total = len(listOfPaths)
-        listOfDataFramesPath = runIntermediateDir.joinpath(variableName)
+        listOfDataFramesPath = runIntermediateDir.joinpath(f"{variableName}.CSV")
+        header = True
         for it3, fpath in enumerate(listOfPaths, start=1):
             logger.info(f"""    Working on file {it3:,} of {it3Total:,}: "{choosePathToLog(path=fpath, rootPath=rootPath)}".""")
             df = pd.read_csv(filepath_or_buffer=fpath,
-                             engine="pyarrow")
+                             engine=pandasEngine)
             # Standardize variable names
             df = standardizeMapHeaders(dataFrame=df,
                                        variableAliases=variableAliases,
