@@ -6,4 +6,4 @@ from pathlib import Path
 from os.path import dirname
 PATH = Path(dirname(__file__)).absolute()
 
-__version__ = "1.0.41"
+__version__ = "1.0.42"
