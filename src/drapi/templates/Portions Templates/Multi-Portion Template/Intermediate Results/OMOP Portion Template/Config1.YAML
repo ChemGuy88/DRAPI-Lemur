@@ -9,11 +9,11 @@ db_connections:
 data_output:  # Assumes Windows path separator (i.e., "\"), and must end with path separator
   identified_file_location: 'data\output\identified'
   deidentified_file_location: 'data\output\de-identified'
-  mapping_location: 'data\output\'
+  mapping_location: 'data\output\mapping'
 
 # Path of the list of OMOP person IDs to use to pull the day, i.e. the cohort. The path
 # is expected to be relative to the project directory, i.e. the command line working directory.
-person_id: 'data/output/getPersonIDs/.../personIDs.csv'
+person_id: 'data/output/getPersonIDs/.../Person IDs.csv'
 
 #####   DATA RELEASE SELECTION   #####
 data_release:
@@ -32,9 +32,11 @@ person_information_tables:
    - location
 clinical_data_tables:
   condition_occurrence: condition_start_date
+  episode: episode_start_date
   device_exposure: device_exposure_start_date
   drug_exposure: drug_exposure_start_date
   measurement: measurement_date
+  metadata: metadata_date
   note_nlp: nlp_date
   observation_period: observation_period_start_date
   observation: observation_date
@@ -62,6 +64,20 @@ condition_occurrence:
   - condition_source_value
   - condition_source_concept_id
   - condition_status_source_value
+episode:
+  - person_id
+  - episode_id
+  - episode_concept_id
+  - episode_start_date
+  - episode_start_datetime
+  - episode_end_date
+  - episode_end_datetime
+  - episode_parent_id
+  - episode_number
+  - episode_object_concept_id
+  - episode_type_concept_id
+  - episode_source_value
+  - episode_source_concept_id
 location: 
 #####   LOCATION   #####
   - location_id
@@ -153,6 +169,17 @@ measurement:
   - measurement_source_concept_id
   - unit_source_value
   - value_source_value
+metadata:
+  - person_id
+  - metadata_id
+  - metadata_concept_id
+  - metadata_type_concept_id
+  - name
+  - value_as_string
+  - value_as_concept_id
+  - value_as_number
+  - metadata_date
+  - metadata_datetime
 note_nlp:
 #####   NOTE NLP #####
   - person_id
