@@ -4,8 +4,6 @@ OMOP Data Pull Script
 Please be sure to review the README for this script before running.
 """
 
-__all__ = []
-
 import glob
 import logging
 import os
@@ -23,7 +21,13 @@ from drapi.code.drapi.omop.configProcessing import (editConfig,
                                                     interpretPath)
 
 # Arguments
+DO_PARTIAL_DOWNLOAD = False  # This is used if you want to re-do a download using the same YAML configurations, but skipping the tables and table chunks already downloaded. The tables and table chunks are skipped by indicated the table to continue on (`DO_PARTIAL_DOWNLOAD_IT_NUM`), and its corresponding chunk number (`DO_PARTIAL_DOWNLOAD_TABLE_NAME`).
 LOG_LEVEL = "INFO"  # Lowest level available is "9"
+
+# Arguments: Sub-option: Partial download
+# NOTE These are required if `DO_PARTIAL_DOWNLOAD` is `True`
+DO_PARTIAL_DOWNLOAD_IT_NUM = None
+DO_PARTIAL_DOWNLOAD_TABLE_NAME = None
 
 # Arguments: SQL server settings
 if False:
@@ -33,6 +37,13 @@ if False:
     SERVER = "DWSRSRCH01.shands.ufl.edu"  # AKA `HOST`
     DATABASE = "DWS_OMOP_PROD"
     USERDOMAIN = "UFAD"
+
+# Argument parsing
+if DO_PARTIAL_DOWNLOAD:
+    assert not isinstance(DO_PARTIAL_DOWNLOAD_IT_NUM, type(None))
+    assert not isinstance(DO_PARTIAL_DOWNLOAD_TABLE_NAME, type(None))
+else:
+    pass
 
 # Variables
 timestamp = getTimestamp()
@@ -184,69 +195,85 @@ def query_attempt(search_config, list_of_tables, dict_of_dates, person_id_file_p
         numChunks = sum([1 for _ in pd.read_csv(person_id_file_path, chunksize=500)])
         for it, person_id in enumerate(pd.read_csv(person_id_file_path, chunksize=500), start=1):
             logging.info(f"""    Working on table chunk {it} of {numChunks}""")
-            person_id_list = person_id.iloc[:, 0]
-            person_id_list_string = ', '.join(map(str, person_id_list))
-            date_sorted_by = dict_of_dates.get(current_table)
-            query_string = "(SELECT " + columns_string + " FROM " + current_table + " WHERE person_id IN (" + person_id_list_string + ") AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
-            if ((dict_of_search.get(current_table) is not None)):
-                row_query_string = ''
-                rows = dict_of_search.get(current_table)
-                before, sep, after = current_table.partition('_')
-                current_key = before
-                if (current_table == 'condition_occurrence'):
-                    row_query_string = "("
-                    for i in range(len(rows)):
-                        row_string = rows[i]
-                        row_query_string += "(SELECT " + columns_string + " FROM " + current_table + " WHERE " + current_key + "_source_value LIKE '" + row_string + "%' AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
-                        if (i != len(rows) - 1):
-                            row_query_string += " UNION "
-                        else:
-                            row_query_string += ")"
-                elif (current_table == 'measurement'):
-                    rows_string = "', '".join(map(str, rows))
-                    row_query_string = "(SELECT " + columns_string + " FROM " + current_table + " WHERE " + current_key + "_source_value IN ('" + rows_string + "') AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
-                    if (dict_of_search.get('measurement_laboratory_search') is not None):
-                        row_string = "', '".join(map(str, dict_of_search.get('measurement_laboratory_search')))
-                        search_query_string = "(SELECT " + columns_string + " FROM " + current_key + " WHERE " + current_key + "_source_value IN ('" + row_string + "') AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
-                    else:
-                        search_query_string = "(SELECT " + columns_string + " FROM " + current_key + " WHERE " + current_key + "_source_value LIKE '%[0-9]-[0-9]'  AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
-                    query = query_string + " INTERSECT " + search_query_string + " ORDER BY person_id, " + date_sorted_by
-                    logging.log(9, f"  ..  >>> This is the query >>>\n{query}\n<<< End of query <<<")
-                    data1 = db_execute_read_query(host, database, query)
-                    identified_file_location_asString = interpretPath(search_config['data_output']['identified_file_location'])
-                    file_location = identified_file_location_asString + 'measurement_laboratories.csv'
-                    if not data1.empty:
-                        csv_output_file = (file_location)
-                        try:
-                            logging.log(9, f"""  ..  Saving query chunk results to "{csv_output_file}".""")
-                            data1.to_csv(csv_output_file, index=False, header=h1, mode=m1)
-                            h1 = False
-                            m1 = 'a'
-                        except Exception as err:
-                            errorMessage = f"{err.__class__.__name__}: {err.__str__()}"
-                            message = f" . . . . . . .An exception has occurred. This may be caused by an output directory error; please double check the directory in the config file. The actual exception message is below:\n{errorMessage}"
-                            logging.error(message)
+            if DO_PARTIAL_DOWNLOAD:
+                condition1 = current_table == DO_PARTIAL_DOWNLOAD_TABLE_NAME
+                if condition1:
+                    condition2 = it > DO_PARTIAL_DOWNLOAD_IT_NUM
+                    condition = condition1 and condition2
                 else:
-                    rows_string = "', '".join(map(str, rows))
-                    row_query_string = "(SELECT " + columns_string + " FROM " + current_table + " WHERE " + current_key + "_source_value IN ('" + rows_string + "') AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
-                query = query_string + " INTERSECT " + row_query_string
-                query_string = query
-            query_string += " ORDER BY person_id, " + date_sorted_by
-            logging.log(9, f"  ..  >>> This is the query >>>\n{query_string}\n<<< End of query <<<")
-            data = db_execute_read_query(host, database, query_string)
-            if not data.empty:
-                identified_file_location_asString = interpretPath(search_config['data_output']['identified_file_location'])
-                file_location = identified_file_location_asString + current_table + '.csv'
-                csv_output_file = (file_location)
-                try:
-                    logging.info(f"""  ..  Saving query chunk results to "{csv_output_file}".""")
-                    data.to_csv(csv_output_file, index=False, header=h, mode=m)
-                    h = False
-                    m = 'a'
-                except Exception as err:
-                    errorMessage = f"{err.__class__.__name__}: {err.__str__()}"
-                    message = f"An exception has occurred. This may be caused by an output directory error; please double check the directory in the config file. The actual exception message is below:\n{errorMessage}"
-                    logging.error(message)
+                    condition2 = "N/A"
+                    condition = not condition1
+                logging.info(f"""      `condition1`: "{condition1}"
+`condition2`: "{condition2}"
+`condition` : "{condition}".""")
+            else:
+                condition = True
+            if condition:
+                person_id_list = person_id.iloc[:, 0]
+                person_id_list_string = ', '.join(map(str, person_id_list))
+                date_sorted_by = dict_of_dates.get(current_table)
+                query_string = "(SELECT " + columns_string + " FROM " + current_table + " WHERE person_id IN (" + person_id_list_string + ") AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
+                if ((dict_of_search.get(current_table) is not None)):
+                    row_query_string = ''
+                    rows = dict_of_search.get(current_table)
+                    before, sep, after = current_table.partition('_')
+                    current_key = before
+                    if (current_table == 'condition_occurrence'):
+                        row_query_string = "("
+                        for i in range(len(rows)):
+                            row_string = rows[i]
+                            row_query_string += "(SELECT " + columns_string + " FROM " + current_table + " WHERE " + current_key + "_source_value LIKE '" + row_string + "%' AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
+                            if (i != len(rows) - 1):
+                                row_query_string += " UNION "
+                            else:
+                                row_query_string += ")"
+                    elif (current_table == 'measurement'):
+                        rows_string = "', '".join(map(str, rows))
+                        row_query_string = "(SELECT " + columns_string + " FROM " + current_table + " WHERE " + current_key + "_source_value IN ('" + rows_string + "') AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
+                        if (dict_of_search.get('measurement_laboratory_search') is not None):
+                            row_string = "', '".join(map(str, dict_of_search.get('measurement_laboratory_search')))
+                            search_query_string = "(SELECT " + columns_string + " FROM " + current_key + " WHERE " + current_key + "_source_value IN ('" + row_string + "') AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
+                        else:
+                            search_query_string = "(SELECT " + columns_string + " FROM " + current_key + " WHERE " + current_key + "_source_value LIKE '%[0-9]-[0-9]'  AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
+                        query = query_string + " INTERSECT " + search_query_string + " ORDER BY person_id, " + date_sorted_by
+                        logging.log(9, f"  ..  >>> This is the query >>>\n{query}\n<<< End of query <<<")
+                        data1 = db_execute_read_query(host, database, query)
+                        identified_file_location_asString = interpretPath(search_config['data_output']['identified_file_location'])
+                        file_location = identified_file_location_asString + 'measurement_laboratories.csv'
+                        if not data1.empty:
+                            csv_output_file = (file_location)
+                            try:
+                                logging.log(9, f"""  ..  Saving query chunk results to "{csv_output_file}".""")
+                                data1.to_csv(csv_output_file, index=False, header=h1, mode=m1)
+                                h1 = False
+                                m1 = 'a'
+                            except Exception as err:
+                                errorMessage = f"{err.__class__.__name__}: {err.__str__()}"
+                                message = f" . . . . . . .An exception has occurred. This may be caused by an output directory error; please double check the directory in the config file. The actual exception message is below:\n{errorMessage}"
+                                logging.error(message)
+                    else:
+                        rows_string = "', '".join(map(str, rows))
+                        row_query_string = "(SELECT " + columns_string + " FROM " + current_table + " WHERE " + current_key + "_source_value IN ('" + rows_string + "') AND " + date_sorted_by + " BETWEEN " + start_date + " AND " + end_date + ")"
+                    query = query_string + " INTERSECT " + row_query_string
+                    query_string = query
+                query_string += " ORDER BY person_id, " + date_sorted_by
+                logging.log(9, f"  ..  >>> This is the query >>>\n{query_string}\n<<< End of query <<<")
+                data = db_execute_read_query(host, database, query_string)
+                if not data.empty:
+                    identified_file_location_asString = interpretPath(search_config['data_output']['identified_file_location'])
+                    file_location = identified_file_location_asString + current_table + '.csv'
+                    csv_output_file = (file_location)
+                    try:
+                        logging.info(f"""  ..  Saving query chunk results to "{csv_output_file}".""")
+                        data.to_csv(csv_output_file, index=False, header=h, mode=m)
+                        h = False
+                        m = 'a'
+                    except Exception as err:
+                        errorMessage = f"{err.__class__.__name__}: {err.__str__()}"
+                        message = f"An exception has occurred. This may be caused by an output directory error; please double check the directory in the config file. The actual exception message is below:\n{errorMessage}"
+                        logging.error(message)
+            else:
+                pass
         logging.info(f"""  Done processing table "{current_table}".""")
 
 
