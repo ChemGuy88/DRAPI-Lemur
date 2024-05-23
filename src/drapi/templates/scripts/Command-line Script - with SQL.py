@@ -66,15 +66,7 @@ if __name__ == "__main__":
     argNamespace = parser.parse_args()
 
     # Parsed arguments: Main
-    FILE_PATH = argNamespace.FILE_PATH
-    FILE_HEADER = argNamespace.FILE_HEADER
-    FROM = argNamespace.FROM
-    TO = argNamespace.TO
-    ID_TYPE = argNamespace.ID_TYPE
-    FIRST_TIME = argNamespace.FIRST_TIME
-    OLD_RUN_PATH = argNamespace.OLD_RUN_PATH
-
-    SCRIPT_TEST_MODE = argNamespace.SCRIPT_TEST_MODE
+    pass
 
     # Parsed arguments: Meta-parameters
     LOG_LEVEL = argNamespace.LOG_LEVEL
