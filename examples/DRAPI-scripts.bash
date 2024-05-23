@@ -10,31 +10,25 @@ source "/home/herman/.hermanCode/functions.bash"
 makeDirTemplate 0 "Path to Where you Want the Template Directory Create"
 
 # Map OneFlorida IDs to IDR Patient IDs
-mapOF2IDR.py True --MAP_1_PATH "Path to OneFlorida-to-De-identified-OneFlorida IDs/filename.CSV" \
-                  -FIRST_TIME True \
-                  -PATIENT_KEYS_FILE_PATH "Path to File with IDR Patient IDs/filename.CSV" \
-                  -MAP_1_COLUMN_NAME_FROM "Column Name from <MAP_1_PATH> that you are converting FROM"
+mapOF2IDR_id2id.py --FILE_PATH "../../../Data Request 06 - 2024-05-17/Intermediate Results/General Portion/data/input/mpa_id_mapping_add.csv" \
+                   --FILE_HEADER "UFH_ID" \
+                   --FROM "OneFlorida Patient ID" \
+                   --TO_VARIABLES "MRN (UF)" "MRN (Jax)" \
+                   --ID_TYPE "OneFlorida Patient ID" \
+                   --FIRST_TIME\
+                   &> "logs (nohup)/$(getTimestamp).out" & getTimestamp
 
-# If you have previously downloaded the OneFlorida-to-IDR map, you can specify its path using `OLD_RUN_PATH`
-mapOF2IDR.py True --MAP_1_PATH "Path to OneFlorida-to-De-identified-OneFlorida IDs/filename.CSV" \
-                  -FIRST_TIME True \
-                  -PATIENT_KEYS_FILE_PATH "Path to File with IDR Patient IDs/filename.CSV" \
-                  -MAP_1_COLUMN_NAME_FROM "Column Name from <MAP_1_PATH> that you are converting FROM" \
-                  -OLD_RUN_PATH "../../Intermediate Results/SQL Portion/data/output/mapOF2IDR/2024-03-20 14-51-32/Map 2"
+# Join OneFlorida de-identification map to OF-to-IDR map
+join.py --LEFT_TABLE "../../../Data Request 06 - 2024-05-17/Intermediate Results/General Portion/data/input/mpa_id_mapping_add.csv" \
+        --RIGHT_TABLE "../../../Data Request 06 - 2024-05-17/Intermediate Results/General Portion/data/output/mapOF2IDR_id2id/2024-05-23 16-28-53/OneFlorida to UF Health Patient ID Map - Final.CSV" \
+        --LEFT_TABLE_INDEX "UFH_ID" \
+        --RIGHT_TABLE_INDEX "OneFlorida Patient ID" \
+        --HOW "outer" \
+        --COLUMNS_TO_DROP "UFH_ID" \
+        --FILE_EXTENSION "CSV" \
+        &> "logs (nohup)/$(getTimestamp).out" & getTimestamp
 
 # De-identify using an additive function
-nohup python "code/convertColumnsHash.py" TRUE\
-                                          --DICTIONARY_OF_MAPPING_ARGUMENTS="{\"Encounter # (CSN)\": [1, \"random\"],\
-                                                                              \"Patient Key\": [1, \"random\"],\
-                                                                              \"Provider Key\": [1, \"random\"],\
-                                                                              \"Encounter Key\": [1, \"random\"],\
-                                                                              \"Note Key\": [1, \"random\"],\
-                                                                              \"Note ID\": [1, \"random\"],\
-                                                                              \"Linkage Note ID\": [1, \"random\"],\
-                                                                              \"MRN (UF)\": [1, \"random\"],\
-                                                                              \"MRN (Jax)\": [1, \"random\"]}"\
-                                                                              &> "logs (nohup)/$(timeStamp).out" & timeStamp
-
 
 # Replace text in files. In this example, CRLF to LF
 replaceText.py -f FILEPATH -bo $'\\r\\n' -bn $'\\n'
