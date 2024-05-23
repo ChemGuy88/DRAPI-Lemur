@@ -6,6 +6,7 @@ import argparse
 import logging
 import os
 import pprint
+import shutil
 from pathlib import Path
 # Third-party packages
 import pandas as pd
@@ -35,10 +36,10 @@ if __name__ == "__main__":
                         type=str,
                         choices=ONE_FLORIDA_ID_TYPE_LIST,
                         help="The variable used as input.")
-    parser.add_argument("--TO",
-                        type=str,
+    parser.add_argument("--TO_VARIABLES",
+                        nargs="*",
                         choices=ONE_FLORIDA_ID_TYPE_LIST,
-                        help="The variable to be output.")
+                        help="The variable(s) to be output.")
     parser.add_argument("--ID_TYPE",
                         type=str,
                         choices=ONE_FLORIDA_ID_TYPE_LIST,
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     FILE_PATH = argNamespace.FILE_PATH
     FILE_HEADER = argNamespace.FILE_HEADER
     FROM = argNamespace.FROM
-    TO = argNamespace.TO
+    TO_VARIABLES = argNamespace.TO_VARIABLES
     ID_TYPE = argNamespace.ID_TYPE
     FIRST_TIME = argNamespace.FIRST_TIME
     OLD_RUN_PATH = argNamespace.OLD_RUN_PATH
@@ -124,11 +125,11 @@ if __name__ == "__main__":
                         FILE_PATH,
                         FILE_HEADER,
                         FROM,
-                        TO,
+                        TO_VARIABLES,
                         ID_TYPE]
     FORM_2_ARGUMENTS = [OLD_RUN_PATH,
                         FROM,
-                        TO,
+                        TO_VARIABLES,
                         ID_TYPE]
     # <<< meta variable <<<
 
@@ -259,7 +260,7 @@ if __name__ == "__main__":
                                       host=SERVER,
                                       database=DATABASE)
         
-        # Modify query according to `TO` and `FROM` arguments
+        # Modify query according to `TO_VARIABLES` and `FROM` arguments
         SQL_FILE_PATH_RELATIVE = Path("../../src/drapi/sql/OneFlorida to UF Health Patient ID Map.SQL")
         SQL_FILE_PATH = drapiInstallationPath.joinpath(SQL_FILE_PATH_RELATIVE)
         with open(SQL_FILE_PATH, "r") as file:
@@ -270,7 +271,7 @@ if __name__ == "__main__":
                                       old="{PYTHON_VARIABLE: IDTypeSQL}",
                                       new=IDTypeSQL,
                                       logger=logger)
-        sqlFilePathTemp = runIntermediateDir.joinpath(f"OneFlorida to UF Health Patient ID Map - {FROM}.SQL")
+        sqlFilePathTemp = runIntermediateDir.joinpath(f"OneFlorida to UF Health Patient ID Map - Filter by {FROM}.SQL")
         with open(sqlFilePathTemp, "w") as file:
             file.write(query)
 
@@ -283,7 +284,7 @@ if __name__ == "__main__":
                 filterVariablePythonDataType="int",
                 filterVariableSqlQueryTemplatePlaceholder="{PYTHON_VARIABLE: IDTypeValues}",
                 logger=logger,
-                outputFileName=f"OneFlorida to UF Health Patient ID Map - {FROM}",
+                outputFileName=f"OneFlorida to UF Health Patient ID Map",
                 runOutputDir=downloadDir,
                 queryChunkSize=10000)
     else:
@@ -291,7 +292,7 @@ if __name__ == "__main__":
 
     # Concatenate downloaded data
     pathli = sorted(list(downloadDir.iterdir()))
-    concatenatedMapPath = runOutputDir.joinpath(f"OneFlorida to UF Health Patient ID Map - {FROM}.CSV")
+    concatenatedMapPath = runOutputDir.joinpath(f"OneFlorida to UF Health Patient ID Map - Raw.CSV")
     header = True
     for fpath in pathli:
         logger.info(f"""  Reading file "{choosePathToLog(path=fpath, rootPath=projectDir)}".""")
@@ -303,12 +304,18 @@ if __name__ == "__main__":
         header = False
 
     # Select data to output
-    columnsToExport = [TO,
-                       FROM]
     finalMap = pd.read_csv(filepath_or_buffer=concatenatedMapPath)
+    if len(TO_VARIABLES) == 0:
+        columnsToExport = finalMap.columns
+    elif len(TO_VARIABLES) > 1:
+        columnsToExport = [FROM] + TO_VARIABLES
+    else:
+        message = """."""
+        logger.critical(message)
+        raise Exception(message)
     finalMap = finalMap[columnsToExport]
-    finalMap = finalMap.sort_values(by=TO)
-    exportPath = runOutputDir.joinpath(f"Map - {FROM} to {TO}.CSV")
+    finalMap = finalMap.sort_values(by=columnsToExport)
+    exportPath = runOutputDir.joinpath(f"OneFlorida to UF Health Patient ID Map - Final.CSV")
     finalMap.to_csv(exportPath, index=False)
 
     # QA
@@ -317,6 +324,11 @@ if __name__ == "__main__":
 
     # Output location summary
     logger.info(f"""Script output is located in the following directory: "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}".""")
+
+    # Remove intermediate files
+    logger.info("Removing intermediate files.")
+    shutil.rmtree(runIntermediateDir)
+    logger.info("Removing intermediate files - done.")
 
     # <<< End module body <<<
     logger.info(f"""Finished running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
