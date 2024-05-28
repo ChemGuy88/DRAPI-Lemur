@@ -6,14 +6,17 @@ import argparse
 import logging
 import os
 import pprint
+import shutil
 from pathlib import Path
 # Third-party packages
 import pandas as pd
 from sqlalchemy import URL
 # Local packages
 from drapi import __version__ as drapiVersion
+from drapi import loggingChoices
 from drapi.code.drapi.drapi import (choosePathToLog,
                                     getTimestamp,
+                                    loggingChoiceParser,
                                     makeDirPath)
 # Super-local imports
 from drapi.code.drapi.getData.getData import getData
@@ -23,20 +26,18 @@ if __name__ == "__main__":
     # >>> `Argparse` arguments >>>
     parser = argparse.ArgumentParser()
 
-    # Arguments: Main: Single input option: Data sources
+    # Arguments: Main
     parser.add_argument("--LEFT_DEIDENTIFICATION_MAP_PATH",
                         type=str,
                         required=True)
     parser.add_argument("--LEFT_VARIABLE_NAME",
                         type=str,
-                        required=True,
                         help="The column header for the left map.")
     parser.add_argument("--RIGHT_DEIDENTIFICATION_MAP_PATH",
                         type=str,
                         required=True)
     parser.add_argument("--RIGHT_VARIABLE_NAME",
                         type=str,
-                        required=True,
                         help="The column header for the right map.")
     parser.add_argument("--SQL_FILE_PATH",
                         type=Path,
@@ -48,17 +49,30 @@ if __name__ == "__main__":
                         type=str,
                         required=True,
                         help="The name of the query results.")
-    
-    parser.add_argument("--LEFT_VARIABLE_NAME_ALIAS",
+    parser.add_argument("--LEFT_VARIABLE_DEIDENTIFIED_NAME",
                         type=str,
-                        help="The column header for the left map's de-identification.")
-    parser.add_argument("--RIGHT_VARIABLE_NAME_ALIAS",
+                        help="The de-identified version of the left variable's name")
+    parser.add_argument("--RIGHT_VARIABLE_DEIDENTIFIED_NAME",
                         type=str,
-                        help="The column header for the right map's de-identification.")
+                        help="The de-identified version of the right variable's name")
+
+    # Variable aliases
+    parser.add_argument("--LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP",
+                        type=str,
+                        help="")
+    parser.add_argument("--LEFT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP",
+                        type=str,
+                        help="")
+    parser.add_argument("--RIGHT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP",
+                        type=str,
+                        help="")
+    parser.add_argument("--RIGHT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP",
+                        type=str,
+                        help="")
     parser.add_argument("--STANDARDIZE_COLUMN_NAMES",
                         action="store_true",
                         help="Whether to rename variable aliases to standard variable names.")
-    
+
     parser.add_argument("--DROP_NA_HOW",
                         default="all",
                         choices=["all",
@@ -69,31 +83,13 @@ if __name__ == "__main__":
                         action="store_true")
     parser.add_argument("--OLD_RUN_PATH",
                         type=str,
-                        help="The path to the data previously downloaded from another session of this program.")
-
-    # Arguments: Main
-    parser.add_argument("--SCRIPT_TEST_MODE",
-                        type=lambda stringValue: True if stringValue.lower() == "true" else False if stringValue.lower() == "false" else None,
-                        help=""" Choose one of {{True, False}}""")
-
-    # Arguments: General
-    parser.add_argument("--CHUNKSIZE",
-                        default=50000,
-                        type=int,
-                        help="The number of rows to read at a time from the CSV using Pandas `chunksize`")
-    parser.add_argument("--MESSAGE_MODULO_CHUNKS",
-                        default=50,
-                        type=int,
-                        help="How often to print a log message, i.e., print a message every x number of chunks, where x is `MESSAGE_MODULO_CHUNKS`")
-    parser.add_argument("--MESSAGE_MODULO_FILES",
-                        default=100,
-                        type=int,
-                        help="How often to print a log message, i.e., print a message every x number of chunks, where x is `MESSAGE_MODULO_FILES`")
+                        help="""The path to the data previously downloaded from another session of this program. This is usually the "Left-to-right Map" directory.""")
 
     # Arguments: Meta-parameters
     parser.add_argument("--LOG_LEVEL",
                         default=10,
-                        type=int,
+                        type=loggingChoiceParser,
+                        choices=loggingChoices,
                         help="""Increase output verbosity. See "logging" module's log level for valid values.""")
 
     # Arguments: SQL connection settings
@@ -141,21 +137,19 @@ if __name__ == "__main__":
     SQL_FILE_PLACEHOLDER = argNamespace.SQL_FILE_PLACEHOLDER
     OUTPUT_FILE_NAME = argNamespace.OUTPUT_FILE_NAME
 
-    LEFT_VARIABLE_NAME_ALIAS = argNamespace.LEFT_VARIABLE_NAME_ALIAS
-    RIGHT_VARIABLE_NAME_ALIAS = argNamespace.RIGHT_VARIABLE_NAME_ALIAS
+    LEFT_VARIABLE_DEIDENTIFIED_NAME = argNamespace.LEFT_VARIABLE_DEIDENTIFIED_NAME
+    RIGHT_VARIABLE_DEIDENTIFIED_NAME = argNamespace.RIGHT_VARIABLE_DEIDENTIFIED_NAME
+
+    LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP = argNamespace.LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP
+    LEFT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP = argNamespace.LEFT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP
+    RIGHT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP = argNamespace.RIGHT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP
+    RIGHT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP = argNamespace.RIGHT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP
     STANDARDIZE_COLUMN_NAMES = argNamespace.STANDARDIZE_COLUMN_NAMES
 
     DROP_NA_HOW = argNamespace.DROP_NA_HOW
 
     FIRST_TIME = argNamespace.FIRST_TIME
     OLD_RUN_PATH = argNamespace.OLD_RUN_PATH
-
-    SCRIPT_TEST_MODE = argNamespace.SCRIPT_TEST_MODE
-
-    # Parsed arguments: General
-    CHUNKSIZE = argNamespace.CHUNKSIZE
-    MESSAGE_MODULO_CHUNKS = argNamespace.MESSAGE_MODULO_CHUNKS
-    MESSAGE_MODULO_FILES = argNamespace.MESSAGE_MODULO_FILES
 
     # Parsed arguments: Meta-parameters
     LOG_LEVEL = argNamespace.LOG_LEVEL
@@ -170,14 +164,21 @@ if __name__ == "__main__":
     # <<< `Argparse` arguments <<<
 
     # >>> Custom parsing >>>
-    if LEFT_VARIABLE_NAME_ALIAS:
-        leftVariableDeidentificationName = LEFT_VARIABLE_NAME_ALIAS
-    else:
-        leftVariableDeidentificationName = LEFT_VARIABLE_NAME
-    if RIGHT_VARIABLE_NAME_ALIAS:
-        rightVariableDeidentificationName = RIGHT_VARIABLE_NAME_ALIAS
-    else:
-        rightVariableDeidentificationName = RIGHT_VARIABLE_NAME
+    # If `STANDARDIZE_COLUMN_NAMES` is passed, we need `LEFT_VARIABLE_NAME` and `RIGHT_VARIABLE_NAME`
+    if STANDARDIZE_COLUMN_NAMES:
+        if isinstance(LEFT_VARIABLE_NAME, type(None)) or isinstance(LEFT_VARIABLE_NAME, type(None)):
+            message = "If `STANDARDIZE_COLUMN_NAMES` is passed, we need `LEFT_VARIABLE_NAME` and `RIGHT_VARIABLE_NAME`"
+            parser.error(message)
+    # If `LEFT_VARIABLE_DEIDENTIFIED_NAME` is NOT passed, we need `LEFT_VARIABLE_NAME`
+    if isinstance(LEFT_VARIABLE_DEIDENTIFIED_NAME, type(None)):
+        if isinstance(LEFT_VARIABLE_NAME, type(None)):
+            message = "If `LEFT_VARIABLE_DEIDENTIFIED_NAME` is NOT passed, we need `LEFT_VARIABLE_NAME`"
+            parser.error(message)
+    # If `RIGHT_VARIABLE_DEIDENTIFIED_NAME` is not passed, we need `RIGHT_VARIABLE_NAME`
+    if isinstance(RIGHT_VARIABLE_DEIDENTIFIED_NAME, type(None)):
+        if isinstance(RIGHT_VARIABLE_NAME, type(None)):
+            message = "If `RIGHT_VARIABLE_DEIDENTIFIED_NAME` is not passed, we need `RIGHT_VARIABLE_NAME`"
+            parser.error(message)
     # <<< Custom parsing <<<
 
     # >>> Argument checks >>>
@@ -251,7 +252,7 @@ if __name__ == "__main__":
     logger.info(f"""Begin running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
     logger.info(f"""DRAPI-Lemur version is "{drapiVersion}".""")
     logger.info(f"""All other paths will be reported in debugging relative to the current working directory: "{choosePathToLog(path=projectDir, rootPath=projectDir)}".""")
- 
+
     argList = argNamespace._get_args() + argNamespace._get_kwargs()
     argListString = pprint.pformat(argList)  # TODO Remove secrets from list to print, e.g., passwords.
     logger.info(f"""Script arguments:\n{argListString}""")
@@ -274,7 +275,7 @@ if __name__ == "__main__":
         getData(sqlFilePath=SQL_FILE_PATH,
                 connectionString=connectionString,
                 filterVariableChunkSize=10000,
-                filterVariableColumnName=leftVariableDeidentificationName,
+                filterVariableColumnName=LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP,
                 filterVariableData=leftdf,
                 filterVariableFilePath=None,
                 filterVariablePythonDataType="int",
@@ -291,7 +292,7 @@ if __name__ == "__main__":
     left2rightdf = pd.DataFrame()
     itTotal = len(listofPaths)
     for it, fpath in enumerate(listofPaths, start=1):
-        logger.info(f"""  Working on file {it:,} of {itTotal}.""")
+        logger.info(f"""  Working on file {it:,} of {itTotal:,}.""")
         df = pd.read_csv(fpath)
         left2rightdf = pd.concat([left2rightdf, df])
     del df
@@ -303,27 +304,44 @@ if __name__ == "__main__":
     pass
 
     # Join maps
-    joinedMaps = leftdf.set_index(leftVariableDeidentificationName).join(other=left2rightdf.set_index(LEFT_VARIABLE_NAME),
-                                                        how="outer")
-    joinedMaps = joinedMaps.reset_index(names=leftVariableDeidentificationName)
-    # joinedMaps.index.name = leftVariableDeidentificationName
+    joinedMaps = leftdf.set_index(LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP).join(other=left2rightdf.set_index(LEFT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP),
+                                                                                      how="outer")
+    joinedMaps = joinedMaps.reset_index(names=LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP)
 
-    joinedMaps = joinedMaps.set_index(RIGHT_VARIABLE_NAME).join(other=rightdf.set_index(rightVariableDeidentificationName),
-                                                  how="outer")
-    joinedMaps = joinedMaps.reset_index(names=RIGHT_VARIABLE_NAME)
+    joinedMaps = joinedMaps.set_index(RIGHT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP).join(other=rightdf.set_index(RIGHT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP),
+                                                                                        how="outer")
+    joinedMaps = joinedMaps.reset_index(names=RIGHT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP)
 
     # Standardize column names
     if STANDARDIZE_COLUMN_NAMES:
-        joinedMaps = joinedMaps.rename(columns={leftVariableDeidentificationName: LEFT_VARIABLE_NAME,
-                                                rightVariableDeidentificationName: RIGHT_VARIABLE_NAME,
-                                                f"De-identified {leftVariableDeidentificationName}": f"De-identified {LEFT_VARIABLE_NAME}",
-                                                f"De-identified {rightVariableDeidentificationName}": f"De-identified {RIGHT_VARIABLE_NAME}"})
+        joinedMaps = joinedMaps.rename(columns={LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP: f"{LEFT_VARIABLE_NAME}_L",
+                                                LEFT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP: f"{LEFT_VARIABLE_NAME}_LR",
+                                                RIGHT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP: f"{RIGHT_VARIABLE_NAME}_R",
+                                                RIGHT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP: f"{RIGHT_VARIABLE_NAME}_LR",
+                                                LEFT_VARIABLE_DEIDENTIFIED_NAME: f"De-identified {LEFT_VARIABLE_NAME}",
+                                                RIGHT_VARIABLE_DEIDENTIFIED_NAME: f"De-identified {RIGHT_VARIABLE_NAME}",
+                                                # For the below options we are assuming the de-identification prefix is "De-identififed" and not "deid" or another variant. These lines can possibly be removed.
+                                                f"De-identified {LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP}": f"De-identified {LEFT_VARIABLE_NAME}",
+                                                f"De-identified {LEFT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP}": f"De-identified {LEFT_VARIABLE_NAME}",
+                                                f"De-identified {RIGHT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP}": f"De-identified {RIGHT_VARIABLE_NAME}",
+                                                f"De-identified {RIGHT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP}": f"De-identified {RIGHT_VARIABLE_NAME}"})
     else:
         pass
 
-    # Select data to output
-    COLUMNS_TO_EXPORT = [f"De-identified {LEFT_VARIABLE_NAME}",
-                         f"De-identified {RIGHT_VARIABLE_NAME}"]
+    # Select data to output: Select column names
+    # We are assuming that if the left and right de-identified variable names are not supplied we are using the standard variable names.
+    if LEFT_VARIABLE_DEIDENTIFIED_NAME:
+        leftDeidentifiedColumnName = LEFT_VARIABLE_DEIDENTIFIED_NAME
+    else:
+        leftDeidentifiedColumnName = f"De-identified {LEFT_VARIABLE_NAME}"
+    if RIGHT_VARIABLE_DEIDENTIFIED_NAME:
+        rightDeidentifiedColumnName = RIGHT_VARIABLE_DEIDENTIFIED_NAME
+    else:
+        rightDeidentifiedColumnName = f"De-identified {RIGHT_VARIABLE_NAME}"
+    COLUMNS_TO_EXPORT = [leftDeidentifiedColumnName,
+                         rightDeidentifiedColumnName]
+
+    # Select data to output: Select columns
     logger.info(joinedMaps.columns)
     logger.info(joinedMaps.head().T)
     finalMap = joinedMaps[COLUMNS_TO_EXPORT]
@@ -339,7 +357,13 @@ if __name__ == "__main__":
     logger.info(f"""Final map shape before and after dropping "{DROP_NA_HOW}" NAs: {mapSize0:,} -> {mapSize1:,}.""")
 
     # Output location summary
-    logger.info(f"""Results are in "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}.""")
+    logger.info(f"""Results are in "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}".""")
+
+    # Remove intermediate files, unless running in `DEBUG` mode.
+    if logger.getEffectiveLevel() > 10:
+        logger.info("Removing intermediate files.")
+        shutil.rmtree(runIntermediateDir)
+        logger.info("Removing intermediate files - done.")
 
     # End module body
     logger.info(f"""Finished running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
