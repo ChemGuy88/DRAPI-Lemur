@@ -12,8 +12,10 @@ from pathlib import Path
 import pandas as pd
 # Local packages
 from drapi import __version__ as drapiVersion
+from drapi import loggingChoices
 from drapi.code.drapi.drapi import (choosePathToLog,
                                     getTimestamp,
+                                    loggingChoiceParser,
                                     makeDirPath)
 
 if __name__ == "__main__":
@@ -57,15 +59,16 @@ if __name__ == "__main__":
                         nargs="*",
                         help="The columns to drop. By defautl, all are kept")
     
-    parser.add_argument("--FILE_EXTENSION",
-                        default=".CSV",
+    parser.add_argument("--FILE_NAME",
                         type=str,
-                        help="The file extension to use for the output.")
-
+                        default="Joined Table",
+                        help="The name to give to the joined table file.")
+    
     # Arguments: Meta-parameters
     parser.add_argument("--LOG_LEVEL",
                         default=10,
-                        type=int,
+                        type=loggingChoiceParser,
+                        choices=loggingChoices,
                         help="""Increase output verbosity. See "logging" module's log level for valid values.""")
 
     argNamespace = parser.parse_args()
@@ -85,12 +88,15 @@ if __name__ == "__main__":
     COLUMNS_TO_KEEP = argNamespace.COLUMNS_TO_KEEP
     COLUMNS_TO_DROP = argNamespace.COLUMNS_TO_DROP
 
-    FILE_EXTENSION = argNamespace.FILE_EXTENSION
-    FILE_EXTENSION = str(FILE_EXTENSION)  # For type hinting
+    FILE_NAME = argNamespace.FILE_NAME
 
     # Parsed arguments: Meta-parameters
     LOG_LEVEL = argNamespace.LOG_LEVEL
     # <<< `Argparse` arguments <<<
+
+    # >>> Custom argument parsing >>>
+    pass
+    # <<< Custom argument parsing <<<
 
     # >>> Argument checks >>>
     # NOTE TODO Look into handling this natively with `argparse` by using `subcommands`. See "https://stackoverflow.com/questions/30457162/argparse-with-different-modes"
@@ -216,14 +222,7 @@ if __name__ == "__main__":
     finalTable = joinedTable[finalColumns]
 
     # Make export path
-    if FILE_EXTENSION:
-        if FILE_EXTENSION.startswith("."):
-            fileExtension = FILE_EXTENSION
-        else:
-            fileExtension = f".{FILE_EXTENSION}"
-    else:
-        fileExtension = ""
-    exportPath = runOutputDir.joinpath(f"""Joined Table{fileExtension}""")
+    exportPath = runOutputDir.joinpath(f"""{FILE_NAME}""")
     
     # Save results
     finalTable.to_csv(path_or_buf=exportPath,
@@ -232,10 +231,11 @@ if __name__ == "__main__":
     # Output location summary
     logger.info(f"""Script output is located in the following directory: "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}".""")
 
-    # Remove intermediate files
-    logger.info("Removing intermediate files.")
-    shutil.rmtree(runIntermediateDir)
-    logger.info("Removing intermediate files - done.")
+    # Remove intermediate files, unless running in `DEBUG` mode.
+    if logger.getEffectiveLevel() > 10:
+        logger.info("Removing intermediate files.")
+        shutil.rmtree(runIntermediateDir)
+        logger.info("Removing intermediate files - done.")
 
     # <<< End script body <<<
     logger.info(f"""Finished running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")

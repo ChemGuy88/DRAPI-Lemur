@@ -26,6 +26,7 @@ import sqlalchemy as sa
 import sqlite3
 from pandas.io.parsers.readers import TextFileReader
 # Local packages
+from drapi import loggingChoices_String
 pass
 
 logger = logging.getLogger(__name__)
@@ -91,6 +92,21 @@ def makeDirPath(directory_path: str) -> None:
 
 def getTimestamp():
     return dt.datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+
+
+def loggingChoiceParser(string_: str) -> Union[int, str]:
+    """
+    Checks if a string is in one of the choices for the "logging" module's log level. This function is case sensitive because the `setLevel` method is case sensitive; e.g., `logger.setLevel("DEBUG")` works while `logger.setLevel("debug")` produces an error.
+    """
+    try:
+        return int(string_)
+    except ValueError:
+        if string_ in loggingChoices_String:
+            return string_
+        else:
+            raise Exception(f"""Input was not found in any of the possible log level choices for the "logging" module. You supplied "{string_}".""")
+    else:
+        raise Exception
 
 
 def getPercentDifference(x, y):
@@ -442,7 +458,10 @@ def loglevel2int(loglevel: Union[int, str]) -> int:
     return loglevel
 
 
-def replace_sql_query(query: str, old: str, new: str, logger: logging.Logger) -> str:
+def replace_sql_query(query: str,
+                      old: str,
+                      new: str,
+                      logger: logging.Logger) -> str:
     """
     Replaces text in a SQL query only if it's not commented out. I.e., this function applies string.replace() only if the string doesn't begin with "--".
     TODO Don't replace text after "--".
@@ -454,7 +473,7 @@ def replace_sql_query(query: str, old: str, new: str, logger: logging.Logger) ->
     for line in li:
         logger.debug(f"""  Working on "{line}".""")
         obj = re.search(pattern, line)
-        if obj:
+        if obj or old not in line:
             logger.debug("    Passing")
             nline = line
         else:
