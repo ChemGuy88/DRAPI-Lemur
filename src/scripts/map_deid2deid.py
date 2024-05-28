@@ -1,5 +1,28 @@
 """
 Create a map from one de-identified ID to another de-identified ID.
+
+Consider the table below for an illustration of the meaning of the parameter names.
+
+|  table1 |   | table 2 |   | table 3 |
+| c1 | c2 |   | c3 | c4 |   | c5 | c6 |
+
+Where
+`c1` is `LEFT_VARIABLE_DEIDENTIFIED_NAME`
+`c2` is `LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP`
+`c3` is `LEFT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP`
+`c4` is `RIGHT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP`
+`c5` is `RIGHT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP`
+`c6` is `RIGHT_VARIABLE_DEIDENTIFIED_NAME`
+
+Note that 
+
+- `c2` and `c3` can be the same, (e.g., "Patient Key")
+- `c4` and `c5` can be the same
+- `c1` and `c6` can be the same (e.g., "De-identified Patient Key")
+
+In some rare situations all of `c1` through `c6` can also be the same. For example, if the de-identified name is simply the variable name.
+
+NOTE Situations where `c2` and `c3` are the same or `c4` and `c5` are the same might be handled by using `LEFT_VARIABLE_NAME` or `RIGHT_VARIABLE_NAME`, accordingly. For example, if `LEFT_VARIABLE_NAME` is set, but neither of `LEFT_VARIABLE_NAME_ALIAS_DEIDENTIFICATION_MAP` or `LEFT_VARIABLE_NAME_ALIAS_LEFT_TO_RIGHT_MAP` are set, then apply `LEFT_VARIABLE_NAME` to both of `c2` and `c3`.
 """
 
 import argparse
