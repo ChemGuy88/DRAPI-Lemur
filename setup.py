@@ -2,7 +2,7 @@ from distutils.core import setup
 from pathlib import Path
 from setuptools import find_namespace_packages
 
-SCRIPTS = sorted([str(fpath) for fpath in Path("./src/scripts").iterdir()])
+SCRIPTS = sorted([str(fpath) for fpath in Path("./src/scripts").glob("**/*") if fpath.is_file()])
 
 INIT_PATH = Path("src").joinpath("drapi",
                                  "__init__.py")
