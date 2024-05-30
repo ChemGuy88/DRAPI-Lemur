@@ -129,7 +129,10 @@ def flatExtend(iterable: Collection) -> list:
     return outputList
 
 
-def readDataFile(fname: Path, *args, **kwargs) -> TextFileReader:
+def readDataFile(fname: Path,
+                 engine: Literal["c", "pyarrow", "python"] = "pyarrow",
+                 *args,
+                 **kwargs) -> TextFileReader:
     """
     Opens a file based on the file extension of its file name `fname` using a Pandas built-in to return a DataFrame object. Below is the list of Pandas built-ins, whose odcumentation you can search to find out what keyword arguments (`kwargs`) to use.
       - `pd.read_csv`
@@ -141,20 +144,38 @@ def readDataFile(fname: Path, *args, **kwargs) -> TextFileReader:
     """
     suffix = fname.suffix.lower()
     if suffix.endswith(('.csv',)):
-        TextFileReaderObject = pd.read_csv(fname, *args, **kwargs)
+        TextFileReaderObject = pd.read_csv(filepath_or_buffer=fname,
+                                           engine=engine,
+                                           *args,
+                                           **kwargs)
     elif suffix.endswith(('.tsv',)):
         kwargs["delimiter"] = "\t"
-        TextFileReaderObject = pd.read_csv(fname, *args, **kwargs)
+        TextFileReaderObject = pd.read_csv(filepath_or_buffer=fname,
+                                           encoding=engine,
+                                           *args,
+                                           **kwargs)
     elif suffix.endswith(('.json',)):
-        TextFileReaderObject = pd.read_json(fname, *args, **kwargs)
+        TextFileReaderObject = pd.read_json(path_or_buf=fname,
+                                            *args,
+                                            **kwargs)
     elif suffix.endswith(('.xml',)):
-        TextFileReaderObject = pd.read_xml(fname, *args, **kwargs)
+        TextFileReaderObject = pd.read_xml(path_or_buffer=fname,
+                                           *args,
+                                           **kwargs)
     elif suffix.endswith(('.xls', 'xlsx',)):
-        TextFileReaderObject = pd.read_excel(fname, *args, **kwargs)
+        TextFileReaderObject = pd.read_excel(io=fname,
+                                             *args,
+                                             **kwargs)
     elif suffix.endswith(('.hdf',)):
-        TextFileReaderObject = pd.read_hdf(fname, *args, **kwargs)
+        TextFileReaderObject = pd.read_hdf(path_or_buf=fname,
+                                           *args,
+                                           **kwargs)
     elif suffix.endswith(('.sql',)):
-        TextFileReaderObject = pd.read_sql(fname, *args, **kwargs)
+        with open(file=fname, mode="r") as file:
+            query = file.read()
+        TextFileReaderObject = pd.read_sql(sql=query,
+                                           *args,
+                                           **kwargs)
     else:
         raise ValueError(f"""Unsupported filetype for file "{fname}".""")
     return TextFileReaderObject
@@ -214,7 +235,9 @@ def choosePathToLog(path: Path, rootPath: Path) -> Path:
     lenRootPath = len(str(rootPath.absolute()))
     if lenCommonPath < lenRootPath:
         pathToDisplay = path
-    elif lenCommonPath >= lenRootPath:
+    elif lenCommonPath == lenRootPath:
+        pathToDisplay = path.absolute().name
+    elif lenCommonPath > lenRootPath:
         pathToDisplay = path.absolute().relative_to(rootPath)
     else:
         raise Exception("An unexpected error occurred.")

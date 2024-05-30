@@ -1,6 +1,7 @@
 """
 """
 
+import re
 from logging import Logger
 from pathlib import Path
 from typing_extensions import Union
@@ -137,10 +138,9 @@ def getData_outer(conStr: str,
                                   old="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)) as "Admit BMI",""",
                                   new="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/NULLIF(((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)), 0) as "Admit BMI",""",
                                   logger=logger)
-        query = replace_sql_query(query=query,
-                                  old=",(cast(wt.last_wt_oz as decimal(10,2))*0.0283495)/((cast(ht.last_ht_in as decimal(10,2))*0.0254)*(cast(ht.last_ht_in as decimal(10,2)))*0.0254) as bmi_manual_calc",
-                                  new=",(cast(wt.last_wt_oz as decimal(10,2))*0.0283495)/NULLIF(((cast(ht.last_ht_in as decimal(10,2))*0.0254)*(cast(ht.last_ht_in as decimal(10,2)))*0.0254), 0) as bmi_manual_calc",
-                                  logger=logger)
+        query = re.sub(pattern=r"""\(\s*cast\(\s*wt.last_wt_oz\s+[asAS]{2}\s+decimal\(10,\s*2\s*\)\s*\)\s*\*\s*0.0283495\s*\)\s*/\s*\(\s*\(cast\s*\(ht.last_ht_in\s+[asAS]{2}\s+decimal\(10,\s*2\s*\)\s*\)\s*\*\s*0.0254\s*\)\s*\*\s*\(cast\(\s*ht.last_ht_in\s+[asAS]{2}\s+decimal\(10,\s*2\)\s*\)\s*\)\s*\*\s*0.0254\s*\)""",
+                       repl="(cast(wt.last_wt_oz as decimal(10,2))*0.0283495)/NULLIF(((cast(ht.last_ht_in as decimal(10,2))*0.0254)*(cast(ht.last_ht_in as decimal(10,2)))*0.0254), 0)",
+                       string=query)
 
         query = replace_sql_query(query=query,
                                   old=filterVariableSqlQueryTemplatePlaceholder,
