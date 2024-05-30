@@ -126,7 +126,9 @@ dependencies0 = table["Dependencies"]
 channels0 = table["Channel"]
 if platform == "darwin":
     osmask = ~dependencies0.isin(WINDOWS_ONLY_LIST)
-elif platofmr == "win32":
+elif platform == "win32":
+    osmask = ~dependencies0.isin(DARWIN_ONLY_LIST)
+elif platform == "linux":
     osmask = ~dependencies0.isin(DARWIN_ONLY_LIST)
 dependencies = dependencies0[osmask].dropna().sort_values()
 channels = channels0[osmask].dropna().drop_duplicates().sort_values()
