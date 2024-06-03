@@ -1,5 +1,5 @@
 """
-Script template to download data using SQL queries.
+Module to download data using SQL queries.
 """
 
 import logging
@@ -7,7 +7,10 @@ from pathlib import Path
 from typing import Union
 # Third-party packages
 import pandas as pd
+import sqlalchemy as sa
+from sqlalchemy.exc import ResourceClosedError
 # First-party packages
+from drapi.code.drapi.classes import SecretString
 from drapi.code.drapi.getData.getData_inner import getData_inner
 from drapi.code.drapi.getData.getData_outer import getData_outer
 
@@ -15,12 +18,17 @@ from drapi.code.drapi.getData.getData_outer import getData_outer
 
 
 def getData(sqlFilePath: Union[Path, str],
-            connectionString: str,
+            connectionString1: SecretString,
             filterVariablePythonDataType: str,
             filterVariableSqlQueryTemplatePlaceholder: str,
             logger: logging.Logger,
-            outputFileName: str,
             runOutputDir: Union[Path, str],
+            downloadData: bool,
+            outputFileName: str,
+            connectionString2: SecretString,
+            newSQLTable_Database: str,
+            newSQLTable_Name: str,
+            newSQLTable_Schema: str,
             filterVariableChunkSize: int = 1000,
             filterVariableColumnName: str = None,
             filterVariableData: Union[pd.DataFrame, pd.Series] = None,
@@ -62,19 +70,33 @@ def getData(sqlFilePath: Union[Path, str],
         raise Exception(message)
     # <<< Determine if we're filtering <<<
 
+    # >>> Drop SQL table, if necessary >>>
+    if downloadData:
+        query = f"""\
+DROP TABLE IF EXISTS [{newSQLTable_Schema}].[{newSQLTable_Name}];\
+"""
+        with sa.engine.create_engine(url=connectionString2).connect() as connection:
+            with connection.begin():
+                _ = connection.execute(sa.text(query))
+                logger.info("If the table exists in the server, it was dropped.")  # TODO Add SQL feedback message
+    else:
+        pass
+    # <<< Drop SQL table, if necessary <<<
+
     # Choose core function
     if not useFiltering:
-        getData_inner(conStr=connectionString,
+        getData_inner(connectionString1=connectionString1,
                       logger=logger,
                       outputName=outputFileName,
                       queryChunkSize=queryChunkSize,
                       runOutputDir=runOutputDir,
                       sqlQuery=None,
+                      downloadData=downloadData,
                       itstring1=None,
                       numChunks1=None,
                       sqlFilePath=sqlFilePath)
     elif useFiltering:
-        getData_outer(conStr=connectionString,
+        getData_outer(connectionString1=connectionString1,
                       filterVariableColumnName=filterVariableColumnName,
                       filterVariableChunkSize=filterVariableChunkSize,
                       filterVariableData=filterVariableData,
@@ -84,8 +106,13 @@ def getData(sqlFilePath: Union[Path, str],
                       logger=logger,
                       outputName=outputFileName,
                       queryChunkSize=queryChunkSize,
-                      runOutputDir=runOutputDir,
-                      sqlFilePath=sqlFilePath)
+                      sqlFilePath=sqlFilePath,
+                      downloadData=downloadData,
+                      connectionString2=connectionString2,
+                      newSQLTable_Database=newSQLTable_Database,
+                      newSQLTable_Name=newSQLTable_Name,
+                      newSQLTable_Schema=newSQLTable_Schema,
+                      runOutputDir=runOutputDir)
     else:
         message = "An unexpected error occurred."
         logger.critical(message)

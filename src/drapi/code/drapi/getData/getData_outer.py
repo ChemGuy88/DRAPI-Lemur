@@ -1,4 +1,5 @@
 """
+Module that contains the outer (wrapper) function for getting data using SQL queries.
 """
 
 import re
@@ -9,24 +10,30 @@ from typing_extensions import Union
 import pandas as pd
 from sqlalchemy import create_engine
 # Local packages
+from drapi.code.drapi.classes import SecretString
 from drapi.code.drapi.drapi import (makeChunks,
                                     readDataFile,
                                     replace_sql_query)
 from drapi.code.drapi.getData.getData_inner import getData_inner
 
 
-def getData_outer(conStr: str,
-                filterVariableColumnName: str,
-                filterVariableChunkSize: int,
-                filterVariableData: Union[pd.DataFrame, pd.Series],
-                filterVariableFilePath: Union[Path, str],
-                filterVariablePythonDataType: str,
-                filterVariableSqlQueryTemplatePlaceholder: str,
-                outputName: str,
-                queryChunkSize: int,
-                runOutputDir: Path,
-                sqlFilePath: Union[Path, str],
-                logger: Logger) -> pd.DataFrame:
+def getData_outer(connectionString1: SecretString,
+                  filterVariableColumnName: str,
+                  filterVariableChunkSize: int,
+                  filterVariableData: Union[pd.DataFrame, pd.Series],
+                  filterVariableFilePath: Union[Path, str],
+                  filterVariablePythonDataType: str,
+                  filterVariableSqlQueryTemplatePlaceholder: str,
+                  outputName: str,
+                  queryChunkSize: int,
+                  sqlFilePath: Union[Path, str],
+                  logger: Logger,
+                  downloadData: bool,
+                  connectionString2: SecretString,
+                  newSQLTable_Database: str,
+                  newSQLTable_Name: str,
+                  newSQLTable_Schema: str,
+                  runOutputDir: Path) -> pd.DataFrame:
     """
     Executes a SQL query with a filter.
     """
@@ -103,9 +110,6 @@ def getData_outer(conStr: str,
         raise Exception(message)
     # <<< Select filter variable data <<<
         
-    connection1 = create_engine(conStr).connect().execution_options(stream_results=True)
-    connection2 = create_engine(conStr).connect().execution_options(stream_results=True)
-
     # Read query file
     with open(sqlFilePath, "r") as file:
         query0 = file.read()
@@ -134,6 +138,7 @@ def getData_outer(conStr: str,
         elif filterVariablePythonDataType == "str":
             filterVariableValuesAsString = ",".join([f"'{el}'" for el in dfChunk])
 
+        # Fill query template: Patch queries that might raise divide-by-zero errors
         query = replace_sql_query(query=query0,
                                   old="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)) as "Admit BMI",""",
                                   new="""(( ADMIT_EVENT_Derived.NUM_GRAM_WGHT )/1000)/NULLIF(((( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)*(( ADMIT_EVENT_Derived.NUM_CENTMTR_HGHT )/100)), 0) as "Admit BMI",""",
@@ -142,20 +147,33 @@ def getData_outer(conStr: str,
                        repl="(cast(wt.last_wt_oz as decimal(10,2))*0.0283495)/NULLIF(((cast(ht.last_ht_in as decimal(10,2))*0.0254)*(cast(ht.last_ht_in as decimal(10,2)))*0.0254), 0)",
                        string=query)
 
+        # Fill query template: filter
         query = replace_sql_query(query=query,
                                   old=filterVariableSqlQueryTemplatePlaceholder,
                                   new=filterVariableValuesAsString,
                                   logger=logger)
 
-        getData_inner(conStr=conStr,
+        # Fill query template: Non-download option: New table name, database, and schema
+        query = query.replace("PYTHON_VARIABLE__newSQLTable_Database",
+                              newSQLTable_Database)
+        query = str(query)  # For type hinting
+        query = query.replace("PYTHON_VARIABLE__newSQLTable_Name",
+                              newSQLTable_Name)
+        query = str(query)  # For type hinting
+        query = query.replace("PYTHON_VARIABLE__newSQLTable_Schema",
+                              newSQLTable_Schema)
+        query = str(query)  # For type hinting
+
+        getData_inner(connectionString1=connectionString1,
                       logger=logger,
                       outputName=outputName,
                       queryChunkSize=queryChunkSize,
                       runOutputDir=runOutputDir,
                       sqlQuery=query,
+                      downloadData=downloadData,
+                      connectionString2=connectionString2,
+                      newSQLTable_Name=newSQLTable_Name,
+                      newSQLTable_Schema=newSQLTable_Schema,
                       itstring1=itstring1,
                       numChunks1=numChunks1,
                       sqlFilePath=None)
-
-    connection1.close()
-    connection2.close()

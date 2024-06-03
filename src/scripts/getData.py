@@ -26,17 +26,18 @@ if __name__ == "__main__":
     # >>> `Argparse` arguments >>>
     parser = argparse.ArgumentParser()
 
-    # Arguments: Main: Multiple query option
+    # Arguments: Multiple query option: Main
     parser.add_argument("--DICTIONARY_OF_ARGUMENTS",
                         type=json.loads)
 
-    # Arguments: Main: Single query option
+    # Arguments: Single query option: Main
     parser.add_argument("--CONNECTION_STRING",
                         type=SecretString)
     parser.add_argument("--SQL_FILE_PATH",
                         type=str)
-    parser.add_argument("--OUTPUT_FILE_NAME",
-                        type=str)
+    parser.add_argument("--DOWNLOAD_DATA",
+                        required=True,
+                        type=lambda value: True if value.lower() == "true" else False if value.lower() == "false" else None)
     parser.add_argument("--FILTER_VARIABLE_FILE_PATH",
                         type=str)
     parser.add_argument("--FILTER_VARIABLE_COLUMN_NAME",
@@ -57,26 +58,25 @@ if __name__ == "__main__":
     parser.add_argument("--QUERY_CHUNK_SIZE",
                         default=10000,
                         type=int)
-
-    parser.add_argument("--SCRIPT_TEST_MODE",
-                        default=False,
-                        choices=[True, False],
-                        type=lambda stringValue: True if stringValue.lower() == "true" else False if stringValue.lower() == "false" else None,
-                        help=""" Choose one of {{True, False}}""")
-
-    # Arguments: General
-    parser.add_argument("--CHUNKSIZE",
-                        default=50000,
-                        type=int,
-                        help="The number of rows to read at a time from the CSV using Pandas `chunksize`")
-    parser.add_argument("--MESSAGE_MODULO_CHUNKS",
-                        default=50,
-                        type=int,
-                        help="How often to print a log message, i.e., print a message every x number of chunks, where x is `MESSAGE_MODULO_CHUNKS`")
-    parser.add_argument("--MESSAGE_MODULO_FILES",
-                        default=100,
-                        type=int,
-                        help="How often to print a log message, i.e., print a message every x number of chunks, where x is `MESSAGE_MODULO_FILES`")
+    
+    # Arguments: Single query option: non-download method
+    parser.add_argument("--CONNECTION_STRING_2",
+                        type=SecretString,
+                        help="The connection string to use to upload the resulting data.")
+    parser.add_argument("--newSQLTable_Database",
+                        default="DWS_OMOP",
+                        choices=["DWS_OMOP"],
+                        help="The database of the new table to create in the SQL server.")
+    parser.add_argument("--newSQLTable_Name",
+                        help="The name of the new table to create in the SQL server.")
+    parser.add_argument("--newSQLTable_Schema",
+                        default="dbo",
+                        choices=["dbo"],
+                        help="The schema of the new table to create in the SQL server.")
+    
+    # Arguments: Single query option: download data method
+    parser.add_argument("--OUTPUT_FILE_NAME",
+                        type=str)
 
     # Arguments: Meta-parameters
     parser.add_argument("--LOG_LEVEL",
@@ -122,13 +122,13 @@ if __name__ == "__main__":
 
     argNamespace = parser.parse_args()
 
-    # Parsed arguments: Main: Multiple query option
+    # Parsed arguments: Multiple query option: Main
     DICTIONARY_OF_ARGUMENTS = argNamespace.DICTIONARY_OF_ARGUMENTS
 
-    # Parsed arguments: Main: Single query option
+    # Parsed arguments: Single query option: Main
     CONNECTION_STRING = argNamespace.CONNECTION_STRING
     SQL_FILE_PATH = argNamespace.SQL_FILE_PATH
-    OUTPUT_FILE_NAME = argNamespace.OUTPUT_FILE_NAME
+    DOWNLOAD_DATA = argNamespace.DOWNLOAD_DATA
     FILTER_VARIABLE_FILE_PATH = argNamespace.FILTER_VARIABLE_FILE_PATH
     FILTER_VARIABLE_COLUMN_NAME = argNamespace.FILTER_VARIABLE_COLUMN_NAME
     FILTER_VARIABLE_DATA = argNamespace.FILTER_VARIABLE_DATA
@@ -137,42 +137,75 @@ if __name__ == "__main__":
     FILTER_VARIABLE_CHUNK_SIZE = argNamespace.FILTER_VARIABLE_CHUNK_SIZE
     QUERY_CHUNK_SIZE = argNamespace.QUERY_CHUNK_SIZE
 
-    # Parsed arguments: Main
-    SCRIPT_TEST_MODE = argNamespace.SCRIPT_TEST_MODE
+    # Parsed arguments: Single query option: non-download method
+    CONNECTION_STRING_2 = argNamespace.CONNECTION_STRING_2
+    newSQLTable_Database = argNamespace.newSQLTable_Database
+    newSQLTable_Name = argNamespace.newSQLTable_Name
+    newSQLTable_Schema = argNamespace.newSQLTable_Schema
 
-    # Parsed arguments: General
-    CHUNKSIZE = argNamespace.CHUNKSIZE
-    MESSAGE_MODULO_CHUNKS = argNamespace.MESSAGE_MODULO_CHUNKS
-    MESSAGE_MODULO_FILES = argNamespace.MESSAGE_MODULO_FILES
+    # Parsed arguments: Single query option: download data method
+    OUTPUT_FILE_NAME = argNamespace.OUTPUT_FILE_NAME
 
     # Parsed arguments: Meta-parameters
     LOG_LEVEL = argNamespace.LOG_LEVEL
     # <<< `Argparse` arguments <<<
 
-    # Argument parsing: Additional checks  # NOTE TODO Look into handling this natively with `argparse` by using `subcommands`. See "https://stackoverflow.com/questions/30457162/argparse-with-different-modes"
-    # NOTE That `SINGLE_OPTION_ARGUMENTS` doesn't include `FILTER_VARIABLE_DATA`, because for now it's only possible value is `None`.
-    SINGLE_OPTION_ARGUMENTS = [CONNECTION_STRING,
+    # >>> Argument parsing: Additional checks >>>
+    # NOTE TODO Look into handling this natively with `argparse` by using `subcommands`. See "https://stackoverflow.com/questions/30457162/argparse-with-different-modes"
+    messageProgramOptions = """\
+This program is meant to function one of two ways. Either
+1. Pass `DICTIONARY_OF_ARGUMENTS`, or
+2. Pass each of the single-option arguments
+    - `CONNECTION_STRING`
+    - `SQL_FILE_PATH`
+    - `FILTER_VARIABLE_FILE_PATH`
+    - `FILTER_VARIABLE_COLUMN_NAME`
+    - `FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER`
+    - `FILTER_VARIABLE_PYTHON_DATA_TYPE`
+    - `FILTER_VARIABLE_CHUNK_SIZE`
+    - `QUERY_CHUNK_SIZE`
+    - `DOWNLOAD_DATA`
+    - If downloading data:
+        - `OUTPUT_FILE_NAME`
+    - Else:
+        - `newSQLTable_Database`
+        - `newSQLTable_Name`
+        - `newSQLTable_Schema`\
+"""
+
+    # Argument parsing: Additional checks: Multiple-query vs single-query
+    # NOTE That `SINGLE_OPTION_ARGUMENTS_MAIN` doesn't include `FILTER_VARIABLE_DATA`, because for now it's only possible value is `None`.
+    SINGLE_OPTION_ARGUMENTS_MAIN = [CONNECTION_STRING,
                                SQL_FILE_PATH,
-                               OUTPUT_FILE_NAME,
+                               DOWNLOAD_DATA,
                                FILTER_VARIABLE_FILE_PATH,
                                FILTER_VARIABLE_COLUMN_NAME,
                                FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER,
                                FILTER_VARIABLE_PYTHON_DATA_TYPE,
                                FILTER_VARIABLE_CHUNK_SIZE,
-                               QUERY_CHUNK_SIZE]
-    if DICTIONARY_OF_ARGUMENTS and any(SINGLE_OPTION_ARGUMENTS):
-        parser.error("""This program is meant to function one of two ways. Either
-1. Pass `DICTIONARY_OF_ARGUMENTS`, or
-2. Pass each of the single-option arguments
-    2. 1. `CONNECTION_STRING`
-    2. 2. `SQL_FILE_PATH`
-    2. 3. `OUTPUT_FILE_NAME`
-    2. 4. `FILTER_VARIABLE_FILE_PATH`
-    2. 5. `FILTER_VARIABLE_COLUMN_NAME`
-    2. 6. `FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER`
-    2. 7. `FILTER_VARIABLE_PYTHON_DATA_TYPE`
-    2. 8. `FILTER_VARIABLE_CHUNK_SIZE`
-    2. 9. `QUERY_CHUNK_SIZE`""")
+                               QUERY_CHUNK_SIZE,
+                               newSQLTable_Database,
+                               newSQLTable_Name,
+                               newSQLTable_Schema,
+                               OUTPUT_FILE_NAME]
+    SINGLE_OPTION_ARGUMENTS_MAIN_1 = [CONNECTION_STRING_2,
+                                      newSQLTable_Database,
+                                      newSQLTable_Name,
+                                      newSQLTable_Schema]
+    SINGLE_OPTION_ARGUMENTS_MAIN_2 = [OUTPUT_FILE_NAME]
+    if DICTIONARY_OF_ARGUMENTS and any(SINGLE_OPTION_ARGUMENTS_MAIN):
+        message = "You supplied arguments for two conflicting options: multiple-query and single-query options. " + messageProgramOptions
+        parser.error(message)
+
+    # Argument parsing: Additional checks: Catch leaks from `DOWNLOAD_DATA`
+    if isinstance(DOWNLOAD_DATA, type(None)):
+        parser.error("--DOWNLOAD_DATA must be one of {{True, False}}.")
+
+    # Argument parsing: Additional checks: Download vs non-download option
+    if any(SINGLE_OPTION_ARGUMENTS_MAIN_1) and any(SINGLE_OPTION_ARGUMENTS_MAIN_2):
+        message = "You supplied arguments for two conflicting options: download and non-download options. " + messageProgramOptions
+        parser.error(message)
+    # >>> Argument parsing: Additional checks >>>
 
     # Variables: Path construction: General
     runTimestamp = getTimestamp()
@@ -237,7 +270,7 @@ if __name__ == "__main__":
     # Conform mapping arguments
     if DICTIONARY_OF_ARGUMENTS:
         sqlFileSettings = DICTIONARY_OF_ARGUMENTS
-    elif all(SINGLE_OPTION_ARGUMENTS):
+    else:
         sqlFileSettings = {0: {"CONNECTION_STRING": CONNECTION_STRING,
                                "FILTER_VARIABLE_FILE_PATH": FILTER_VARIABLE_FILE_PATH,
                                "FILTER_VARIABLE_COLUMN_NAME": FILTER_VARIABLE_COLUMN_NAME,
@@ -245,11 +278,14 @@ if __name__ == "__main__":
                                "FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER": FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER,
                                "FILTER_VARIABLE_PYTHON_DATA_TYPE": FILTER_VARIABLE_PYTHON_DATA_TYPE,
                                "FILTER_VARIABLE_CHUNK_SIZE": FILTER_VARIABLE_CHUNK_SIZE,
-                               "OUTPUT_FILE_NAME": OUTPUT_FILE_NAME,
                                "QUERY_CHUNK_SIZE": QUERY_CHUNK_SIZE,
-                               "SQL_FILE_PATH": SQL_FILE_PATH}}
-    else:
-        raise Exception("This should not happen")
+                               "SQL_FILE_PATH": SQL_FILE_PATH,
+                               "DOWNLOAD_DATA": DOWNLOAD_DATA,
+                               "CONNECTION_STRING_2": CONNECTION_STRING_2,
+                               "newSQLTable_Database": newSQLTable_Database,
+                               "newSQLTable_Name" : newSQLTable_Name,
+                               "newSQLTable_Schema" : newSQLTable_Schema,
+                               "OUTPUT_FILE_NAME": OUTPUT_FILE_NAME}}
 
     # Iterate over SQL file settings
     logger.info("""Iterating over SQL directory contents.""")
@@ -265,10 +301,15 @@ if __name__ == "__main__":
         FILTER_VARIABLE_FILE_PATH = fileSettings["FILTER_VARIABLE_FILE_PATH"]
         FILTER_VARIABLE_PYTHON_DATA_TYPE = fileSettings["FILTER_VARIABLE_PYTHON_DATA_TYPE"]
         FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER = fileSettings["FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER"]
-        OUTPUT_FILE_NAME = fileSettings["OUTPUT_FILE_NAME"]
         QUERY_CHUNK_SIZE = fileSettings["QUERY_CHUNK_SIZE"]
+        DOWNLOAD_DATA = fileSettings["DOWNLOAD_DATA"]
+        CONNECTION_STRING_2 = fileSettings["CONNECTION_STRING_2"]
+        newSQLTable_Database = fileSettings["newSQLTable_Database"]
+        newSQLTable_Name = fileSettings["newSQLTable_Name"]
+        newSQLTable_Schema = fileSettings["newSQLTable_Schema"]
+        OUTPUT_FILE_NAME = fileSettings["OUTPUT_FILE_NAME"]
         getData(sqlFilePath=SQL_FILE_PATH,
-                connectionString=CONNECTION_STRING,
+                connectionString1=CONNECTION_STRING,
                 filterVariableChunkSize=FILTER_VARIABLE_CHUNK_SIZE,
                 filterVariableColumnName=FILTER_VARIABLE_COLUMN_NAME,
                 filterVariableData=FILTER_VARIABLE_DATA,
@@ -277,6 +318,11 @@ if __name__ == "__main__":
                 filterVariableSqlQueryTemplatePlaceholder=FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER,
                 outputFileName=OUTPUT_FILE_NAME,
                 queryChunkSize=QUERY_CHUNK_SIZE,
+                downloadData=DOWNLOAD_DATA,
+                connectionString2=CONNECTION_STRING_2,
+                newSQLTable_Database=newSQLTable_Database,
+                newSQLTable_Name=newSQLTable_Name,
+                newSQLTable_Schema=newSQLTable_Schema,
                 runOutputDir=runOutputDir,
                 logger=logger)
 
