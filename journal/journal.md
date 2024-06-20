@@ -119,17 +119,19 @@ with io.StringIO() as ioText:
     ioText.write(TEXT)
     ioText.seek(0)
     table0 = pd.read_table(ioText, skip_blank_lines=True, sep="\s*\|\s*", engine="python")
-mask = ~table0.map(lambda el: str(el).replace("-", "") == "").any(axis=1)
+mask = ~table0.applymap(lambda el: str(el).replace("-", "") == "").any(axis=1)
 table = table0[mask]
 environment = table["Environment"].dropna()
 dependencies0 = table["Dependencies"]
 channels0 = table["Channel"]
 if platform == "darwin":
-    osmask = ~dependencies0.isin(WINDOWS_ONLY_LIST)
+    osmask = ~dependencies0.isin(WINDOWS_ONLY_LIST + LINUX_ONLY_LIST)
 elif platform == "win32":
-    osmask = ~dependencies0.isin(DARWIN_ONLY_LIST)
+    osmask = ~dependencies0.isin(DARWIN_ONLY_LIST + LINUX_ONLY_LIST)
 elif platform == "linux":
-    osmask = ~dependencies0.isin(DARWIN_ONLY_LIST)
+    osmask = ~dependencies0.isin(DARWIN_ONLY_LIST + WINDOWS_ONLY_LIST)
+else:
+    raise Exception(f"Unsupported operating system: {platform}")
 dependencies = dependencies0[osmask].dropna().sort_values()
 channels = channels0[osmask].dropna().drop_duplicates().sort_values()
 
