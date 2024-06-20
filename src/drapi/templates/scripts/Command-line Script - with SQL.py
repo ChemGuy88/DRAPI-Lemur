@@ -1,32 +1,46 @@
+#!/usr/bin/env python
+
 """
-A template python script that uses command-line argument parsing.
+A template for creating command-line scripts.
 """
 
 import argparse
 import logging
 import os
 import pprint
+import shutil
 from pathlib import Path
 # Third-party packages
-import pandas as pd
-from sqlalchemy import URL
-# Local packages
+pass
+# First-party packages
 from drapi import __version__ as drapiVersion
+from drapi import loggingChoices
+from drapi.code.drapi.classes import (SecretString)
+from drapi.code.drapi.cli_parsers import parse_string_to_boolean
 from drapi.code.drapi.drapi import (choosePathToLog,
                                     getTimestamp,
+                                    loggingChoiceParser,
                                     makeDirPath)
+
 
 if __name__ == "__main__":
     # >>> `Argparse` arguments >>>
     parser = argparse.ArgumentParser()
 
-    # Arguments: Main
-    pass
+    # Arguments
+    parser.add_argument("--BOOLEAN",
+                        required=True,
+                        type=parse_string_to_boolean)
+    parser.add_argument("--CONNECTION_STRING",
+                        type=SecretString)
 
     # Arguments: Meta-parameters
+    parser.add_argument("--TIMESTAMP",
+                        type=str)
     parser.add_argument("--LOG_LEVEL",
                         default=10,
-                        type=int,
+                        type=loggingChoiceParser,
+                        choices=loggingChoices,
                         help="""Increase output verbosity. See "logging" module's log level for valid values.""")
 
     # Arguments: SQL connection settings
@@ -61,32 +75,44 @@ if __name__ == "__main__":
                         help="")
     parser.add_argument("--USER_PWD",
                         default=None,
+                        type=SecretString,
                         help="")
 
     argNamespace = parser.parse_args()
 
-    # Parsed arguments: Main
-    pass
+    # Parsed arguments
+    CONNECTION_STRING = argNamespace.CONNECTION_STRING
 
     # Parsed arguments: Meta-parameters
+    TIMESTAMP = argNamespace.TIMESTAMP
     LOG_LEVEL = argNamespace.LOG_LEVEL
-
-    # Parsed arguments: SQL connection settings
-    SERVER = argNamespace.SERVER
-    DATABASE = argNamespace.DATABASE
-    USER_DOMAIN = argNamespace.USER_DOMAIN
-    USERNAME = argNamespace.USERNAME
-    USER_ID = argNamespace.USER_ID
-    USER_PWD = argNamespace.USER_PWD
     # <<< `Argparse` arguments <<<
+
+    # >>> Custom argument parsing >>>
+    # >>> Custom argument parsing: Parsing 1 >>>
+    pass
+    # <<< Custom argument parsing: Parsing 1 <<<
+
+    # >>> Custom argument parsing: Parsing 2 >>>
+    pass
+    # <<< Custom argument parsing: Parsing 2 <<<
+    # <<< Custom argument parsing <<<
 
     # >>> Argument checks >>>
     # NOTE TODO Look into handling this natively with `argparse` by using `subcommands`. See "https://stackoverflow.com/questions/30457162/argparse-with-different-modes"
+    # >>> Argument checks: Check 1 >>>
     pass
+    # <<< Argument checks: Check 1 <<<
+    # >>> Argument checks: Check 2 >>>
+    pass
+    # <<< Argument checks: Check 2 <<<
     # <<< Argument checks <<<
 
     # Variables: Path construction: General
-    runTimestamp = getTimestamp()
+    if TIMESTAMP: 
+        runTimestamp = TIMESTAMP
+    else:
+        runTimestamp = getTimestamp()
     thisFilePath = Path(__file__)
     thisFileStem = thisFilePath.stem
     currentWorkingDir = Path(os.getcwd()).absolute()
@@ -107,21 +133,6 @@ if __name__ == "__main__":
 
     # Variables: Path construction: Project-specific
     pass
-
-    # Variables: SQL Parameters
-    if USER_ID:
-        userID = USER_ID[:]
-    else:
-        userID = fr"{USER_DOMAIN}\{USERNAME}"
-    if USER_PWD:
-        userPwd = USER_PWD
-    else:
-        userPwd = os.environ["HFA_UFADPWD"]
-    connectionString = URL.create(drivername="mssql+pymssql",
-                                  username=userID,
-                                  password=userPwd,
-                                  host=SERVER,
-                                  database=DATABASE)
 
     # Variables: Other
     pass
@@ -162,8 +173,16 @@ if __name__ == "__main__":
 
     pass
 
+    # <<< End script body <<<
+
     # Output location summary
     logger.info(f"""Script output is located in the following directory: "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}".""")
 
-    # <<< End script body <<<
-    logger.info(f"""Finished running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
+    # Remove intermediate files, unless running in `DEBUG` mode.
+    if logger.getEffectiveLevel() > 10:
+        logger.info("Removing intermediate files.")
+        shutil.rmtree(runIntermediateDir)
+        logger.info("Removing intermediate files - done.")
+
+    # Script end confirmation
+    logger.info(f"""Finished running "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}".""")
