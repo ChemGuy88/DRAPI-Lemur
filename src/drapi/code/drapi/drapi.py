@@ -151,7 +151,7 @@ def readDataFile(fname: Path,
     elif suffix.endswith(('.tsv',)):
         kwargs["delimiter"] = "\t"
         TextFileReaderObject = pd.read_csv(filepath_or_buffer=fname,
-                                           encoding=engine,
+                                           engine=engine,
                                            *args,
                                            **kwargs)
     elif suffix.endswith(('.json',)):
