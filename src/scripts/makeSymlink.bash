@@ -1,7 +1,7 @@
 #!/bin/env bash
 
-# shellcheck source="/data/herman/Documents/GitHub/Herman Code/Shell Package/functions/functions.bash"
-source "/data/herman/Documents/GitHub/Herman Code/Shell Package/functions/functions.bash"
+# shellcheck source="/data/herman/Documents/Git Repositories/Herman Code/Shell Package/functions/functions.bash"
+source "$HERMANS_CODE_INSTALL_PATH/Shell Package/functions/functions.bash"
 
 usage0() {
     cat <<USAGE
