@@ -18,10 +18,10 @@ def getData_inner(connectionString1: str,
                   runOutputDir: Path,
                   sqlQuery: Union[None, str],
                   downloadData: bool,
-                  connectionString2: SecretString,
-                  newSQLTable_Name: str,
-                  newSQLTable_Schema: str,
-                  outputName: str,
+                  connectionString2: SecretString = None,
+                  newSQLTable_Name: str = None,
+                  newSQLTable_Schema: str = None,
+                  outputName: str = None,
                   itstring1: str = None,
                   numChunks1: int = None,
                   sqlFilePath: Union[None, Path, str] = None) -> pd.DataFrame:
@@ -54,6 +54,7 @@ def getData_inner(connectionString1: str,
         raise Exception(message)
     # <<< Determine query source: File or string <<<
 
+    # >>> Define `query` >>>
     if case1 and case2:
         message = f"""There is an ambiguous argument input. Only one of `sqlFilePath` or `sqlQuery` may be passed, but not both."""
         logger.fatal(message)
@@ -67,6 +68,18 @@ def getData_inner(connectionString1: str,
         message = f"""An unexpected error occurred."""
         logger.fatal(message)
         raise Exception(message)
+    # <<< Define `query` <<<
+    
+    # >>> Argumnet check: `outputName` >>>
+    if downloadData:
+        if isinstance(outputName, type(None)):
+            message = """When `downloadData` is set to `True`, you must pass a value to `outputName`."""
+            logger.critical(message)
+            raise Exception(message)
+    else:
+        pass
+
+    # <<< Argumnet check: `outputName` <<<
 
     # Save query to log
     logger.debug(query)

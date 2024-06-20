@@ -15,6 +15,7 @@ import sqlalchemy as sa
 from drapi import __version__ as drapiVersion
 from drapi import loggingChoices
 from drapi.code.drapi.classes import (SecretString)
+from drapi.code.drapi.cli_parsers import parse_string_to_boolean
 from drapi.code.drapi.drapi import (choosePathToLog,
                                     getTimestamp,
                                     loggingChoiceParser,
@@ -32,12 +33,13 @@ if __name__ == "__main__":
 
     # Arguments: Single query option: Main
     parser.add_argument("--CONNECTION_STRING",
-                        type=SecretString)
+                        type=SecretString,
+                        help=""".""")
     parser.add_argument("--SQL_FILE_PATH",
                         type=str)
     parser.add_argument("--DOWNLOAD_DATA",
                         required=True,
-                        type=lambda value: True if value.lower() == "true" else False if value.lower() == "false" else None)
+                        type=parse_string_to_boolean)
     parser.add_argument("--FILTER_VARIABLE_FILE_PATH",
                         type=str)
     parser.add_argument("--FILTER_VARIABLE_COLUMN_NAME",
@@ -58,27 +60,28 @@ if __name__ == "__main__":
     parser.add_argument("--QUERY_CHUNK_SIZE",
                         default=10000,
                         type=int)
-    
+
     # Arguments: Single query option: non-download method
     parser.add_argument("--CONNECTION_STRING_2",
                         type=SecretString,
                         help="The connection string to use to upload the resulting data.")
     parser.add_argument("--newSQLTable_Database",
-                        default="DWS_OMOP",
                         choices=["DWS_OMOP"],
                         help="The database of the new table to create in the SQL server.")
     parser.add_argument("--newSQLTable_Name",
                         help="The name of the new table to create in the SQL server.")
     parser.add_argument("--newSQLTable_Schema",
-                        default="dbo",
                         choices=["dbo"],
                         help="The schema of the new table to create in the SQL server.")
-    
+
     # Arguments: Single query option: download data method
     parser.add_argument("--OUTPUT_FILE_NAME",
-                        type=str)
+                        type=str,
+                        help="The name to give to the files downloaded.")
 
     # Arguments: Meta-parameters
+    parser.add_argument("--TIMESTAMP",
+                        type=str)
     parser.add_argument("--LOG_LEVEL",
                         default=10,
                         type=loggingChoiceParser,
@@ -147,6 +150,7 @@ if __name__ == "__main__":
     OUTPUT_FILE_NAME = argNamespace.OUTPUT_FILE_NAME
 
     # Parsed arguments: Meta-parameters
+    TIMESTAMP = argNamespace.TIMESTAMP
     LOG_LEVEL = argNamespace.LOG_LEVEL
     # <<< `Argparse` arguments <<<
 
@@ -176,18 +180,22 @@ This program is meant to function one of two ways. Either
     # Argument parsing: Additional checks: Multiple-query vs single-query
     # NOTE That `SINGLE_OPTION_ARGUMENTS_MAIN` doesn't include `FILTER_VARIABLE_DATA`, because for now it's only possible value is `None`.
     SINGLE_OPTION_ARGUMENTS_MAIN = [CONNECTION_STRING,
-                               SQL_FILE_PATH,
-                               DOWNLOAD_DATA,
-                               FILTER_VARIABLE_FILE_PATH,
-                               FILTER_VARIABLE_COLUMN_NAME,
-                               FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER,
-                               FILTER_VARIABLE_PYTHON_DATA_TYPE,
-                               FILTER_VARIABLE_CHUNK_SIZE,
-                               QUERY_CHUNK_SIZE,
-                               newSQLTable_Database,
-                               newSQLTable_Name,
-                               newSQLTable_Schema,
-                               OUTPUT_FILE_NAME]
+                                    SQL_FILE_PATH,
+                                    DOWNLOAD_DATA,
+                                    FILTER_VARIABLE_FILE_PATH,
+                                    FILTER_VARIABLE_COLUMN_NAME,
+                                    FILTER_VARIABLE_SQL_QUERY_TEMPLATE_PLACEHOLDER,
+                                    FILTER_VARIABLE_PYTHON_DATA_TYPE,
+                                    FILTER_VARIABLE_CHUNK_SIZE,
+                                    QUERY_CHUNK_SIZE,
+                                    newSQLTable_Database,
+                                    newSQLTable_Name,
+                                    newSQLTable_Schema,
+                                    OUTPUT_FILE_NAME]
+    SINGLE_OPTION_ARGUMENTS_MAIN_0 = [CONNECTION_STRING,
+                                      SQL_FILE_PATH,
+                                      DOWNLOAD_DATA,
+                                      OUTPUT_FILE_NAME]
     SINGLE_OPTION_ARGUMENTS_MAIN_1 = [CONNECTION_STRING_2,
                                       newSQLTable_Database,
                                       newSQLTable_Name,
@@ -197,10 +205,6 @@ This program is meant to function one of two ways. Either
         message = "You supplied arguments for two conflicting options: multiple-query and single-query options. " + messageProgramOptions
         parser.error(message)
 
-    # Argument parsing: Additional checks: Catch leaks from `DOWNLOAD_DATA`
-    if isinstance(DOWNLOAD_DATA, type(None)):
-        parser.error("--DOWNLOAD_DATA must be one of {{True, False}}.")
-
     # Argument parsing: Additional checks: Download vs non-download option
     if any(SINGLE_OPTION_ARGUMENTS_MAIN_1) and any(SINGLE_OPTION_ARGUMENTS_MAIN_2):
         message = "You supplied arguments for two conflicting options: download and non-download options. " + messageProgramOptions
@@ -208,7 +212,10 @@ This program is meant to function one of two ways. Either
     # >>> Argument parsing: Additional checks >>>
 
     # Variables: Path construction: General
-    runTimestamp = getTimestamp()
+    if TIMESTAMP: 
+        runTimestamp = TIMESTAMP
+    else:
+        runTimestamp = getTimestamp()
     thisFilePath = Path(__file__)
     thisFileStem = thisFilePath.stem
     currentWorkingDir = Path(os.getcwd()).absolute()
@@ -283,8 +290,8 @@ This program is meant to function one of two ways. Either
                                "DOWNLOAD_DATA": DOWNLOAD_DATA,
                                "CONNECTION_STRING_2": CONNECTION_STRING_2,
                                "newSQLTable_Database": newSQLTable_Database,
-                               "newSQLTable_Name" : newSQLTable_Name,
-                               "newSQLTable_Schema" : newSQLTable_Schema,
+                               "newSQLTable_Name": newSQLTable_Name,
+                               "newSQLTable_Schema": newSQLTable_Schema,
                                "OUTPUT_FILE_NAME": OUTPUT_FILE_NAME}}
 
     # Iterate over SQL file settings

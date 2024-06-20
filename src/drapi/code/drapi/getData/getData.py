@@ -72,6 +72,8 @@ def getData(sqlFilePath: Union[Path, str],
 
     # >>> Drop SQL table, if necessary >>>
     if downloadData:
+        pass
+    else:
         query = f"""\
 DROP TABLE IF EXISTS [{newSQLTable_Schema}].[{newSQLTable_Name}];\
 """
@@ -79,19 +81,20 @@ DROP TABLE IF EXISTS [{newSQLTable_Schema}].[{newSQLTable_Name}];\
             with connection.begin():
                 _ = connection.execute(sa.text(query))
                 logger.info("If the table exists in the server, it was dropped.")  # TODO Add SQL feedback message
-    else:
-        pass
     # <<< Drop SQL table, if necessary <<<
 
     # Choose core function
     if not useFiltering:
         getData_inner(connectionString1=connectionString1,
                       logger=logger,
-                      outputName=outputFileName,
                       queryChunkSize=queryChunkSize,
                       runOutputDir=runOutputDir,
                       sqlQuery=None,
                       downloadData=downloadData,
+                      connectionString2=connectionString2,
+                      newSQLTable_Name=newSQLTable_Name,
+                      newSQLTable_Schema=newSQLTable_Schema,
+                      outputName=outputFileName,
                       itstring1=None,
                       numChunks1=None,
                       sqlFilePath=sqlFilePath)
