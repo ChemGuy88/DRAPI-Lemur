@@ -7,8 +7,10 @@ A template for creating command-line scripts.
 import argparse
 import logging
 import os
+import multiprocessing as mp
 import pprint
 import shutil
+from functools import partial
 from pathlib import Path
 # Third-party packages
 pass
@@ -28,6 +30,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     # Arguments
+    parser.add_argument("--list_of_paths",
+                        type=Path,
+                        nargs="+")
     parser.add_argument("--BOOLEAN",
                         required=True,
                         type=parse_string_to_boolean)
@@ -81,7 +86,9 @@ if __name__ == "__main__":
     argNamespace = parser.parse_args()
 
     # Parsed arguments
+    list_of_file_paths = argNamespace.list_of_file_paths
     CONNECTION_STRING = argNamespace.CONNECTION_STRING
+    BOOLEAN = argNamespace.BOOLEAN
 
     # Parsed arguments: Meta-parameters
     TIMESTAMP = argNamespace.TIMESTAMP
@@ -171,7 +178,15 @@ if __name__ == "__main__":
 
     # >>> Begin script body >>>
 
-    pass
+    # >>> Template parallelized block >>>
+    kwarg_1 = "apple"
+    kwarg_2 = "cake"
+    with mp.Pool() as pool:
+        results = pool.map(partial(lambda x, y, z: print(f"x: {x} -- y: {y} -- z: {z}"),
+                                    kwarg_1=kwarg_1,
+                                    kwarg_2=kwarg_2),
+                            list_of_file_paths)
+    # <<< Template parallelized block <<<
 
     # <<< End script body <<<
 
