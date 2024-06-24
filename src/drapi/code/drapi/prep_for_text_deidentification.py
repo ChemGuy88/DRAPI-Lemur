@@ -14,10 +14,14 @@ from drapi.code.drapi.drapi import readDataFile
 def prep_for_text_deidentification(filepath: Path,
                                    output_directory: Path,
                                    logger: logging.Logger,
+                                   log_file_name: bool = True,
                                    rename_columns: bool = False,
                                    columns_to_keep: Union[None, List[Union[int, str]]] = None) -> None:
     """
     """
+    if log_file_name:
+        logger.info(f"""Working on file "{filepath}".""")
+
     # Read file
     readerObject = readDataFile(fname=filepath,
                                 engine="pyarrow")
