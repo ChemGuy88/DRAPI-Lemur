@@ -2,6 +2,8 @@
 
 """
 A template for creating command-line scripts.
+
+NOTE TODO There are TODO tags in this file.
 """
 
 import argparse
@@ -35,7 +37,11 @@ if __name__ == "__main__":
                         required=True,
                         nargs="+",
                         help="The list of file paths to convert.")
+
     parser.add_argument("--rename_columns",
+                        type=parse_string_to_boolean)
+    parser.add_argument("--log_file_name",
+                        default=True,  # TODO Remove default value when you implement the use of `eval` elsewhere in this file.
                         type=parse_string_to_boolean)
     parser.add_argument("--columns_to_keep",
                         help="The indices or labels of columns to keep. Max 2.",
@@ -55,6 +61,7 @@ if __name__ == "__main__":
     # Parsed arguments
     list_of_file_paths = argNamespace.list_of_file_paths
     rename_columns = argNamespace.rename_columns
+    log_file_name = argNamespace.log_file_name
     columns_to_keep = argNamespace.columns_to_keep
 
     # Parsed arguments: Meta-parameters
@@ -145,23 +152,16 @@ if __name__ == "__main__":
 
     # >>> Begin script body >>>
 
-    if False:
-        # Serial implementation
-        for file_path in list_of_file_paths:
-            prep_for_text_deidentification(filepath=fp_obj,
-                                           output_directory=runOutputDir,
-                                           logger=logger,
-                                           rename_columns=rename_columns,
-                                           columns_to_keep=columns_to_keep)
-    elif True:
-        # Parallel implementation
-        with pp.Pool() as pool:
-            results = pool.map(partial(prep_for_text_deidentification,
-                                       output_directory=runOutputDir,
-                                       logger=logger,
-                                       rename_columns=rename_columns,
-                                       columns_to_keep=columns_to_keep),
-                               list_of_file_paths)
+    # Parallel implementation
+    with pp.Pool() as pool:
+        # NOTE TODO For developer: should not pass implicitely-valued None-types to the function. I should handle this better, maybe by using `eval`. See https://www.geeksforgeeks.org/execute-string-code-python/
+        results = pool.map(partial(prep_for_text_deidentification,
+                                   output_directory=runOutputDir,
+                                   logger=logger,
+                                   log_file_name=log_file_name,
+                                   rename_columns=rename_columns,
+                                   columns_to_keep=columns_to_keep),
+                           list_of_file_paths)
 
     # <<< End script body <<<
 
