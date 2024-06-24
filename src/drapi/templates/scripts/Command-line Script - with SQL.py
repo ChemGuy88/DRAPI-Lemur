@@ -188,6 +188,25 @@ if __name__ == "__main__":
                             list_of_file_paths)
     # <<< Template parallelized block <<<
 
+    # >>> Template with unpacked non-NoneType keyword arguments >>>
+    def function_2(parameter_1: str, parameter_2: str) -> str: return parameter_1 + parameter_2
+    function_2_parameters = ["parameter_1",
+                             "parameter_2",
+                               "logger"]
+    function_2_kwargs = {}
+    for argTuple in argList:
+        keyword, value = argTuple
+        condition_1 = keyword in function_2_parameters
+        condition_2 = not isinstance(value, type(None))
+        if condition_1 and condition_2:
+            function_2_kwargs[keyword] = value
+    function_2_kwargs["logger"] = logger
+
+    function_2_result = function_2(**function_2_kwargs)
+    logger.info(f"""Result from `function_2` = "{function_2_result}".""")
+
+    # <<< Template with unpacked non-NoneType keyword arguments <<<
+
     # <<< End script body <<<
 
     # Output location summary
