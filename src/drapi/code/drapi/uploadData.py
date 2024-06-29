@@ -18,12 +18,11 @@ def lazy_hack_1_function(string_: str):
     """
     """
     if isinstance(string_, str):
-        pass
+        new_string = re.sub(pattern="\x00",
+                        repl="<NULL-BYTE>",
+                        string=string_)
     else:
-        return string_
-    new_string = re.sub(pattern="\x00",
-                    repl="<NULL-BYTE>",
-                    string=string_)
+        new_string = string_
     return new_string
 
 
