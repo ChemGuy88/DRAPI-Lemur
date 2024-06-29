@@ -15,10 +15,20 @@ def prep_for_text_deidentification(filepath: Path,
                                    output_directory: Path,
                                    logger: logging.Logger,
                                    log_file_name: bool = True,
-                                   rename_columns: bool = False,
+                                   rename_columns: Union[None, List[Union[int, str]]] = None,
                                    columns_to_keep: Union[None, List[Union[int, str]]] = None) -> None:
     """
     """
+    # Assertions
+    if rename_columns:
+        len_rename_columns = len(rename_columns)
+        message = f"""If you wish to rename the columns, then `rename_columns` should have exactly two values."""
+        if len_rename_columns < 2:
+            logger.critical(message)
+        elif len_rename_columns > 2:
+            logger.warning(message)
+
+    # Verbose block
     if log_file_name:
         logger.info(f"""Working on file "{filepath}".""")
 
@@ -57,10 +67,10 @@ def prep_for_text_deidentification(filepath: Path,
         column_2 = columns[1]
 
         # Rename columns: Column 1
-        df = df.rename(columns={column_1: "De-identified Linkage"})
+        df = df.rename(columns={column_1: rename_columns[0]})
 
         # Rename columns: Column 2
-        df = df.rename(columns={column_2: "note_text"})
+        df = df.rename(columns={column_2: rename_columns[1]})
 
     # Save as TSV
     file_stem = filepath.stem

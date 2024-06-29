@@ -1,7 +1,5 @@
-#!/usr/bin/env python
-
 """
-A template for creating command-line scripts.
+Converts files to the format required by DeepDe-ID.
 
 NOTE TODO There are TODO tags in this file.
 """
@@ -39,7 +37,7 @@ if __name__ == "__main__":
                         help="The list of file paths to convert.")
 
     parser.add_argument("--rename_columns",
-                        type=parse_string_to_boolean)
+                        nargs="+")
     parser.add_argument("--log_file_name",
                         default=True,  # TODO Remove default value when you implement the use of `eval` elsewhere in this file.
                         type=parse_string_to_boolean)
