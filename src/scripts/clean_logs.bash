@@ -5,6 +5,8 @@
 # Runs from different programs do not have the same name or timestamp.
 # Dotfiles are not included in glob expansion.
 # Data and log directories have a fixed depth.
+# NOTE - TODO
+# Sort the contents of `all_files_to_check` by the parent directory, and display like in `tree`.
 
 # shellcheck source="/data/herman/Documents/Git Repositories/Herman Code/Shell Package/functions/functions.bash"
 source "$HERMANS_CODE_INSTALL_PATH/Shell Package/functions/functions.bash" || exit 1
