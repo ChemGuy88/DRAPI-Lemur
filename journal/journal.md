@@ -89,6 +89,7 @@ Below is a list of typical IDR virtual environments and their dependencies.
 |             | numpy            | defaults    |
 |             | openpyxl         | defaults    |
 |             | pandas           | defaults    |
+|             | pathos           |             |
 |             | pyarrow          | conda-forge |
 |             | pymssql          | defaults    |
 |             | pyodbc           | defaults    |
