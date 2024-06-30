@@ -12,6 +12,7 @@ import pprint
 import shutil
 from functools import partial
 from pathlib import Path
+from typing_extensions import List
 # Third-party packages
 pass
 # First-party packages
@@ -86,13 +87,13 @@ if __name__ == "__main__":
     argNamespace = parser.parse_args()
 
     # Parsed arguments
-    list_of_file_paths = argNamespace.list_of_file_paths
-    CONNECTION_STRING = argNamespace.CONNECTION_STRING
-    BOOLEAN = argNamespace.BOOLEAN
+    list_of_file_paths: List[Path] = argNamespace.list_of_file_paths
+    CONNECTION_STRING: SecretString = argNamespace.CONNECTION_STRING
+    BOOLEAN: bool = argNamespace.BOOLEAN
 
     # Parsed arguments: Meta-parameters
-    TIMESTAMP = argNamespace.TIMESTAMP
-    LOG_LEVEL = argNamespace.LOG_LEVEL
+    TIMESTAMP: str = argNamespace.TIMESTAMP
+    LOG_LEVEL: str = argNamespace.LOG_LEVEL
     # <<< `Argparse` arguments <<<
 
     # >>> Custom argument parsing >>>
@@ -219,4 +220,4 @@ if __name__ == "__main__":
         logger.info("Removing intermediate files - done.")
 
     # Script end confirmation
-    logger.info(f"""Finished running "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}".""")
+    logger.info(f"""Finished running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
