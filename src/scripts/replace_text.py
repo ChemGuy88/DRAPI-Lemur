@@ -4,13 +4,13 @@ Replaces text using byte strings.
 This is useful for converting CRLF to LF. You can do so like this:
 
 ```bash
-python replaceText.py -f FILEPATH -bo $'\\r\\n' -bn $'\\n'
+python replace_text.py -list_of_file_paths "$list_of_file_paths" -old_text $'\\r\\n' -new_text $'\\n'
 ```
 """
 
 import argparse
 import logging
-import multiprocessing as pp
+import multiprocessing as mp
 import os
 import pprint
 import shutil
@@ -20,8 +20,7 @@ from typing import List
 # Third-party packages
 pass
 # First-party packages
-from drapi.code.drapi.cli_parsers import (parse_string_to_boolean,
-                                          parse_string_to_bytes)
+from drapi.code.drapi.cli_parsers import parse_string_to_bytes
 from drapi.code.drapi.drapi import (choosePathToLog,
                                     getTimestamp,
                                     loggingChoiceParser,
@@ -191,7 +190,7 @@ if __name__ == "__main__":
     # >>> Begin script body >>>
 
     # Parallel implementation
-    with pp.Pool() as pool:
+    with mp.Pool() as pool:
         # NOTE TODO For developer: should not pass implicitely-valued None-types to the function. I should handle this better, maybe by using `eval`. See https://www.geeksforgeeks.org/execute-string-code-python/
         results = pool.map(partial(replace_text_wrapper,
                                 old_text=old_text_,

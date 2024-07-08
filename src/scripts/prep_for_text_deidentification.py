@@ -5,6 +5,7 @@ NOTE TODO There are TODO tags in this file.
 """
 
 import argparse
+import json
 import logging
 import multiprocessing as pp
 import os
@@ -37,7 +38,7 @@ if __name__ == "__main__":
                         help="The list of file paths to convert.")
 
     parser.add_argument("--rename_columns",
-                        nargs="+")
+                        type=json.loads)
     parser.add_argument("--log_file_name",
                         default=True,  # TODO Remove default value when you implement the use of `eval` elsewhere in this file.
                         type=parse_string_to_boolean)
