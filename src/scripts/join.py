@@ -51,8 +51,9 @@ if __name__ == "__main__":
                         help="The method to join on.")
 
     parser.add_argument("--COLUMNS_TO_KEEP",
-                        default=[],
+                        default=None,
                         nargs="*",
+                        action="extend",
                         help="The columns to keep. By default, all are kept.")
     parser.add_argument("--COLUMNS_TO_DROP",
                         default=[],
