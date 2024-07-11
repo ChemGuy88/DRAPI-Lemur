@@ -8,6 +8,7 @@ import os
 import pprint
 import shutil
 from pathlib import Path
+from typing_extensions import List
 # Third-party packages
 import pandas as pd
 from sqlalchemy import URL
@@ -37,7 +38,8 @@ if __name__ == "__main__":
                         choices=ONE_FLORIDA_ID_TYPE_LIST,
                         help="The variable used as input.")
     parser.add_argument("--TO_VARIABLES",
-                        nargs="*",
+                        nargs="+",
+                        action="extend",
                         choices=ONE_FLORIDA_ID_TYPE_LIST,
                         help="The variable(s) to be output.")
     parser.add_argument("--ID_TYPE",
@@ -112,13 +114,13 @@ if __name__ == "__main__":
     argNamespace = parser.parse_args()
 
     # Parsed arguments: Main
-    FILE_PATH = argNamespace.FILE_PATH
-    FILE_HEADER = argNamespace.FILE_HEADER
-    FROM = argNamespace.FROM
-    TO_VARIABLES = argNamespace.TO_VARIABLES
-    ID_TYPE = argNamespace.ID_TYPE
-    FIRST_TIME = argNamespace.FIRST_TIME
-    OLD_RUN_PATH = argNamespace.OLD_RUN_PATH
+    FILE_PATH: str = argNamespace.FILE_PATH
+    FILE_HEADER: str = argNamespace.FILE_HEADER
+    FROM: str = argNamespace.FROM
+    TO_VARIABLES: List = argNamespace.TO_VARIABLES
+    ID_TYPE: str = argNamespace.ID_TYPE
+    FIRST_TIME: bool = argNamespace.FIRST_TIME
+    OLD_RUN_PATH: str = argNamespace.OLD_RUN_PATH
 
     # >>> meta variable <<<
     FORM_1_ARGUMENTS = [FIRST_TIME,
@@ -259,7 +261,7 @@ if __name__ == "__main__":
                                       password=userPwd,
                                       host=SERVER,
                                       database=DATABASE)
-        
+
         # Modify query according to `TO_VARIABLES` and `FROM` arguments
         SQL_FILE_PATH_RELATIVE = Path("../../src/drapi/sql/OneFlorida to UF Health Patient ID Map.SQL")
         SQL_FILE_PATH = drapiInstallationPath.joinpath(SQL_FILE_PATH_RELATIVE)
@@ -276,7 +278,7 @@ if __name__ == "__main__":
             file.write(query)
 
         getData(sqlFilePath=sqlFilePathTemp,
-                connectionString=connectionString,
+                connectionString1=connectionString,
                 filterVariableChunkSize=10000,
                 filterVariableColumnName=fileHeader,
                 filterVariableData=fromData,
@@ -286,7 +288,11 @@ if __name__ == "__main__":
                 logger=logger,
                 outputFileName=f"OneFlorida to UF Health Patient ID Map",
                 runOutputDir=downloadDir,
-                queryChunkSize=10000)
+                downloadData=True,
+                connectionString2=None,
+                newSQLTable_Database=None,
+                newSQLTable_Name=None,
+                newSQLTable_Schema=None)
     else:
         downloadDir = Path(OLD_RUN_PATH)
 
@@ -305,22 +311,11 @@ if __name__ == "__main__":
 
     # Select data to output
     finalMap = pd.read_csv(filepath_or_buffer=concatenatedMapPath)
-    if len(TO_VARIABLES) == 0:
-        columnsToExport = finalMap.columns
-    elif len(TO_VARIABLES) > 1:
-        columnsToExport = [FROM] + TO_VARIABLES
-    else:
-        message = """."""
-        logger.critical(message)
-        raise Exception(message)
+    columnsToExport = TO_VARIABLES
     finalMap = finalMap[columnsToExport]
     finalMap = finalMap.sort_values(by=columnsToExport)
     exportPath = runOutputDir.joinpath(f"OneFlorida to UF Health Patient ID Map - Final.CSV")
     finalMap.to_csv(exportPath, index=False)
-
-    # QA
-    mapSize = finalMap.dropna().shape[0]
-    logger.info(f"""Final map shape after dropping any NAs: {mapSize:,}.""")
 
     # Output location summary
     logger.info(f"""Script output is located in the following directory: "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}".""")

@@ -154,15 +154,18 @@ def getData_outer(connectionString1: SecretString,
                                   logger=logger)
 
         # Fill query template: Non-download option: New table name, database, and schema
-        query = query.replace("PYTHON_VARIABLE__newSQLTable_Database",
-                              newSQLTable_Database)
-        query = str(query)  # For type hinting
-        query = query.replace("PYTHON_VARIABLE__newSQLTable_Name",
-                              newSQLTable_Name)
-        query = str(query)  # For type hinting
-        query = query.replace("PYTHON_VARIABLE__newSQLTable_Schema",
-                              newSQLTable_Schema)
-        query = str(query)  # For type hinting
+        if downloadData:
+            pass
+        else:
+            query = query.replace("PYTHON_VARIABLE__newSQLTable_Database",
+                                newSQLTable_Database)
+            query = str(query)  # For type hinting
+            query = query.replace("PYTHON_VARIABLE__newSQLTable_Name",
+                                newSQLTable_Name)
+            query = str(query)  # For type hinting
+            query = query.replace("PYTHON_VARIABLE__newSQLTable_Schema",
+                                newSQLTable_Schema)
+            query = str(query)  # For type hinting
 
         getData_inner(connectionString1=connectionString1,
                       logger=logger,
