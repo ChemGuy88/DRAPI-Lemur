@@ -55,16 +55,25 @@ def checkStatus(statusType=Literal["C2S", "death"],
         locationValueForQuery = "110"
 
     # Define value for query: LIST_OF_MRNS
-    MRNValuesForQuery = ",".join(f"'{MRNNumber}'" for MRNNumber in listOfMRNs)
+    MRNValuesForQuery = ",".join(f"{MRNNumber}" for MRNNumber in listOfMRNs if not pd.isna(MRNNumber))
 
     # Load query template
     with open(queryFilePath, "r") as file:
         query0 = file.read()
 
     # Prepare query
-    query = replace_sql_query(query=query0, old="{<PYTHON_PLACEHOLDER : LOCATION_NAME>}", new=locationNameForQuery)
-    query = replace_sql_query(query=query, old="{<PYTHON_PLACEHOLDER : LOCATION_TYPE>}", new=locationValueForQuery)
-    query = replace_sql_query(query=query, old="{<PYTHON_PLACEHOLDER : LIST_OF_MRNS>}", new=MRNValuesForQuery)
+    query = replace_sql_query(query=query0,
+                              old="{<PYTHON_PLACEHOLDER : LOCATION_NAME>}",
+                              new=locationNameForQuery,
+                              logger=logging.getLogger())
+    query = replace_sql_query(query=query,
+                              old="{<PYTHON_PLACEHOLDER : LOCATION_TYPE>}",
+                              new=locationValueForQuery,
+                              logger=logging.getLogger())
+    query = replace_sql_query(query=query,
+                              old="{<PYTHON_PLACEHOLDER : LIST_OF_MRNS>}",
+                              new=MRNValuesForQuery,
+                              logger=logging.getLogger())
 
     # Run query
     logging.debug(query)
