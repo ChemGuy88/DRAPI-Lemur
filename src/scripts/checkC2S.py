@@ -95,7 +95,7 @@ if __name__ == "__main__":
                         help="")
     parser.add_argument("--USER_PWD",
                         default=os.environ["TopSecret"],
-                        type=str,
+                        type=SecretString,
                         help="")
 
     argNamespace = parser.parse_args()
@@ -177,7 +177,7 @@ if __name__ == "__main__":
         uid = USER_ID[:]
     else:
         uid = fr"{USER_DOMAIN}\{USERNAME}"
-    conStr = f"mssql+pymssql://{uid}:{USER_PWD}@{SERVER}/{DATABASE}"
+    conStr = f"mssql+pymssql://{uid}:"+USER_PWD+f"@{SERVER}/{DATABASE}"
     
 
     # Directory creation: General
