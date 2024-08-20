@@ -37,7 +37,7 @@ DATABASE = "DWS_PROD"
 USERDOMAIN = "UFAD"
 USERNAME = os.environ["USER"]
 UID = fr"{USERDOMAIN}\{USERNAME}"
-PWD = os.environ["HFA_UFADPWD"]
+PWD = os.environ["TopSecret"]
 
 # SQLAlchemy connections
 conStr = f"mssql+pymssql://{UID}:{PWD}@{SERVER}/{DATABASE}"  # Create connection string

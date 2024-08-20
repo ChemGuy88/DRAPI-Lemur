@@ -1,65 +1,240 @@
+#!/usr/bin/env python
+
 """
-Check the C2S status of MRNs. This checks C2S enrollment and death information.
+A template for creating command-line scripts.
 """
 
 import argparse
-import sys
-# Third-party packages
+import logging
+import os
+import multiprocessing as mp
 import pandas as pd
+import pprint
+import shutil
+from functools import partial
 from pathlib import Path
-# Local packages
-from drapi.code.drapi.c2s.c2s import checkStatus, doCheck
+from typing_extensions import List
 
+# Third-party packages
+pass
+# First-party packages
+from drapi import __version__ as drapiVersion
+from drapi import PATH as drapiPath
+from drapi import loggingChoices
+from drapi.code.drapi.classes import (SecretString)
+from drapi.code.drapi.cli_parsers import parse_string_to_boolean
+from drapi.code.drapi.drapi import (choosePathToLog,
+                                    getTimestamp,
+                                    loggingChoiceParser,
+                                    makeDirPath)
 
-def checkStatusWrapper(fpath: str, columnName: str, statusType: str, location: str, verbosity):
-    """
-    """
-    fpath
-    data = pd.read_csv(fpath)
-
-    MRNsAsList = data[columnName].to_list()
-
-    result = checkStatus(statusType=statusType,
-                         location=location,
-                         listOfMRNs=MRNsAsList)
-
-    checkResultPass, failedRows = doCheck(result, statusType)
-
-    if checkResultPass:
-        print("Passed.")
-    elif not checkResultPass:
-        print("Not passed. Below are the failed cases:")
-        print(failedRows)
-
-    if verbosity < 10:
-        print(result.set_index(columnName).sort_index().to_string())
-
+from drapi.code.drapi.c2s.c2s import C2Share_query
 
 if __name__ == "__main__":
+    # >>> `Argparse` arguments >>>
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--verbosity", help="""Increase output verbosity. See "logging" module's log level for valid values.""", type=int, default=10)
+    # Arguments
+    parser.add_argument("--sql_path",
+                        type=Path,
+                        default=drapiPath.joinpath('../../../DRAPI-Lemur/src/drapi/sql/C2ShareAndDeathCheck.sql'), 
+                        help="The path to the Consent to Share sql query"
+                        )
 
-    parser.add_argument("fpath", help="The path to the file that contains the MRNs.", type=str)
+    parser.add_argument("--MRNs_path",
+                        type=Path,
+                        required=True
+                        )
 
-    parser.add_argument("columnName", help="The name of the column that contains the MRNs.", type=str)
+    parser.add_argument("--facility",
+                        choices=['UF','JAX'],
+                        required=True
+                                    )
+    parser.add_argument("--MRNs_column_name",
+                        type=str,
+                        required=True
+                        )
 
-    parser.add_argument("statusType", help="The type of status check.", choices=["C2S", "death"], type=str)
+    # Arguments: Meta-parameters
+    parser.add_argument("--TIMESTAMP",
+                        type=str)
+    parser.add_argument("--LOG_LEVEL",
+                        default=10,
+                        type=loggingChoiceParser,
+                        choices=loggingChoices,
+                        help="""Increase output verbosity. See "logging" module's log level for valid values.""")
 
-    parser.add_argument("location", help="The MRN location type.", choices=["gnv", "jax"], type=str)
+    # Arguments: SQL connection settings
+    parser.add_argument("--SERVER",
+                        default="DWSRSRCH01.shands.ufl.edu",
+                        type=str,
+                        choices=["Acuo03.shands.ufl.edu",
+                                 "EDW.shands.ufl.edu",
+                                 "DWSRSRCH01.shands.ufl.edu",
+                                 "IDR01.shands.ufl.edu",
+                                 "RDW.shands.ufl.edu"],
+                        help="")
+    parser.add_argument("--DATABASE",
+                        default="DWS_PROD",
+                        type=str,
+                        choices=["DWS_NOTES",
+                                 "DWS_OMOP_PROD",
+                                 "DWS_OMOP",
+                                 "DWS_PROD"],  # TODO Add the i2b2 databases... or all the other databases?
+                        help="")
+    parser.add_argument("--USER_DOMAIN",
+                        default="UFAD",
+                        type=str,
+                        choices=["UFAD"],
+                        help="")
+    parser.add_argument("--USERNAME",
+                        default=os.environ["USER"],
+                        type=str,
+                        help="")
+    parser.add_argument("--USER_ID",
+                        help="")
+    parser.add_argument("--USER_PWD",
+                        default=os.environ["TopSecret"],
+                        type=str,
+                        help="")
 
-    args = parser.parse_args()
+    argNamespace = parser.parse_args()
 
-    fpathAsString = args.fpath
-    columnName = args.columnName
-    statusType = args.statusType
-    location = args.location
+    # Parsed arguments
+    sql_path: Path = argNamespace.sql_path
+    facility: str = argNamespace.facility
+    MRNs_path: Path = argNamespace.MRNs_path
+    MRNs_column_name: str = argNamespace.MRNs_column_name
 
-    verbosity = args.verbosity
+    # Parsed arguments: SQL connections
+    SERVER: str = argNamespace.SERVER
+    DATABASE: str = argNamespace.DATABASE
+    USER_DOMAIN: str = argNamespace.USER_DOMAIN
+    USERNAME: str = argNamespace.USERNAME
+    USER_ID: str = argNamespace.USER_ID
+    USER_PWD: str = argNamespace.USER_PWD
 
-    fpath = Path(fpathAsString)
+    # Parsed arguments: Meta-parameters
+    TIMESTAMP: str = argNamespace.TIMESTAMP
+    LOG_LEVEL: str = argNamespace.LOG_LEVEL
+    # <<< `Argparse` arguments <<<
 
-    checkStatusWrapper(fpath, columnName, statusType, location, verbosity)
+    # >>> Custom argument parsing >>>
+    # >>> Custom argument parsing: Parsing 1 >>>
+    pass
+    # <<< Custom argument parsing: Parsing 1 <<<
 
-    if not len(sys.argv) > 1:
-        parser.print_usage()
+    # >>> Custom argument parsing: Parsing 2 >>>
+    pass
+    # <<< Custom argument parsing: Parsing 2 <<<
+    # <<< Custom argument parsing <<<
+
+    # >>> Argument checks >>>
+    # NOTE TODO Look into handling this natively with `argparse` by using `subcommands`. See "https://stackoverflow.com/questions/30457162/argparse-with-different-modes"
+    # >>> Argument checks: Check 1 >>>
+    pass
+    # <<< Argument checks: Check 1 <<<
+    # >>> Argument checks: Check 2 >>>
+    pass
+    # <<< Argument checks: Check 2 <<<
+    # <<< Argument checks <<<
+
+    # Variables: Path construction: General
+    if TIMESTAMP: 
+        runTimestamp = TIMESTAMP
+    else:
+        runTimestamp = getTimestamp()
+    thisFilePath = Path(__file__)
+    thisFileStem = thisFilePath.stem
+    currentWorkingDir = Path(os.getcwd()).absolute()
+    projectDir = currentWorkingDir
+    dataDir = projectDir.joinpath("data")
+    if dataDir:
+        inputDataDir = dataDir.joinpath("input")
+        intermediateDataDir = dataDir.joinpath("intermediate")
+        outputDataDir = dataDir.joinpath("output")
+        if intermediateDataDir:
+            runIntermediateDir = intermediateDataDir.joinpath(thisFileStem, runTimestamp)
+        if outputDataDir:
+            runOutputDir = outputDataDir.joinpath(thisFileStem, runTimestamp)
+    logsDir = projectDir.joinpath("logs")
+    if logsDir:
+        runLogsDir = logsDir.joinpath(thisFileStem)
+    sqlDir = projectDir.joinpath("sql")
+
+    # Variables: Path construction: Project-specific
+    if facility=='UF':
+        facilityid=101
+    elif facility == 'JAX':
+        facilityid = 110
+    else:
+        raise Exception("Invalid Facility")
+    # Variables: Other
+    pass
+
+    # Variables: SQL Parameters
+    if USER_ID:
+        uid = USER_ID[:]
+    else:
+        uid = fr"{USER_DOMAIN}\{USERNAME}"
+    conStr = f"mssql+pymssql://{uid}:{USER_PWD}@{SERVER}/{DATABASE}"
+    
+
+    # Directory creation: General
+    makeDirPath(runIntermediateDir)
+    makeDirPath(runOutputDir)
+    makeDirPath(runLogsDir)
+
+    # Logging block
+    logpath = runLogsDir.joinpath(f"log {runTimestamp}.log")
+    logFormat = logging.Formatter("""[%(asctime)s][%(levelname)s](%(funcName)s): %(message)s""")
+
+    logger = logging.getLogger(__name__)
+
+    fileHandler = logging.FileHandler(logpath)
+    fileHandler.setLevel(9)
+    fileHandler.setFormatter(logFormat)
+
+    streamHandler = logging.StreamHandler()
+    streamHandler.setLevel(LOG_LEVEL)
+    streamHandler.setFormatter(logFormat)
+
+    logger.addHandler(fileHandler)
+    logger.addHandler(streamHandler)
+
+    logger.setLevel(9)
+
+    logger.info(f"""Begin running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
+    logger.info(f"""DRAPI-Lemur version is "{drapiVersion}".""")
+    logger.info(f"""All other paths will be reported in debugging relative to the current working directory: "{choosePathToLog(path=projectDir, rootPath=projectDir)}".""")
+
+    argList = argNamespace._get_args() + argNamespace._get_kwargs()
+    argListString = pprint.pformat(argList)  # TODO Remove secrets from list to print, e.g., passwords.
+    logger.info(f"""Script arguments:\n{argListString}""")
+
+    # >>> Begin script body >>>
+    table = pd.read_csv(filepath_or_buffer=MRNs_path)
+    
+    MRNs=','.join([f'{MRN}' for MRN in table[MRNs_column_name]])
+    C2Share_SQLStatement = C2Share_query(sqlpath=sql_path,
+                                         facility=facilityid,
+                                         MRNs=MRNs,
+                                         logger=logger)
+   
+    result=pd.read_sql(sql=C2Share_SQLStatement,
+                       con=conStr)
+    print(result)
+    result.to_csv(runOutputDir.joinpath('result.csv'))
+    # <<< End script body <<<
+
+    # Output location summary
+    logger.info(f"""Script output is located in the following directory: "{choosePathToLog(path=runOutputDir, rootPath=projectDir)}".""")
+
+    # Remove intermediate files, unless running in `DEBUG` mode.
+    if logger.getEffectiveLevel() > 10:
+        logger.info("Removing intermediate files.")
+        shutil.rmtree(runIntermediateDir)
+        logger.info("Removing intermediate files - done.")
+
+    # Script end confirmation
+    logger.info(f"""Finished running "{choosePathToLog(path=thisFilePath, rootPath=projectDir)}".""")
