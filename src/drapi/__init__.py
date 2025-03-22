@@ -7,7 +7,7 @@ from pathlib import Path
 from os.path import dirname
 PATH = Path(dirname(__file__)).absolute()
 
-__version__ = "1.0.45"
+__version__ = "1.0.46"
 
 # Logging choices
 loggingChoices_Numeric_Min = min(logging.getLevelNamesMapping().values())
