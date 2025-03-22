@@ -41,28 +41,6 @@ git log --oneline -n 5
 git log --oneline -n 5  --tags --no-walk
 ```
 
-## Publishing a Package Manually
-
-The manual way is to use `twine`. However, all the below steps can be replaced using Continuous Improvement and Continuous Deployment, as implemented by GitHub Actions.
-
-```shell
-# Package code
-python -m build
-# Check everything you wanted was packaged
-unzip dist/thePackageWheelFile -d dist/tempDir
-# Remove unzipped file
-rm -rf dist/tempDir
-# Upload package
-twine upload dist/*
-# Done!
-```
-
-References
-
-- https://packaging.python.org/en/latest/tutorials/packaging-projects/
-- https://packaging.python.org/en/latest/guides/using-testpypi/
-- 
-
 ## i2b2 Portion Template
 
 For IRB202100946 I created two auxilairy scripts for de-identifying i2b2 data sets
